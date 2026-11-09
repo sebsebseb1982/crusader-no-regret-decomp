@@ -1,5 +1,7 @@
 # Enhancements and changes from the original game
 
+> This document comes from the No Remorse port and describes its features as written for *No Remorse*. The code is in this repository; each feature will be checked on *No Regret* as the game becomes playable.
+
 This document lists everything this C++20/SDL2 port adds to or changes from *Crusader: No Remorse* (Origin, 1995, DOS executable). For each item it gives the rules as the code implements them.
 
 The rest of the engine reproduces the original. Each function carries an `@orig <segment:offset>` tag that points to the routine it rewrites in `CRUSADER.EXE` (French 1.08). Port-only code is tagged `@orig none` or commented "Port addition". This document is built from those markers, the configuration (`src/core/game_config.hpp`), the project documentation and the git history.

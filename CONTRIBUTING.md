@@ -5,14 +5,14 @@ Thanks for your interest in the project! Contributions of all kinds are welcome:
 ## Before you start
 
 - For substantial changes, **open an issue first** to discuss the approach.
-- This repository contains **no game files**, and none must ever be committed: no game code, data, ISO, or screenshots of the original game. You need your own copy of *Crusader: No Remorse* to run the full test suite.
+- This repository contains **no game files**, and none must ever be committed: no game code, data, ISO, or screenshots of the original game. You need your own copy of *Crusader: No Regret* to run its tests (and of *Crusader: No Remorse* for the tests inherited from that port).
 - By contributing, you agree that your work is released under the [GNU GPL v3](LICENSE) (or any later version).
 
 ## Reporting a bug
 
 Please include:
 
-- the game version (French 1.08 or US 1.23) and the port version (`./crusader --version`);
+- the game version (English 1.06) and the port version (`./crusader --version`);
 - your operating system (and device, for PortMaster handhelds);
 - a screenshot, and a **savegame** if the bug happens in game;
 - the steps to reproduce it;
