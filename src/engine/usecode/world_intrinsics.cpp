@@ -23,7 +23,9 @@ std::uint16_t arg16(Args a, std::size_t pos) {
 
 }  // namespace
 
-// @orig 10E0:0000 10E0:0121
+// @orig 10E8:0000 10E8:0247
+// TODO(regret): modified in REGRET.EXE (No Remorse 10E0:0000, similarity 0.46)
+// TODO(regret): modified in REGRET.EXE (No Remorse 10E0:0121, similarity 0.47)
 void set_alert(World& world, bool on) {
     world.state.alert_active = on;
     // A search of the whole map ("@ %n = ... + $"), cell by cell.

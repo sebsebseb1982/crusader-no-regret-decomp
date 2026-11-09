@@ -28,7 +28,7 @@ constexpr std::size_t kCellWords = 64 * 64;
 constexpr std::size_t kListWordsAt = 10 + 2 * 2 * kCellWords;
 }  // namespace
 
-// @orig 10B0:01E7
+// @orig 10B8:01E7
 std::vector<GlobItem> read_glob(const FlexArchive& globs, std::size_t index) {
     const auto d = globs.entry(index);
     std::vector<GlobItem> items;
@@ -43,7 +43,7 @@ std::vector<GlobItem> read_glob(const FlexArchive& globs, std::size_t index) {
     return items;
 }
 
-// @orig 10B0:01E7
+// @orig 10B8:01E7
 std::size_t World::expand_glob_egg(const FlexArchive& globs, ObjId egg_id) {
     // GLOB.C: each item is created, popped to its place and flagged 0x82.
     // Coordinates in usecode units: x = (egg.x & ~0x1FF) + 2 * gx + 1.
@@ -65,7 +65,8 @@ std::size_t World::expand_glob_egg(const FlexArchive& globs, ObjId egg_id) {
     return created;
 }
 
-// @orig 10A0:039C
+// @orig 10A8:039C
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A0:039C, similarity 0.99)
 bool World::glob_near_view(std::int32_t base_x, std::int32_t base_y) const {
     // The egg's chunk corner projected without z, widened by 376 / 250 / 255
     // pixels, against the drawn area (768 x 640 for a 640 x 480 view).
@@ -76,7 +77,7 @@ bool World::glob_near_view(std::int32_t base_x, std::int32_t base_y) const {
     return sx - 376 <= right && sx + 375 >= drawn_left_ && sy - 250 <= bottom && sy + 255 >= drawn_top_;
 }
 
-// @orig 10B0:01E7
+// @orig 10B8:01E7
 std::size_t World::expand_glob_eggs(const FlexArchive& globs) {
     std::vector<ObjId> eggs;
     for_each([&](const Item& i) {
@@ -102,7 +103,8 @@ std::size_t World::expand_glob_eggs(const FlexArchive& globs) {
     return created;
 }
 
-// @orig 10B8:03EF 10B0:05D6
+// @orig 10C0:03EF 10B8:05E3
+// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:05D6, similarity 0.87)
 std::vector<FixedRecord> read_fixed_map(const FlexArchive& fixed, std::size_t map) {
     const auto d = fixed.entry(map);
     std::vector<FixedRecord> records;
@@ -134,7 +136,8 @@ const Item* World::get(ObjId id) const {
     return it == items_.end() ? nullptr : &it->second;
 }
 
-// @orig 10B0:262A
+// @orig 10B8:2700
+// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:262A, similarity 0.94)
 Item& World::add(Item item) {
     // The head of the free item slots. With none left (viewers expanding a
     // whole map's globs), the port goes on past the table, where the
@@ -217,7 +220,7 @@ bool World::cells_consistent() const {
     return linked == expected;
 }
 
-// @orig 10B0:0FED (entries 0 and 1; entries 10 and 20 as NPC_10f0_00e5 and 38dd)
+// @orig 10B8:1016 (entries 0 and 1; entries 10 and 20 as NPC_10f0_00e5 and 38dd)
 std::size_t World::load_saved_items(const FlexArchive& save) {
     // Item table, saved as one array per field (10240 slots; slot number =
     // object id).
@@ -422,7 +425,7 @@ std::size_t World::load_saved_items(const FlexArchive& save) {
     return count;
 }
 
-// @orig 10B0:0B67 (entry 0)
+// @orig 10B8:0B90 (entry 0)
 std::vector<std::uint8_t> World::saved_item_table() const {
     std::vector<std::uint8_t> out(kItemTableSize, 0);
     std::size_t offsets[12];
@@ -519,7 +522,7 @@ std::vector<std::uint8_t> World::saved_item_table() const {
     return out;
 }
 
-// @orig 10B0:0B67 (entry 1)
+// @orig 10B8:0B90 (entry 1)
 std::vector<std::uint8_t> World::saved_item_lists() const {
     std::vector<std::uint8_t> out(kListWordsAt + 16, 0);
     auto word = [&](std::size_t at, std::uint32_t v) {
@@ -569,7 +572,7 @@ std::vector<std::uint8_t> World::saved_item_lists() const {
     return out;
 }
 
-// @orig 1128:05B7
+// @orig 1138:05B7
 std::vector<std::uint8_t> World::saved_tracker(int part) const {
     // 50: the slot count (DS:26E4), 51: the items tracked (DS:26E6), 52: the
     // slots (DS:26E0).
@@ -584,7 +587,7 @@ std::vector<std::uint8_t> World::saved_tracker(int part) const {
     return out;
 }
 
-// @orig 10C8:18C0
+// @orig 10D0:18C0
 std::vector<ObjId> World::rect_search(
 std::int32_t x0, std::int32_t y0, std::int32_t x1, std::int32_t y1) const {
     // 16-bit coordinates; negative bounds become 0 (low) or 0x7FFF (high).
@@ -621,7 +624,8 @@ World::Point World::location(const Item& item) const {
     return {top->x, top->y, top->z};
 }
 
-// @orig 10F0:236B 10B0:268D
+// @orig 10F8:2609 10B8:2763
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:236B, similarity 0.83)
 ObjId World::create_npc(std::uint16_t shape, std::uint16_t frame) {
     ObjId slot = free_npcs_.ids.empty() ? 0 : free_npcs_.ids.front();
     for (ObjId id = 2; id < kNpcSlots && slot == 0; ++id) {
@@ -654,7 +658,8 @@ ObjId World::create_npc(std::uint16_t shape, std::uint16_t frame) {
     return slot;
 }
 
-// @orig 10A8:11E7 10B0:262A
+// @orig 10B0:1259 10B8:2700
+// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:262A, similarity 0.94)
 ObjId World::create(std::uint16_t shape, std::uint8_t frame) {
     // Item::I_create (ITEM.C). The original reuses a free slot, keeping its
     // stale x/y/z; flags, quality, NPC and map numbers are cleared.
@@ -680,7 +685,8 @@ void World::detach(Item& item) {
     item.parent = 0;
 }
 
-// @orig 10B0:1C21
+// @orig 10B8:1CF7
+// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1C21, similarity 0.96)
 void World::push(ObjId id) {
     // ITEMCACH.C: already out of the world -> nothing. Otherwise the item
     // leaves its container or map cell and goes on top of the stack. An
@@ -698,7 +704,8 @@ void World::push(ObjId id) {
     pending_.push_back(id);
 }
 
-// @orig 10B0:1D29
+// @orig 10B8:1DFF
+// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1D29, similarity 1.00)
 ObjId World::pop_to_coords(std::int32_t x, std::int32_t y, std::int32_t z) {
     // Not reproduced yet: display list, camera follow when the item is the
     // controlled NPC.
@@ -742,7 +749,8 @@ bool World::has_fast_area_events(const Item& item) const {
     return is_npc_id(item.id) || (info && info->is(ShapeInfo::kNoisy));
 }
 
-// @orig 10A8:2B30
+// @orig 10B0:2B34
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:2B30, similarity 0.93)
 std::uint16_t World::enter_fast_area(Item& item) {
     // Families 4/7/8 and the NPC reset are handled below through hooks. Not
     // reproduced: the shape 0x4FE hook (CRUSYS_1060_021b) and the EggHatcher
@@ -769,7 +777,7 @@ std::uint16_t World::enter_fast_area(Item& item) {
     return 0;
 }
 
-// @orig 10A8:2DAD
+// @orig 10B0:2DCD
 void World::leave_fast_area(Item& item) {
     item.flags &= static_cast<std::uint16_t>(~kItemFastArea);
     if (item.sprite_only) return;
@@ -788,7 +796,7 @@ bool World::is_trackable(std::uint16_t shape) const {
     return info && (info->is(ShapeInfo::kOccludes) || info->is(ShapeInfo::kTargetable));
 }
 
-// @orig 1128:0098
+// @orig 1138:0098
 void World::track(ObjId id) {
     // First free slot; nothing happens when the list is full. An item can be
     // listed twice, as in the original.
@@ -801,7 +809,7 @@ void World::track(ObjId id) {
     }
 }
 
-// @orig 1128:00FE
+// @orig 1138:00FE
 void World::untrack(ObjId id) {
     // First slot holding the id.
     for (ObjId& slot : tracked_) {
@@ -818,7 +826,7 @@ void World::clear_tracked() {
     tracked_count_ = 0;
 }
 
-// @orig 10A8:06A5
+// @orig 10B0:0717
 void World::set_shape(Item& item, std::uint16_t shape) {
     // Item_I_setShape (10A8:06A5). The fast area is not checked.
     const bool was = is_trackable(item.shape), will = is_trackable(shape);
@@ -834,14 +842,15 @@ void World::set_broken(Item& item) {
     item.flags |= kItemBroken;
 }
 
-// @orig 10A8:260F
+// @orig 10B0:2653
 void World::clear_broken(Item& item) {
     if (!(item.flags & kItemBroken)) return;
     track(item.id);
     item.flags &= static_cast<std::uint16_t>(~kItemBroken);
 }
 
-// @orig 1188:0CBA
+// @orig 1198:0CE8
+// TODO(regret): modified in REGRET.EXE (No Remorse 1188:0CBA, similarity 0.92)
 void World::set_camera(std::int32_t x, std::int32_t y, std::int32_t z) {
     // 16-bit arithmetic of ANIMCACH.C: halves and quarters are taken before
     // the sum or difference.
@@ -850,7 +859,8 @@ void World::set_camera(std::int32_t x, std::int32_t y, std::int32_t z) {
                     (ux >> 2) + (uy >> 2) - (z & 0xFF) - view_origin_y());
 }
 
-// @orig 1188:0CBA
+// @orig 1198:0CE8
+// TODO(regret): modified in REGRET.EXE (No Remorse 1188:0CBA, similarity 0.92)
 void World::set_camera_view(std::int32_t x, std::int32_t y, std::int32_t z, int left, int top) {
     const std::uint16_t ux = static_cast<std::uint16_t>(x), uy = static_cast<std::uint16_t>(y);
     // ANIMCACH.C 0CBA moves the drawn area after the fast area.
@@ -890,7 +900,7 @@ void World::set_view_size(int w, int h) {
     set_camera(state.camera_x, state.camera_y, state.camera_z);
 }
 
-// @orig 10D8:01C7
+// @orig 10E0:01C7
 std::uint8_t direction_16(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2) {
     // 16-bit differences; dy is positive towards -y.
     const auto dx = static_cast<std::int16_t>(x2 - x1), dy = static_cast<std::int16_t>(y1 - y2);
@@ -921,7 +931,7 @@ std::uint8_t direction_16(std::int32_t x1, std::int32_t y1, std::int32_t x2, std
     return pick(8, 7, 6, 5, 4);
 }
 
-// @orig 10D8:0120
+// @orig 10E0:0120
 std::uint8_t direction_8(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2) {
     // 16-bit arithmetic, as in the original.
     const auto ux = static_cast<std::int16_t>(x1 - x2), uy = static_cast<std::int16_t>(y1 - y2);
@@ -938,7 +948,7 @@ std::uint8_t direction_8(std::int32_t x1, std::int32_t y1, std::int32_t x2, std:
     return 2;
 }
 
-// @orig 10D8:0000
+// @orig 10E0:0000
 int closest_direction_in_range(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2, int steps, int lo,
                                int hi) {
     const int dir = steps == 8 ? direction_8(x1, y1, x2, y2) : direction_16(x1, y1, x2, y2);
@@ -949,7 +959,8 @@ int closest_direction_in_range(std::int32_t x1, std::int32_t y1, std::int32_t x2
     return to_lo < to_hi ? lo : hi;
 }
 
-// @orig 10A8:0810
+// @orig 10B0:0882
+// TODO(regret): constants in REGRET.EXE (No Remorse 10A8:0810, similarity 0.99)
 void World::set_frame(Item& item, std::uint16_t frame) {
     if (is_npc_id(item.id)) {
         item.frame = frame;
@@ -1081,7 +1092,7 @@ World::ScreenRect World::combat_rect() const {
     return {std::max(x0, view.x0), std::max(y0, view.y0), std::min(x0 + 639, view.x1), std::min(y0 + 479, view.y1)};
 }
 
-// @orig 10A8:40CE
+// @orig 10B0:41C1
 bool World::is_partly_in(const Item& item, const ScreenRect& r) const {
     if (!frame_lookup_) return false;
     const auto box = frame_lookup_(item.shape, item.frame);
@@ -1097,7 +1108,8 @@ bool World::is_partly_in(const Item& item, const ScreenRect& r) const {
     return left <= r.x1 && right >= r.x0 && top <= r.y1 && bottom >= r.y0 && right >= left && bottom >= top;
 }
 
-// @orig 10A8:41F6
+// @orig 10B0:42E9
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:41F6, similarity 0.95)
 bool World::is_mostly_in(const Item& item, const ScreenRect& r) const {
     if (!frame_lookup_) return false;
     const auto box = frame_lookup_(item.shape, item.frame);
@@ -1130,7 +1142,7 @@ void World::clear_fast_area() {
     drawn_reset_ = true;
 }
 
-// @orig 10B0:13BE
+// @orig 10B8:13E7
 void World::update_fast_area(std::int32_t x, std::int32_t y) {
     const FastArea before = fast_area_;
     const FastArea after = FastArea::around(x, y, fast_half_s_, fast_half_d_);
@@ -1179,7 +1191,7 @@ void World::update_fast_area(std::int32_t x, std::int32_t y) {
     }
 }
 
-// @orig 10B0:229D 10B0:2467
+// @orig 10B8:2373 10B8:253D
 ObjId World::pop_into(ObjId container_id, bool at_end) {
     Item* container = get(container_id);
     if (pending_.empty() || !container) return 0;
@@ -1208,7 +1220,9 @@ ObjId World::pop_into(ObjId container_id, bool at_end) {
 ObjId World::pop_to_container(ObjId container) { return pop_into(container, false); }
 ObjId World::pop_to_end(ObjId container) { return pop_into(container, true); }
 
-// @orig 10B0:1C21 10B0:1D29
+// @orig 10B8:1CF7 10B8:1DFF
+// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1C21, similarity 0.96)
+// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1D29, similarity 1.00)
 void World::move_item(ObjId id, std::int32_t x, std::int32_t y, std::int32_t z) {
     // CONVEYOR pushes its passenger before legalMoveToPoint. push is then
     // a no-op, but the successful move must still pop it back onto the map.
@@ -1228,7 +1242,7 @@ const TrigTables& World::trig() const {
     return trig_ ? *trig_ : computed;
 }
 
-// @orig 10B0:23DC
+// @orig 10B8:24B2
 ObjId World::pop() {
     if (pending_.empty()) return 0;
     const Item& item = *get(pending_.back());
@@ -1254,7 +1268,8 @@ int World::forget_lost_equipment() {
     return forgotten;
 }
 
-// @orig 10A8:1365 10B0:1AB3
+// @orig 10B0:13D7 10B8:1B89
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:1365, similarity 0.82)
 void World::destroy(ObjId id) {
     Item* item = get(id);
     if (!item) return;
@@ -1295,7 +1310,8 @@ void World::destroy(ObjId id) {
     if (id != 1 && listed && hooks_.fail_processes) hooks_.fail_processes(id);
 }
 
-// @orig 10B0:161B
+// @orig 10B8:1644
+// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:161B, similarity 0.80)
 void World::init_free_slots() {
     // Every slot free: NPCs 2..0xFF, items 0x100..0x27FF, each in id order.
     free_items_ = {};
@@ -1309,7 +1325,7 @@ void World::init_free_slots() {
     cell_count_bias_.fill(0);
 }
 
-// @orig 10B0:1A23
+// @orig 10B8:1AF9
 void World::push_free(ObjId id) {
     FreeSlots& list = is_npc_id(id) ? free_npcs_ : free_items_;
     // As the original: the tail moves to the new slot when the head was the
@@ -1320,7 +1336,7 @@ void World::push_free(ObjId id) {
     free_mask_.set(id);
 }
 
-// @orig 10B0:1986
+// @orig 10B8:1A5C
 void World::remove_free(ObjId id) {
     if (id >= kItemSlots || !free_mask_.test(id)) return;
     FreeSlots& list = is_npc_id(id) ? free_npcs_ : free_items_;
@@ -1330,7 +1346,8 @@ void World::remove_free(ObjId id) {
     free_mask_.reset(id);
 }
 
-// @orig 10B0:05D6
+// @orig 10B8:05E3
+// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:05D6, similarity 0.87)
 std::vector<ObjId> World::load_fixed_map(const FlexArchive& fixed, std::size_t map) {
     std::vector<ObjId> top_level;
     std::vector<ObjId> containers;  // open containers, innermost last

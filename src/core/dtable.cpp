@@ -117,7 +117,7 @@ constexpr std::array<ItemIcon, 9> kFamily12Items = {{
     {0, 0}, {835, 0}, {846, 1}, {847, 2}, {848, 3}, {1376, 4}, {922, 5}, {923, 7}, {924, 6},
 }};
 
-// @orig 1120:030E 1120:03A4 1120:0455
+// @orig 1130:030E 1130:03A4 1130:0455
 template <std::size_t N>
 std::uint16_t icon_of(const std::array<ItemIcon, N>& table, std::uint16_t shape) {
     for (const ItemIcon& e : table) {
@@ -128,7 +128,8 @@ std::uint16_t icon_of(const std::array<ItemIcon, N>& table, std::uint16_t shape)
 
 }  // namespace
 
-// @orig 1120:062D
+// @orig 1130:062D
+// TODO(regret): constants in REGRET.EXE (No Remorse 1120:062D, similarity 0.85)
 const FireType* fire_type(int number) {
     for (const FireType& f : kFireTypes) {
         if (f.number() == number && (number != 0 || &f == &kFireTypes[0])) return &f;
@@ -136,7 +137,7 @@ const FireType* fire_type(int number) {
     return nullptr;
 }
 
-// @orig 1120:0145
+// @orig 1130:0145
 int weapon_index(std::uint16_t shape) {
     if (shape == 0) return 0;
     for (std::size_t i = 0; i < kWeapons.size(); ++i) {
@@ -163,7 +164,7 @@ std::uint16_t clip_size(std::uint16_t weapon_shape) {
     return type < kClipSizes.size() ? kClipSizes[type] : 0;
 }
 
-// @orig 1120:020F
+// @orig 1130:020F
 int ammo_index(std::uint16_t shape) {
     for (std::size_t i = 0; i < kAmmoShapes.size(); ++i) {
         if (kAmmoShapes[i] == shape) return static_cast<int>(i);
@@ -171,7 +172,7 @@ int ammo_index(std::uint16_t shape) {
     return 0;
 }
 
-// @orig 1120:0373
+// @orig 1130:0373
 int family12_index(std::uint16_t shape) {
     for (std::size_t i = 0; i < kFamily12Items.size(); ++i) {
         if (kFamily12Items[i].shape == shape) return static_cast<int>(i);
@@ -181,34 +182,35 @@ int family12_index(std::uint16_t shape) {
 
 // The weapon table has 21 records but only 14 names: the records past 13 have
 // shape 0 and are never found by a shape.
-// @orig 1120:032E
+// @orig 1130:032E
 const char* weapon_name(std::uint16_t shape) {
     const int i = weapon_index(shape);
     return i < static_cast<int>(kWeaponNames.size()) ? kWeaponNames[i] : kWeaponNames[0];
 }
 
-// @orig 1120:0474
+// @orig 1130:0474
 const char* item_name(std::uint16_t shape) {
     const int i = inventory_item_index(shape);
     return tr(kItemNames[i], kItemNamesUs[i]);
 }
 
-// @orig 1120:02AB
+// @orig 1130:02AB
 const char* ammo_name(std::uint16_t shape) {
     const int i = ammo_index(shape);
     return tr(kAmmoNames[i], kAmmoNamesUs[i]);
 }
 
-// @orig 1120:03C3
+// @orig 1130:03C3
 const char* family12_name(std::uint16_t shape) {
     const int i = family12_index(shape);
     return tr(kFamily12Names[i], kFamily12NamesUs[i]);
 }
 
-// @orig 1120:0240
+// @orig 1130:0240
 std::uint16_t ammo_icon(std::uint16_t shape) { return kAmmoIcons[ammo_index(shape)]; }
 
-// @orig 1160:0771
+// @orig ?: No Remorse 1160:0771, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::uint16_t overlay_shape(std::uint16_t weapon_shape) {
     for (const Overlay& o : kOverlays) {
         if (o.weapon == weapon_shape) return kOverlayShapes[o.cls];
@@ -219,7 +221,7 @@ std::uint16_t overlay_shape(std::uint16_t weapon_shape) {
 std::uint16_t item_icon_family12(std::uint16_t shape) { return icon_of(kFamily12Items, shape); }
 std::uint16_t item_icon(std::uint16_t shape) { return icon_of(kItems, shape); }
 
-// @orig 1120:0455
+// @orig 1130:0455
 int inventory_item_index(std::uint16_t shape) {
     for (std::size_t i = 0; i < kItems.size(); ++i) {
         if (kItems[i].shape == shape) return static_cast<int>(i);
@@ -227,7 +229,8 @@ int inventory_item_index(std::uint16_t shape) {
     return 0;
 }
 
-// @orig 1120:0075
+// @orig 1130:0075
+// TODO(regret): modified in REGRET.EXE (No Remorse 1120:0075, similarity 0.98)
 NpcTypes NpcTypes::load(const std::filesystem::path& dtable_flx) {
     const FlexArchive flex = FlexArchive::open(dtable_flx);
     const auto entry = flex.entry(0);
@@ -239,7 +242,7 @@ NpcTypes NpcTypes::load(const std::filesystem::path& dtable_flx) {
     return t;
 }
 
-// @orig 1120:010A
+// @orig 1130:010A
 int NpcTypes::index(std::uint16_t shape) const {
     for (int i = 0; i < kRecords; ++i) {
         const std::size_t at = i * kRecordSize + 0x3E;

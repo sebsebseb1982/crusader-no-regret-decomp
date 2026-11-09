@@ -40,7 +40,7 @@ constexpr std::size_t kStackSize = 0x20;
 
 }  // namespace
 
-// @orig 10C8:010C
+// @orig 10D0:010C
 bool World::matches_loop_script(const Item& item, std::span<const std::uint8_t> script) const {
     if (item.sprite_only) return false;  // port-only sprite items are not items
     // The search object holds 32 bytes; past the given script they are zero.
@@ -122,7 +122,7 @@ bool World::matches_loop_script(const Item& item, std::span<const std::uint8_t> 
     return sp == 0 || stack[sp - 1] != 0;
 }
 
-// @orig 10C8:0771 10C8:0A8E
+// @orig 10D0:0771 10D0:0A8E
 std::vector<ObjId> World::area_search(ObjId centre, std::uint16_t range, std::span<const std::uint8_t> script) const {
     std::vector<ObjId> found;
     const Item* c = get(centre);
@@ -156,7 +156,7 @@ namespace {
 // (surface searches only), "@ % n = $", "% n @ = $" and the same with ':',
 // or a shape list followed by '$'. They test the same conditions, except that
 // a surface search on a fast path does not skip the item itself.
-// @orig 10C8:0771 10C8:1099
+// @orig 10D0:0771 10D0:1099
 bool is_fast_path(std::span<const std::uint8_t> s, bool surface) {
     if (s.empty()) return false;
     if (s[0] == '$') return surface;
@@ -170,7 +170,7 @@ bool is_fast_path(std::span<const std::uint8_t> s, bool surface) {
 
 }  // namespace
 
-// @orig 10C8:0F73
+// @orig 10D0:0F73
 std::vector<ObjId> World::surface_search(ObjId item_id, int mode, std::span<const std::uint8_t> script,
                                          std::vector<std::uint8_t>* sides) const {
     std::vector<ObjId> found;
@@ -226,7 +226,7 @@ std::vector<ObjId> World::surface_search(ObjId item_id, int mode, std::span<cons
     return found;
 }
 
-// @orig 10C8:0DEF
+// @orig 10D0:0DEF
 std::vector<ObjId> World::container_search(ObjId container, std::span<const std::uint8_t> script) const {
     std::vector<ObjId> found;
     const Item* c = get(container);

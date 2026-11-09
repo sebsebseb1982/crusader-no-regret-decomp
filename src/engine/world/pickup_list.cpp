@@ -19,7 +19,8 @@ struct Description {
     std::uint16_t frame = 0;
 };
 
-// @orig 1190:070F
+// @orig 11A0:070F
+// TODO(regret): modified in REGRET.EXE (No Remorse 1190:070F, similarity 0.99)
 Description describe(const World& world, const Item& item) {
     if (item.shape == kKeycard) return {tr("PASSE", "KEYCARD"), 5, static_cast<std::uint16_t>(item.frame + 13)};
     if (item.shape == kCredits) return {"CREDITS", 3, 13};
@@ -34,7 +35,8 @@ Description describe(const World& world, const Item& item) {
 
 }  // namespace
 
-// @orig 1190:049C
+// @orig 11A0:049C
+// TODO(regret): constants in REGRET.EXE (No Remorse 1190:049C, similarity 0.94)
 void PickupList::add(const World& world, ObjId item_id) {
     const Item* item = world.get(item_id);
     if (!item) return;
@@ -55,19 +57,20 @@ void PickupList::add(const World& world, ObjId item_id) {
     }
 }
 
-// @orig 1190:0414
+// @orig 11A0:0414
+// TODO(regret): constants in REGRET.EXE (No Remorse 1190:0414, similarity 0.77)
 void PickupList::count_second() {
     for (PickupEntry& e : entries_) {
         if (e.name && --e.seconds == 0) e = {};
     }
 }
 
-// @orig 1190:0000
+// @orig 11A0:0000
 PickupListProcess::PickupListProcess(GameState& state) : state_(&state) { set_runs_at_any_level(true); }
 
 void PickupListProcess::on_added() { last_ = kernel().ticks(); }
 
-// @orig 1190:0057
+// @orig 11A0:0057
 void PickupListProcess::run() {
     const std::uint32_t now = kernel().ticks();
     if (now - last_ < kTicksPerSecond) return;

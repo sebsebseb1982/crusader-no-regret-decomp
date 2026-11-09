@@ -22,7 +22,8 @@ constexpr std::array<std::uint16_t, 5> kClassShapes = {0x1A1, 0x36D, 0x36F, 0x36
 
 }  // namespace
 
-// @orig 1160:03FF
+// @orig ?: No Remorse 1160:03FF, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 WeaponOverlay WeaponOverlay::load(const std::filesystem::path& path) {
     const FlexArchive flex = FlexArchive::open(path);
     WeaponOverlay o;
@@ -34,7 +35,8 @@ WeaponOverlay WeaponOverlay::load(const std::filesystem::path& path) {
     return o;
 }
 
-// @orig 1160:0572 1160:05B7
+// @orig ?: No Remorse 1160:0572 1160:05B7, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::optional<int> WeaponOverlay::weapon_class(std::uint16_t weapon_shape) {
     for (const WeaponClass& w : kClasses) {
         if (w.shape == weapon_shape) return w.weapon_class;
@@ -46,7 +48,8 @@ std::uint16_t WeaponOverlay::class_shape(int weapon_class) {
     return weapon_class >= 0 && weapon_class < static_cast<int>(kClassShapes.size()) ? kClassShapes[weapon_class] : 0;
 }
 
-// @orig 1160:0643
+// @orig ?: No Remorse 1160:0643, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::optional<WeaponOverlay::Piece> WeaponOverlay::piece(std::uint16_t weapon_shape, std::uint16_t action,
                                                          const AnimAction& header, int dir, int index) const {
     const auto c = weapon_class(weapon_shape);

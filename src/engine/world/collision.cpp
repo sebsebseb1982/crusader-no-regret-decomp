@@ -13,7 +13,7 @@ struct Box {
     std::int32_t w = 0, d = 0, h = 0;  // x extent, y extent, height
 };
 
-// @orig 10E8:032E
+// @orig 10F0:032E
 Box box_of(const ShapeInfo* info, bool mirrored) {
     Box b;
     if (!info) return b;
@@ -43,7 +43,7 @@ struct Sweep {
     SweepResult result;
     ObjId goal = 0;  // +0x2D
 
-    // @orig 10E8:0228
+    // @orig 10F0:0228
     void add_hit(ObjId item, std::int32_t hx, std::int32_t hy, std::int32_t hz, bool blocking) {
         // ITEMFIND.C 0228: a blocking contact closer on any axis becomes the blocker.
         if (blocking && (std::abs(hx) < std::abs(best_dx) || std::abs(hy) < std::abs(best_dy) ||
@@ -63,7 +63,7 @@ struct Sweep {
     }
 
     // ITEMFIND.C 032E.
-    // @orig 10E8:032E
+    // @orig 10F0:032E
     void test(const Item& c) {
         const ShapeInfo* info = world.shape_info(c.shape);
         const Box cb = box_of(info, c.flags & 0x0020);
@@ -158,7 +158,7 @@ std::uint16_t collision_mask(const ShapeInfo* info) {
     return m;
 }
 
-// @orig 10E8:0B39
+// @orig 10F0:0B39
 SweepResult sweep(const World& world, std::uint16_t shape, ObjId mover, const World::Point& start,
                   const World::Point& end, std::uint8_t flags, std::uint16_t mask, ObjId goal) {
     const ShapeInfo* info = world.shape_info(shape);
@@ -254,7 +254,7 @@ SweepResult sweep(const World& world, std::uint16_t shape, ObjId mover, const Wo
     return s.result;
 }
 
-// @orig 10E8:00D9 1018:00FD
+// @orig 10F0:00D9 1018:00FD
 bool box_free(const World& world, std::int32_t w, std::int32_t d, std::int32_t h, std::uint16_t mask,
               const World::Point& at, ObjId* first_solid, ObjId ignore) {
     if (first_solid) *first_solid = 0;
@@ -292,7 +292,7 @@ bool position_free(const World& world, std::uint16_t shape, const World::Point& 
     return box_free(world, b.w, b.d, b.h, collision_mask(info), at, first_solid, ignore);
 }
 
-// @orig 10A8:104E
+// @orig 10B0:10C0
 ObjId legal_create_at(World& world, std::uint16_t shape, std::uint8_t frame, const World::Point& at) {
     if (shape > 0x7FF || !position_free(world, shape, at)) return 0;
     const ObjId id = world.create(shape, frame);
@@ -306,7 +306,7 @@ SweepResult try_move(const World& world, ObjId mover, const World::Point& end, s
     return try_move(world, mover, World::Point{m->x, m->y, m->z}, end, flags);
 }
 
-// @orig 10E8:162F
+// @orig 10F0:162F
 SweepResult try_move(const World& world, ObjId mover, const World::Point& start, const World::Point& end,
                      std::uint8_t flags, ObjId goal) {
     const Item* m = world.get(mover);
@@ -349,7 +349,7 @@ namespace {
 // SHAPHAND_1088_0000: a moving stack meets one of the same shape (families 2
 // and 9; 9 needs the same frame too). Their quantities go to the mover, up
 // to 666, and the other keeps the rest or goes.
-// @orig 1088:0000
+// @orig 1090:0000
 void merge_stacks(World& world, ObjId mover, ObjId other) {
     const Item* a = world.get(mover);
     const Item* b = world.get(other);
@@ -369,7 +369,7 @@ void merge_stacks(World& world, ObjId mover, ObjId other) {
 }
 
 // The two contact events (REFSTORE.C 0379, processes 0x20B and 0x20C).
-// @orig 10F8:0379 10A8:2718
+// @orig 1108:00A0 10B0:275C
 void send_contact(World& world, ObjId mover, ObjId other, std::uint16_t force) {
     // ITEM.C 2718: event 5 ("hit") of the mover, with the other's id and the force.
     if (world.hooks().start_event_args && world.get(mover)) {
@@ -382,7 +382,8 @@ void send_contact(World& world, ObjId mover, ObjId other, std::uint16_t force) {
 
 }  // namespace
 
-// @orig 10E8:123A
+// @orig 10F0:123A
+// TODO(regret): modified in REGRET.EXE (No Remorse 10E8:123A, similarity 0.99)
 void finish_move(World& world, ObjId mover, const SweepResult& r) {
     if (mover == 0) return;
     world.move_item(mover, r.end.x, r.end.y, r.end.z);

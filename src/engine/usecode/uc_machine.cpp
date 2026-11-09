@@ -44,7 +44,7 @@ std::uint16_t offset16(std::uint16_t base, int delta) {
 }
 
 // Search area reserved on the stack by the `loop` opcode, per search type.
-// @orig 1418:038B; loop opcodes
+// @orig 13F0:038B; loop opcodes
 std::size_t loop_area_size(int type) {
     switch (type) {
         case 2:
@@ -73,7 +73,7 @@ void UCMachine::set_intrinsic(std::uint16_t number, Intrinsic fn) {
 // (cachein, event 4) thus runs before the teleport moves the fast area and
 // fails the processes of the items left behind: mission 7's egg (MISS7, in
 // a corner of map 13) gives its fusion pack there.
-// @orig 1420:0E3A
+// @orig 13F8:0E3A
 Pid UCMachine::call_event(std::uint16_t cid, std::uint32_t event, ObjId item, std::span<const std::uint8_t> args) {
     const Pid pid = start_event(cid, event, item, args);
     auto* p = dynamic_cast<UCProcess*>(kernel_.get(pid));
@@ -84,7 +84,7 @@ Pid UCMachine::call_event(std::uint16_t cid, std::uint32_t event, ObjId item, st
 
 // The process alone, queued for the next pass (UCProcess, 0086:0EEC, without
 // its first run).
-// @orig 1420:0EEC
+// @orig 13F8:0EEC
 Pid UCMachine::start_event(std::uint16_t cid, std::uint32_t event, ObjId item, std::span<const std::uint8_t> args) {
     const std::uint32_t offset = usecode_.event_offset(cid, event);
     if (offset == 0) {
@@ -95,7 +95,7 @@ Pid UCMachine::start_event(std::uint16_t cid, std::uint32_t event, ObjId item, s
     return kernel_.add(std::move(p));
 }
 
-// @orig 1418:038B; pointer opcodes
+// @orig 13F0:038B; pointer opcodes
 bool UCMachine::dereference(std::uint32_t ptr, std::span<std::uint8_t> out) {
     const std::uint32_t seg = ptr >> 16;
     const std::uint16_t off = static_cast<std::uint16_t>(ptr);
@@ -120,7 +120,7 @@ bool UCMachine::dereference(std::uint32_t ptr, std::span<std::uint8_t> out) {
     return true;
 }
 
-// @orig 1418:038B; pointer opcodes
+// @orig 13F0:038B; pointer opcodes
 bool UCMachine::assign(std::uint32_t ptr, std::span<const std::uint8_t> in) {
     const std::uint32_t seg = ptr >> 16;
     const std::uint16_t off = static_cast<std::uint16_t>(ptr);
@@ -144,7 +144,7 @@ void UCMachine::fault(UCProcess& p, std::string message) {
     p.fail(0);
 }
 
-// @orig 1418:038B
+// @orig 13F0:038B
 void UCMachine::execute(UCProcess& p) {
     std::uint32_t count = 0;
     bool yield = false;
@@ -169,7 +169,7 @@ void UCMachine::execute(UCProcess& p) {
 }
 
 // Executes one instruction. Returns false after a fault.
-// @orig 1418:038B
+// @orig 13F0:038B
 bool UCMachine::step(UCProcess& p, bool& yield) {
     if (!usecode_.has_class(p.class_id_)) {
         fault(p, "no such class");

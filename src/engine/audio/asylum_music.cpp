@@ -53,6 +53,8 @@ void AsylumMusic::set_tick_length_bpm(int tempo) {
 }
 
 // @orig ASYLUM.DLL:1018:0772 ASYLUM.DLL:1008:004D
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:0772)
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1008:004D)
 void AsylumMusic::load(std::shared_ptr<const AmfModule> module) {
     playing_ = false;
     module_ = std::move(module);
@@ -63,6 +65,8 @@ void AsylumMusic::load(std::shared_ptr<const AmfModule> module) {
 }
 
 // @orig ASYLUM.DLL:1018:024A ASYLUM.DLL:1008:01AA
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:024A)
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1008:01AA)
 void AsylumMusic::start() {
     for (AsylumVoice& v : voices_) v.active = false;
     if (!module_) return;
@@ -76,6 +80,8 @@ void AsylumMusic::start() {
 }
 
 // @orig ASYLUM.DLL:1018:0286 ASYLUM.DLL:1008:01F4
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:0286)
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1008:01F4)
 void AsylumMusic::stop() {
     playing_ = false;
     module_.reset();
@@ -91,6 +97,7 @@ void AsylumMusic::stop() {
 }
 
 // @orig ASYLUM.DLL:1000:092A
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:092A)
 void AsylumMusic::tick() {
     if (--counter_ != 0) {
         for (int i = 0; i < kChannels; ++i) effect(channels_[i], voices_[i]);
@@ -120,6 +127,7 @@ void AsylumMusic::tick() {
 }
 
 // @orig ASYLUM.DLL:1000:062D
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:062D)
 void AsylumMusic::row_cell(Channel& c, AsylumVoice& v, const AmfCell& cell) {
     c.effect = static_cast<std::uint16_t>(cell.command << 8 | cell.param);
     if (cell.sample != 0) {
@@ -228,6 +236,7 @@ void AsylumMusic::volume_slide(AsylumVoice& v, std::uint8_t param) {
 }
 
 // @orig ASYLUM.DLL:1000:03E6
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:03E6)
 void AsylumMusic::tone_portamento(Channel& c, AsylumVoice& v, int speed) {
     const int target = as_i16(c.target);
     int period = as_i16(c.period);
@@ -241,6 +250,7 @@ void AsylumMusic::tone_portamento(Channel& c, AsylumVoice& v, int speed) {
 }
 
 // @orig ASYLUM.DLL:1000:03E6
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:03E6)
 void AsylumMusic::vibrato(Channel& c, AsylumVoice& v, std::uint8_t param) {
     c.vibrato_pos = static_cast<std::uint8_t>(c.vibrato_pos + (param >> 4) * 4);
     int delta = kSine[(c.vibrato_pos >> 2) & 0x1F] * (param & 0xF) >> 7;
@@ -256,6 +266,7 @@ void AsylumMusic::retrigger(Channel& c, AsylumVoice& v) {
 }
 
 // @orig ASYLUM.DLL:1000:03E6
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:03E6)
 void AsylumMusic::effect(Channel& c, AsylumVoice& v) {
     if (c.effect == 0) return;
     const std::uint8_t p = c.effect & 0xFF;

@@ -6,7 +6,7 @@
 
 namespace crusader {
 
-// @orig 13D8:0000 1360:0D5A
+// @orig 13C8:0000 1358:0D5A
 MouseCursor MouseCursor::load(const std::filesystem::path& mouse_shp) {
     MouseCursor c;
     c.data_ = read_file(mouse_shp);
@@ -24,7 +24,7 @@ void MouseCursor::reset(std::uint16_t frame) {
     set_frame(frame);
 }
 
-// @orig 1360:0D06
+// @orig 1358:0D06
 std::uint16_t MouseCursor::pop() {
     const std::uint16_t left = stack_[level_];
     if (--level_ < 0) level_ = 0;
@@ -42,7 +42,8 @@ void MouseCursor::set_bottom(int max_y) {
     move_to(x_, y_);
 }
 
-// @orig 13D8:008D
+// @orig 13C8:008D
+// TODO(regret): constants in REGRET.EXE (No Remorse 13D8:008D, similarity 0.98)
 int MouseCursor::zone(int x, int y) {
     // First the screen less a 20-pixel border, then the box around the centre;
     // both rectangles inclusive (rect_contains_point_2).
@@ -51,7 +52,7 @@ int MouseCursor::zone(int x, int y) {
     return on_screen && near ? 1 : 2;
 }
 
-// @orig 13D8:031A
+// @orig 13C8:031A
 int MouseCursor::direction(int x, int y) {
     const int dx = x - kCentreX;
     const int dy = y - kCentreY;
@@ -63,7 +64,7 @@ int MouseCursor::direction(int x, int y) {
     return dx < 0 ? 6 : 2;  // -3 < r < 3
 }
 
-// @orig 13D8:01A0
+// @orig 13C8:01A0
 int MouseCursor::frame() const {
     const std::uint16_t entry = stack_[level_];
     int f = entry;

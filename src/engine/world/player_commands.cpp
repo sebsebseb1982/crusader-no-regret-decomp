@@ -33,7 +33,11 @@ constexpr std::uint16_t kActionJump = 0x3A;
 // From the slot after `current` (step +1 or -1), the first slot holding an
 // item, wrapping from `last` to `first` going up and from below `first` to
 // `last` going down; the current slot is tried last. 0 when none.
-// @orig 13E8:0C07 13E8:0C72 13E8:0D5F 13E8:0DC0
+// @orig 1008:0C8E 1008:0D71 1008:0E54 1008:0EB5
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C07, similarity 0.48)
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C72, similarity 0.68)
+// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0D5F, similarity 0.84)
+// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0DC0, similarity 0.84)
 int find_slot(const World& world, int current, int step, int first, int last) {
     auto wrap = [&](int slot) { return slot > last ? first : slot < first ? last : slot; };
     const int start = wrap(current + step);
@@ -57,7 +61,7 @@ bool weapon_keeps_actions(const World& world) {
 }
 
 // CRUSADER_1138_0014: the controlled NPC's last action is an idle one.
-// @orig 1138:0014
+// @orig 1148:004C
 bool idle(const World& world) {
     switch (world.npc_word(world.state.controlled_npc, npc::kLastAnim)) {
     case 0: case 1: case 0x0B: case 0x10: case 0x20: case 0x37: case 0x3A: case 0x3B:
@@ -74,7 +78,8 @@ ObjId active_item(const World& world) {
 
 // Quality - 1; at 0 the item is destroyed (Item_I_destroy: its looping
 // sounds stop) and leaves the player's slots. True when it was destroyed.
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 bool use_up(World& world, ObjId id) {
     const std::uint16_t quality = world.get(id)->quality;
     set_quality_and_combine(world, id, static_cast<std::uint16_t>(quality - 1));
@@ -91,7 +96,8 @@ bool player_may_act(const World& world) {
     return !world.state.avatar_in_stasis && !world.is_dead(kPlayer) && world.state.controlled_npc == kPlayer;
 }
 
-// @orig 13E8:0C07
+// @orig 1008:0C8E
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C07, similarity 0.48)
 void previous_weapon(World& world) {
     const int current = world.npc_word(kPlayer, npc::kWeapon);
     if (current == 0) return;
@@ -99,7 +105,8 @@ void previous_weapon(World& world) {
         world.set_npc_word(kPlayer, npc::kWeapon, static_cast<std::uint16_t>(slot));
 }
 
-// @orig 13E8:0C72
+// @orig 1008:0D71
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C72, similarity 0.68)
 void next_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
     const int current = world.npc_word(kPlayer, npc::kWeapon);
     if (world.state.controlled_npc != kPlayer || current == 0) return;
@@ -113,7 +120,8 @@ void next_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
     if (pose != 0x40 && !actor_busy(kernel, kPlayer)) set_pose(world, anims, kPlayer, pose);
 }
 
-// @orig 13E8:0D5F
+// @orig 1008:0E54
+// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0D5F, similarity 0.84)
 void previous_item(World& world) {
     const int current = world.npc_word(kPlayer, npc::kActiveItem);
     if (current == 0) return;
@@ -121,7 +129,8 @@ void previous_item(World& world) {
         world.set_npc_word(kPlayer, npc::kActiveItem, static_cast<std::uint16_t>(slot));
 }
 
-// @orig 13E8:0DC0
+// @orig 1008:0EB5
+// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0DC0, similarity 0.84)
 void next_item(World& world) {
     const int current = world.npc_word(kPlayer, npc::kActiveItem);
     if (current == 0) return;
@@ -129,7 +138,8 @@ void next_item(World& world) {
         world.set_npc_word(kPlayer, npc::kActiveItem, static_cast<std::uint16_t>(slot));
 }
 
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void use_active_item(World& world) {
     const ObjId id = active_item(world);
     if (id == 0) return;
@@ -140,7 +150,8 @@ void use_active_item(World& world) {
     if (use_up(world, id)) next_item(world);
 }
 
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void use_carried(World& world, std::uint16_t shape) {
     if (const ObjId id = carried(world, shape)) {
         use_item(world, id);
@@ -148,7 +159,8 @@ void use_carried(World& world, std::uint16_t shape) {
     }
 }
 
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void set_off_detpacs(World& world) {
     const Item* player = world.get(kPlayer);
     if (!player) return;
@@ -161,7 +173,8 @@ void set_off_detpacs(World& world) {
     }
 }
 
-// @orig 13E8:14B4 10A8:00C1
+// @orig 1008:1565 10B0:00C1
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void drop_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
     const ObjId id = world.active_weapon(kPlayer);
     if (id == 0) return;
@@ -172,7 +185,8 @@ void drop_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
     world.pop_to_coords(player->x, player->y, player->z);
 }
 
-// @orig 1138:220A; key case at 1138:253F
+// @orig ?: No Remorse 1138:220A, no counterpart found in REGRET.EXE; key case at 1138:253F
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void jump(Kernel& kernel, World& world, const AnimDat& anims) {
     if (world.state.controlled_npc != kPlayer) return;
     const std::uint16_t last = world.npc_word(kPlayer, npc::kLastAnim);  // Actor_I_getLastAnimSet
@@ -195,7 +209,8 @@ void jump(Kernel& kernel, World& world, const AnimDat& anims) {
     do_anim(kernel, world, anims, kPlayer, kActionRunningJump, kDirCurrent, 0);
 }
 
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 bool player_command(Kernel& kernel, World& world, const AnimDat& anims, std::uint16_t code) {
     const bool may_act = player_may_act(world);
     if (world.state.selection.active) {

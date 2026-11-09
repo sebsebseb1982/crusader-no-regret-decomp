@@ -30,7 +30,7 @@ const ShapeFrame* first_frame(ShapeCache& gumps, std::uint16_t shape, std::size_
 
 }  // namespace
 
-// @orig 1378:0000
+// @orig 1370:0000
 ShapeButton::ShapeButton(ShapeCache& g, std::uint16_t s, int i, int x, int y) : gumps(&g), shape(s), id(i) {
     const ShapeFrame* f = first_frame(g, s);
     const int w = f ? f->width : 1;
@@ -48,7 +48,7 @@ void ShapeButton::draw(Surface8& screen) const {
     if (const ShapeFrame* f = first_frame(*gumps, shape, selected ? 1 : 0)) f->draw(screen, rect.x0, rect.y0);
 }
 
-// @orig 1310:001D
+// @orig 1308:001D
 void ShapeButtons::mouse_down(int x, int y) {
     if (captured_ >= 0) return;
     for (std::size_t i = 0; i < buttons.size(); ++i) {
@@ -66,7 +66,7 @@ void ShapeButtons::mouse_move(int x, int y) {
     b.selected = b.contains(x, y);
 }
 
-// @orig 1310:001D
+// @orig 1308:001D
 int ShapeButtons::mouse_up(int x, int y) {
     // 1310:001D: the capture ends; the button is not deselected.
     if (captured_ < 0) return -1;
@@ -79,7 +79,9 @@ void ShapeButtons::draw(Surface8& screen) const {
     for (const ShapeButton& b : buttons) b.draw(screen);
 }
 
-// @orig 13F8:0000 13F8:0383
+// @orig 13D8:0000 13D8:0383
+// TODO(regret): modified in REGRET.EXE (No Remorse 13F8:0000, similarity 0.99)
+// TODO(regret): modified in REGRET.EXE (No Remorse 13F8:0383, similarity 0.98)
 ShapeDialog::ShapeDialog(ShapeCache& gumps, std::uint16_t shape, bool question)
     : gumps_(&gumps), shape_(shape), question_(question) {
     const ShapeFrame* f = first_frame(gumps, shape);
@@ -106,7 +108,7 @@ void ShapeDialog::draw(Surface8& screen) const {
     buttons_.draw(screen);
 }
 
-// @orig 13F8:0299 13F8:0575
+// @orig 13D8:0299 13D8:0575
 void ShapeDialog::key(std::uint16_t code) {
     if (closed_) return;
     if (question_) {

@@ -15,7 +15,7 @@ constexpr std::array<int, FontSet::kMaxFonts> kExtraHeight = {
 
 }  // namespace
 
-// @orig 1318:0215
+// @orig 1310:0215
 FontSet FontSet::load(const std::filesystem::path& fonts_flx) {
     FontSet set;
     set.flex_ = FlexArchive::open(fonts_flx);
@@ -60,7 +60,7 @@ int TextWriter::baseline() const {
     return g ? g->yoff : 0;
 }
 
-// @orig 12C0:0071 1318:002E
+// @orig 12B0:0071 1310:002E
 void TextWriter::put(Surface8& dst, unsigned char c, int left) {
     if (const ShapeFrame* g = fonts_->glyph(font_, c)) {
         g->draw(dst, x_, y_);
@@ -75,7 +75,7 @@ void TextWriter::put(Surface8& dst, unsigned char c, int left) {
     }
 }
 
-// @orig 12C0:015C
+// @orig 12B0:015C
 void TextWriter::print(Surface8& dst, int x, int y, std::string_view text, int left) {
     move_to(x, y);
     for (char c : text) {
@@ -83,7 +83,7 @@ void TextWriter::print(Surface8& dst, int x, int y, std::string_view text, int l
     }
 }
 
-// @orig 12C0:0183
+// @orig 12B0:0183
 int TextWriter::print_clipped(Surface8& dst, int x, int y, int max_width, std::string_view text, int left) {
     move_to(x, y);
     int written = 0;
@@ -96,7 +96,7 @@ int TextWriter::print_clipped(Surface8& dst, int x, int y, int max_width, std::s
     return written;
 }
 
-// @orig 12C0:01F9
+// @orig 12B0:01F9
 TextWriter::Size TextWriter::measure(std::string_view text) const {
     int line = 0;
     int widest = 0;

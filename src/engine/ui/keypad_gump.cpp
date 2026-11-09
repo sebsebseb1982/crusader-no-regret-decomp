@@ -27,7 +27,7 @@ const std::array<KeypadGump::Rect, KeypadGump::kButtons> KeypadGump::kButtonRect
     {12, 98, 38, 123}, {39, 98, 65, 123}, {66, 98, 91, 123},
 }};
 
-// @orig 13C8:0133 13C8:0000
+// @orig 13B0:013D 13B0:0000
 KeypadGump::KeypadGump(ShapeCache& gumps, std::int16_t code, std::function<void(int)> play_sfx, int screen_width,
                        int screen_height)
     : gumps_(&gumps), play_sfx_(std::move(play_sfx)), code_(code) {
@@ -37,7 +37,7 @@ KeypadGump::KeypadGump(ShapeCache& gumps, std::int16_t code, std::function<void(
     y_ = (screen_height - (f ? f->height : 0)) >> 1;
 }
 
-// @orig 13C8:08F5 13C8:00C4
+// @orig 13B0:08FF 13B0:00C4
 void KeypadGump::draw(Surface8& screen) const {
     if (const ShapeFrame* f = gump_frame(*gumps_, kShape, 0)) f->draw(screen, x_, y_);
     int x = x_ + kDigitsX;
@@ -65,7 +65,7 @@ void KeypadGump::add_digit(int digit) {
     if (count_ < kMaxDigits) digits_[static_cast<std::size_t>(count_++)] = digit;
 }
 
-// @orig 13C8:0543
+// @orig 13B0:054D
 void KeypadGump::button(int index) {
     if (index == kBackspace) {
         if (count_ > 0) --count_;
@@ -88,13 +88,13 @@ void KeypadGump::move_selection(int dx, int dy) {
     selection_active_ = true;
 }
 
-// @orig 13C8:089A
+// @orig 13B0:08A4
 void KeypadGump::compute_value() {
     value_ = 0;
     for (int i = 0; i < count_; ++i) value_ = value_ * 10 + digits_[static_cast<std::size_t>(i)];
 }
 
-// @orig 13C8:09DB
+// @orig 13B0:09E5
 void KeypadGump::check() {
     if (code_ == 0) return;
     if (value_ == kCheatCode) {
@@ -109,13 +109,14 @@ void KeypadGump::check() {
 
 // The value goes to Gump_run_modal in a gump event (kind 0x10), then the
 // gump closes (vtable +0x3C, Gump_close).
-// @orig 1368:1297 1368:12EE
+// @orig 1360:1297 1360:12EE
 void KeypadGump::finish(int result) {
     result_ = result;
     closed_ = true;
 }
 
-// @orig 13C8:0646
+// @orig ?: No Remorse 13C8:0646, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void KeypadGump::key(std::uint16_t code) {
     // The shifted digits of a US keyboard.
     switch (code) {
@@ -165,14 +166,14 @@ void KeypadGump::key(std::uint16_t code) {
 }
 
 // A button released after being pressed sounds.
-// @orig 13C8:0086
+// @orig 13B0:0086
 void KeypadGump::release(int index) {
     if (!pressed_[static_cast<std::size_t>(index)]) return;
     pressed_[static_cast<std::size_t>(index)] = false;
     if (play_sfx_) play_sfx_(index == kBackspace ? kSoundBackspace : kSoundButton);
 }
 
-// @orig 1310:001D 13C8:006D
+// @orig 1308:001D 13B0:006D
 void KeypadGump::mouse_down(int x, int y) {
     if (closed_ || captured_ >= 0) return;
     selection_active_ = false;
@@ -185,7 +186,7 @@ void KeypadGump::mouse_down(int x, int y) {
     }
 }
 
-// @orig 1310:0151
+// @orig 1308:0151
 void KeypadGump::mouse_move(int x, int y) {
     if (captured_ < 0) return;
     const bool inside = kButtonRects[static_cast<std::size_t>(captured_)].contains(x - x_, y - y_);
@@ -193,7 +194,7 @@ void KeypadGump::mouse_move(int x, int y) {
     else release(captured_);
 }
 
-// @orig 1310:0254 1310:001D
+// @orig 1308:0254 1308:001D
 void KeypadGump::mouse_up(int x, int y) {
     if (captured_ < 0) return;
     const int index = captured_;

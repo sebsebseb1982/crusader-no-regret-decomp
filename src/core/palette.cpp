@@ -6,7 +6,7 @@
 
 namespace crusader {
 
-// @orig 1268:03A3
+// @orig 1270:03A3
 Palette Palette::load(const std::filesystem::path& path) {
     const auto data = read_file(path);
     if (data.size() < 256 * 3) {

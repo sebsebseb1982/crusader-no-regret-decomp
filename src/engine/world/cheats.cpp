@@ -57,7 +57,8 @@ enum class Given { kNotMade, kRefused, kTaken };
 
 // Item_I_create (frame 0), popToCoords at 0, 0, 0, MainActor::I_addItemCru
 // (shown); destroyed when refused.
-// @orig 1138:0896
+// @orig 1148:09FD
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 Given give(World& world, std::uint16_t shape) {
     const ObjId id = world.create(shape, 0);
     if (id == 0) return Given::kNotMade;
@@ -67,7 +68,8 @@ Given give(World& world, std::uint16_t shape) {
     return Given::kRefused;
 }
 
-// @orig 1138:01BD
+// @orig 1148:01FB
+// TODO(regret): constants in REGRET.EXE (No Remorse 1138:01BD, similarity 0.90)
 void give_ammo(World& world, std::uint16_t shape) {
     if (const ObjId carried_id = carried(world, shape)) {
         set_quality_and_combine(world, carried_id, kFullAmmo);
@@ -86,7 +88,8 @@ void give_ammo(World& world, std::uint16_t shape) {
     }
 }
 
-// @orig 1138:0896
+// @orig 1148:09FD
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 void give_everything(World& world, std::uint16_t flags) {
     // NPC_10f0_3dbf: the credits carried.
     if (const ObjId c = carried(world, kCredits)) set_quality(world, c, kCheatCredits);
@@ -117,7 +120,8 @@ void give_everything(World& world, std::uint16_t flags) {
 
 }  // namespace
 
-// @orig 1138:2B03
+// @orig ?: No Remorse 1138:2B03, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void cheat_code_key(World& world, const GameKeyEvent& e) {
     if (!e.pressed) return;
     GameState::Cheats& c = world.state.cheats;
@@ -132,7 +136,8 @@ void cheat_code_key(World& world, const GameKeyEvent& e) {
     say(world, c.enabled ? "Cheats are now active." : "Cheats are now inactive.");
 }
 
-// @orig 1138:0896
+// @orig 1148:09FD
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 bool cheat_f10(Kernel& kernel, World& world, const dtable::NpcTypes& types, const GameKeyEvent& e, bool us_123) {
     if (!e.pressed || e.scancode != kScancodeF10 || !world.state.cheats.on) return false;
     const ObjId npc = world.state.controlled_npc;  // DS:285A, DS:2852
@@ -164,7 +169,8 @@ bool cheat_f10(Kernel& kernel, World& world, const dtable::NpcTypes& types, cons
     return true;
 }
 
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 bool cheat_command(World& world, std::uint16_t code, bool us_123) {
     GameState::Cheats& c = world.state.cheats;
     switch (code) {

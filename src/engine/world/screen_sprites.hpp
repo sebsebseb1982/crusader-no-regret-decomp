@@ -30,7 +30,8 @@ class ScreenSprites {
 public:
     static constexpr int kSlots = 64;
 
-    // @orig 11A8:0115
+    // @orig 11B8:0115
+    // TODO(regret): modified in REGRET.EXE (No Remorse 11A8:0115, similarity 0.91)
     int add(std::uint16_t shape, std::uint16_t frame, std::int32_t x, std::int32_t y, std::uint8_t z) {
         for (int i = 0; i < kSlots; ++i) {
             if (slots_[static_cast<std::size_t>(i)].shape != 0) continue;
@@ -42,7 +43,8 @@ public:
     void remove(int slot) {
         if (ScreenSprite* s = at(slot)) *s = ScreenSprite{};
     }
-    // @orig 11A8:071E
+    // @orig 11B8:06DD
+    // TODO(regret): modified in REGRET.EXE (No Remorse 11A8:071E, similarity 0.99)
     void move(int slot, std::int32_t x, std::int32_t y, std::uint8_t z) {
         if (ScreenSprite* s = at(slot)) {
             s->x = x;

@@ -13,7 +13,9 @@ constexpr int kSecondHalf = 170;                       // frame 1 to the right o
 
 }  // namespace
 
-// @orig 13D0:25A2 13D0:2D5E
+// @orig 13B8:27F9 13B8:2FAC
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:25A2, similarity 0.95)
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:2D5E, similarity 0.93)
 DifficultyScreen::DifficultyScreen(ShapeCache& gumps, int& selected) : gumps_(&gumps), selected_(&selected) {
     for (int level = 1; level <= kLevels; ++level) {
         const Shape* s = gumps_->get(static_cast<std::uint16_t>(kBackground + level));
@@ -28,7 +30,9 @@ void DifficultyScreen::draw_shape(Surface8& screen, std::uint16_t shape, int fra
     if (s && static_cast<std::size_t>(frame) < s->frames().size()) s->frames()[frame].draw(screen, x, y);
 }
 
-// @orig 13D0:2B16 13D0:2E2B
+// @orig 13B8:2D79 13B8:3080
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:2B16, similarity 0.76)
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:2E2B, similarity 0.86)
 void DifficultyScreen::draw(Surface8& screen) const {
     screen.clear(0);
     if (us_version()) {
@@ -49,7 +53,7 @@ void DifficultyScreen::draw(Surface8& screen) const {
     }
 }
 
-// @orig 13D0:29B3
+// @orig 13B8:2C16
 void DifficultyScreen::key(std::uint16_t code) {
     if (result_) return;
     int& sel = *selected_;
@@ -73,7 +77,7 @@ void DifficultyScreen::key(std::uint16_t code) {
     }
 }
 
-// @orig 1310:001D
+// @orig 1308:001D
 void DifficultyScreen::mouse_down(int x, int y) {
     if (result_ || captured_) return;
     for (int level = 1; level <= kLevels; ++level) {
@@ -89,7 +93,7 @@ void DifficultyScreen::mouse_move(int x, int y) {
     if (captured_ && buttons_[captured_ - 1].contains(x, y)) *selected_ = captured_;
 }
 
-// @orig 1310:001D 13D0:2975
+// @orig 1308:001D 13B8:2BD8
 void DifficultyScreen::mouse_up(int x, int y) {
     if (result_ || !captured_) return;
     const int level = captured_;

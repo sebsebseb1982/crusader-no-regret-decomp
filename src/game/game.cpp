@@ -239,7 +239,8 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     reset_world();
 }
 
-// @orig 12E0:06BF
+// @orig ?: No Remorse 12E0:06BF, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 
 // WPNCACHE_1160_005f: a firing frame of an actor's animation. The object that
 // fires is the active inventory item when the actor's last action is 13 and
@@ -250,7 +251,8 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
 // fire type, the muzzle offset (x, y * 16, z * 8), the actor's direction
 // (record +0xC) and aiming, and the object's sound (DTABLE +2) on the actor's
 // voice.
-// @orig 1160:005F
+// @orig 1170:0206
+// TODO(regret): modified in REGRET.EXE (No Remorse 1160:005F, similarity 0.75)
 void Game::fire_frame(ObjId actor, int a, int b, int z) {
     ++shots_fired_;
     const auto r = world_->npc_record(actor);
@@ -294,7 +296,8 @@ void Game::set_config(GameConfig config) {
     }
 }
 
-// @orig 1028:03F6
+// @orig 1030:0B6F
+// TODO(regret): modified in REGRET.EXE (No Remorse 1028:03F6, similarity 0.78)
 void Game::reset_world() {
     // The sounds of the previous world go with it.
     if (audio_) {
@@ -478,7 +481,9 @@ bool Game::weapon_out() const {
 // @orig none: the slot's file in the save directory
 void Game::load_save(int slot) { load_save_file(save_dir_ / ("SAVEGAME." + std::to_string(slot))); }
 
-// @orig 1058:02F1 1028:0000
+// @orig 1060:02E4 1030:032D
+// TODO(regret): modified in REGRET.EXE (No Remorse 1058:02F1, similarity 0.85)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::load_save_file(const std::filesystem::path& path) {
     reset_world();
     const auto save = FlexArchive::open(path);
@@ -567,7 +572,8 @@ void Game::load_save_file(const std::filesystem::path& path) {
     world_->state.cycle_paused = false;
 }
 
-// @orig 1058:0115
+// @orig 1060:0115
+// TODO(regret): modified in REGRET.EXE (No Remorse 1058:0115, similarity 0.91)
 void Game::save_game(int slot) {
     if (slot < 1 || slot > LoadScreen::kNames) throw std::runtime_error("no save slot " + std::to_string(slot));
     FlexWriter flex(1024);
@@ -679,14 +685,15 @@ void Game::set_save_dir(const std::filesystem::path& dir) {
     save_names_ = LoadScreen::read_names(dir);
 }
 
-// @orig 1058:0528
+// @orig 1060:0534
 
 void Game::set_save_name(int slot, const std::string& name) {
     if (slot < 1 || slot > LoadScreen::kNames) return;
     save_names_[static_cast<std::size_t>(slot - 1)] = name.substr(0, 31);
 }
 
-// @orig 1008:041A 1048:0429
+// @orig 13C0:04A0 1050:0429
+// TODO(regret): modified in REGRET.EXE (No Remorse 1008:041A, similarity 0.80)
 void Game::save_named(int slot, const std::string& name) {
     // The save screen: the name is set, then the free space of the drive is
     // checked (GAMEPAL_1048_0429, 500000 bytes at least); without it, the
@@ -713,7 +720,7 @@ bool Game::save_or_report(int slot) {
 }
 
 
-// @orig 1410:0051
+// @orig 13E8:0051
 void Game::set_globals(std::span<const std::uint8_t> bytes) {
 
 
@@ -722,7 +729,8 @@ void Game::set_globals(std::span<const std::uint8_t> bytes) {
     std::copy_n(bytes.begin(), std::min(bytes.size(), globals.size()), globals.begin());
 }
 
-// @orig 1028:0000
+// @orig 1030:032D
+// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::new_game(int difficulty) {
     reset_world();
     // FLAG_1410_0051(0): the globals' initial values.
@@ -767,7 +775,7 @@ void Game::new_game(int difficulty) {
     apply_status_bar_mouse_range();
 }
 
-// @orig 11D8:31CF
+// @orig 11E8:31CF
 void Game::update(std::uint32_t elapsed_us) {
     // The enhancements window edits config_ in place.
     if (world_) world_->set_follow_player(config_.follow_player);
@@ -840,7 +848,7 @@ void Game::update(std::uint32_t elapsed_us) {
     apply_status_bar_mouse_range();
 }
 
-// @orig 1038:01B1 1188:1719
+// @orig 1040:01B1 1198:175A
 void Game::animate_scenery() {
     if (modal()) return;
     ++game_passes_;
@@ -865,7 +873,8 @@ void Game::mix_elapsed(std::uint32_t elapsed_us) {
     audio_->mixer.mix(out.data() + from, count);
 }
 
-// @orig 1468:3F77 1468:4060 1468:4169
+// @orig ?: No Remorse 1468:3F77 1468:4060 1468:4169, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::play_movie(const std::string& name, MovieKind kind) {
     if (movie_) return;
     Surface8 screen(kScreenWidth, kScreenHeight);
@@ -873,7 +882,8 @@ void Game::play_movie(const std::string& name, MovieKind kind) {
     start_movie(name, kind, std::move(screen));
 }
 
-// @orig 1468:03E3 1468:3ABC
+// @orig ?: No Remorse 1468:03E3 1468:3ABC, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::start_movie(const std::string& name, MovieKind kind, Surface8 screen) {
     const std::filesystem::path base = data_ / "FLICS" / movie_base_name(name);
     std::filesystem::path avi = base;
@@ -898,7 +908,8 @@ void Game::start_movie(const std::string& name, MovieKind kind, Surface8 screen)
     kernel_->interrupt_slice();
 }
 
-// @orig 1468:03E3 1468:2869
+// @orig ?: No Remorse 1468:03E3 1468:2869, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::update_movie(std::uint32_t elapsed_us) {
     movie_->advance(elapsed_us, [this](std::uint8_t scancode) { return keyboard_.down(scancode, false) != 0; });
     if (movie_->take_playback_start() && audio_) {
@@ -916,7 +927,8 @@ void Game::update_movie(std::uint32_t elapsed_us) {
     if (movie_->finished()) end_movie();
 }
 
-// @orig 1468:3D7A 1468:3C23
+// @orig ?: No Remorse 1468:3D7A 1468:3C23, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::end_movie() {
     const bool shop_movie = weasel_movie_;
     // 1468:3D7A / 3C23.
@@ -942,7 +954,8 @@ void Game::end_movie() {
     next_start_up_movie();
 }
 
-// @orig 1028:0000
+// @orig 1030:032D
+// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::next_start_up_movie() {
     // Game_start after the end credits: the movies of the start-up, one
     // after the other on a black screen (the credits leave it black); a
@@ -960,7 +973,8 @@ void Game::next_start_up_movie() {
     }
 }
 
-// @orig 1020:0C7F
+// @orig 1020:0DB7
+// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0C7F, similarity 0.73)
 void Game::save_config() {
     if (world_) world_->state.frameskip = config_.frameskip;
     if (config_file_.empty()) return;
@@ -971,7 +985,8 @@ void Game::save_config() {
     }
 }
 
-// @orig 13F0:03F4 13F0:0290
+// @orig 13D0:03AB 13D0:0290
+// TODO(regret): modified in REGRET.EXE (No Remorse 13F0:0290, similarity 0.85)
 void Game::run_credits(std::uint32_t ticks_before) {
     Credits* c = menu_->credits();
     if (!c) {
@@ -1006,7 +1021,8 @@ void Game::run_credits(std::uint32_t ticks_before) {
     }
 }
 
-// @orig 1028:0000
+// @orig 1030:032D
+// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::start_up() {
     // As the end of play_end_credits, without the credits: the menu is open
     // first (no game), the movies play over it on a black screen, and its
@@ -1017,7 +1033,9 @@ void Game::start_up() {
     next_start_up_movie();
 }
 
-// @orig 13E8:0000 1028:0000
+// @orig 1030:032D
+// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
+// TODO(regret): No Remorse 13E8:0000 has no counterpart in REGRET.EXE
 void Game::play_end_credits() {
     // 13E8:0000: the music stopped and its stack emptied (music_reset), no
     // game any more (DS:5BEE), the cursor hidden, the screen black; then the
@@ -1034,7 +1052,9 @@ void Game::play_end_credits() {
     menu_->show_credits();
 }
 
-// @orig 1138:0896 13E8:14B4
+// @orig 1148:09FD 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void Game::on_key(const GameKeyEvent& e) {
     // A movie only looks at the keys held (1468:2869).
     if (movie_) return;
@@ -1120,12 +1140,15 @@ void Game::on_key(const GameKeyEvent& e) {
     if (code) player_command(*kernel_, *world_, anims_, code);
 }
 
-// @orig 13E8:10C3 13E8:0E7D
+// @orig 1008:11A9 1008:0F68
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:10C3, similarity 0.76)
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0E7D, similarity 0.68)
 void Game::open_menu() {
     open_menu(false);
 }
 
-// @orig 13D0:0000
+// @orig 13B8:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0000, similarity 0.96)
 void Game::open_menu(bool no_game) {
     if (menu_) return;
     // WORLD_13e8_0e7d and 10c3: the status bar goes, the cursor shows.
@@ -1160,7 +1183,8 @@ void Game::open_menu(bool no_game) {
     if (audio_ && !no_game) audio_->music.push(Music::kMenu);
 }
 
-// @orig 13D0:03F5 13E8:0EF9
+// @orig 13B8:0400 1008:0FF1
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0EF9, similarity 0.70)
 void Game::close_menu() {
     const int result = *menu_->result();
     const int load_slot = menu_->load_slot();
@@ -1196,7 +1220,8 @@ void Game::close_menu() {
     apply_status_bar_mouse_range();
 }
 
-// @orig 1358:0046 1328:1588
+// @orig 1350:0046 1320:159A
+// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void Game::show_message(const std::string& text) {
     if (message_ || menu_) return;
     message_ = std::make_unique<MessageGump>(fonts_, text, kScreenWidth, kScreenHeight);
@@ -1208,7 +1233,7 @@ void Game::show_message(const std::string& text) {
     kernel_->interrupt_slice();
 }
 
-// @orig 1358:02C8
+// @orig 1350:02C8
 void Game::close_message() {
     message_.reset();
     message_process_->terminate();
@@ -1216,7 +1241,8 @@ void Game::close_message() {
     kernel_->drop_empty_levels();
 }
 
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 bool Game::function_key(std::uint16_t code) {
     const GameState& s = world_->state;
     switch (code) {
@@ -1355,7 +1381,8 @@ bool Game::function_key(std::uint16_t code) {
     }
 }
 
-// @orig 13F8:0000
+// @orig 13D8:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 13F8:0000, similarity 0.99)
 void Game::ask(std::uint16_t shape, int sfx, std::function<void()> yes) {
     enter_menu_mode();
     if (audio_) audio_->play_sfx(sfx);
@@ -1371,7 +1398,8 @@ void Game::notify(std::uint16_t shape) {
                 [this](const ModalGump&) { leave_menu_mode(); });
 }
 
-// @orig 1328:1588
+// @orig 1320:159A
+// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void Game::open_screen(std::unique_ptr<ModalGump> screen, std::function<void(const ModalGump&)> closed) {
     screen_ = std::move(screen);
     screen_closed_ = std::move(closed);
@@ -1383,7 +1411,8 @@ void Game::open_screen(std::unique_ptr<ModalGump> screen, std::function<void(con
     kernel_->interrupt_slice();
 }
 
-// @orig 1328:1588
+// @orig 1320:159A
+// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void Game::close_screen() {
     const std::unique_ptr<ModalGump> screen = std::move(screen_);
     const auto closed = std::move(screen_closed_);
@@ -1394,7 +1423,8 @@ void Game::close_screen() {
     if (closed) closed(*screen);
 }
 
-// @orig 13A0:0005 13A0:0212
+// @orig 1390:0005 1390:021C
+// TODO(regret): modified in REGRET.EXE (No Remorse 13A0:0005, similarity 0.91)
 void Game::read_computer(const std::string& text) {
     if (modal() || movie_) return;
     enter_menu_mode();
@@ -1412,7 +1442,8 @@ void Game::read_computer(const std::string& text) {
     });
 }
 
-// @orig 13C8:00FE 13C8:04EE
+// @orig 13B0:00FE 13B0:04F8
+// TODO(regret): modified in REGRET.EXE (No Remorse 13C8:00FE, similarity 0.92)
 void Game::show_keypad(std::int16_t code, Pid pid) {
     if (modal() || movie_) return;
     enter_menu_mode();
@@ -1432,7 +1463,8 @@ void Game::show_keypad(std::int16_t code, Pid pid) {
     });
 }
 
-// @orig 13E0:0000 13E0:0435
+// @orig ?: No Remorse 13E0:0000 13E0:0435, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::show_weasel(int level) {
     if (modal() || movie_) return;
     std::vector<std::uint8_t> stuff;
@@ -1457,7 +1489,8 @@ void Game::show_weasel(int level) {
 
 // The cursor hidden, the movie played over the view and the shop (a
 // cutscene); the palette and the colour cycling come back in end_movie.
-// @orig 13E0:0CD8
+// @orig ?: No Remorse 13E0:0CD8, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::play_weasel_movie(const std::string& name) {
     if (movie_) return;
     Surface8 screen(kScreenWidth, kScreenHeight);
@@ -1467,7 +1500,8 @@ void Game::play_weasel_movie(const std::string& name) {
     weasel_movie_ = movie_ != nullptr;
 }
 
-// @orig 13E8:0E7D
+// @orig 1008:0F68
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0E7D, similarity 0.68)
 void Game::enter_menu_mode() {
     // 13E8:0E7D: the sounds stop, the screen sprites and the status bar go,
     // cursor 0x24 shown.
@@ -1479,7 +1513,8 @@ void Game::enter_menu_mode() {
     cursor_.reset(MouseCursor::kArrow);
 }
 
-// @orig 13E8:0EF9
+// @orig 1008:0FF1
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0EF9, similarity 0.70)
 void Game::leave_menu_mode() {
     // 13E8:0EF9: the screen sprites and the status bar back, the cursor
     // popped and hidden, the keys and clicks forgotten (Input_I_flush), the
@@ -1493,7 +1528,9 @@ void Game::leave_menu_mode() {
     world_->state.crusader_teleporting = false;
 }
 
-// @orig 13D0:25A2 13D0:082E
+// @orig 13B8:27F9 13B8:08A8
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:25A2, similarity 0.95)
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:082E, similarity 0.98)
 void Game::follow_menu_screen() {
     // IRGUMP_13d0_25a2: DIFF.PAL, cursor 0x26 with the mouse at (320, 400);
     // back in the menu (13D0:082E case 0): MISC.PAL and cursor 0x25 again.
@@ -1510,7 +1547,7 @@ void Game::follow_menu_screen() {
     }
 }
 
-// @orig 11B8:0932 11B8:098F
+// @orig 11C8:0D39 11C8:0D96
 void Game::apply_status_bar_mouse_range() {
     // StatusBar_show / hide: mouse range y <= 439 or 479, mouse at (320, 240).
     const bool shown = world_->state.status_bar_visible;
@@ -1520,7 +1557,7 @@ void Game::apply_status_bar_mouse_range() {
     cursor_.move_to(320, 240);
 }
 
-// @orig 1360:045D
+// @orig 1358:045D
 void Game::mouse_move(int x, int y) {
     cursor_.move_to(x, y);
     if (message_) message_->mouse_move(cursor_.x(), cursor_.y());
@@ -1529,7 +1566,7 @@ void Game::mouse_move(int x, int y) {
     else mouse_queue_.move(cursor_.x(), cursor_.y(), mouse_buttons_);
 }
 
-// @orig 1360:045D
+// @orig 1358:045D
 void Game::mouse_button(int button, bool pressed, int x, int y) {
     if (button != 1 && button != 2) return;
     const std::uint16_t bit = button == 1 ? 1 : 2;
@@ -1567,7 +1604,8 @@ void Game::mouse_button(int button, bool pressed, int x, int y) {
     }
 }
 
-// @orig 1328:0624; the mouse events, then the idle event when there were none
+// @orig 1320:0636; the mouse events, then the idle event when there were none
+// TODO(regret): constants in REGRET.EXE (No Remorse 1328:0624, similarity 0.99)
 void Game::dispatch_mouse() {
     bool any = false;
     while (const auto e = mouse_queue_.next()) {
@@ -1607,7 +1645,7 @@ void Game::draw_window(Surface8& screen, int x0, int y0, Draw&& draw) {
     copy_block(window_, 0, 0, screen, x0, y0, kScreenWidth, kScreenHeight);
 }
 
-// @orig 1188:19C1
+// @orig 1198:1A02
 void Game::render(Surface8& screen, RenderStats* stats) {
     // A screen larger than 640 x 480 (native resolution) shows more of the
     // scene around the camera; everything else stays 640 x 480, centred.
@@ -1645,7 +1683,7 @@ void Game::render(Surface8& screen, RenderStats* stats) {
     });
 }
 
-// @orig 1188:12F1
+// @orig 1198:1332
 void Game::render_view(Surface8& screen, RenderStats* stats) {
     screen.clear(0);
     world_->set_view_size(screen.width, screen.height);

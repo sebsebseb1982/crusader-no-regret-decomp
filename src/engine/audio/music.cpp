@@ -34,7 +34,8 @@ constexpr int kM16 = 0x10;
 
 Music::Music(AsylumMixer& mixer, std::filesystem::path sound_dir) : mixer_(mixer), dir_(std::move(sound_dir)) {}
 
-// @orig 1200:00C8
+// @orig 1210:0100
+// TODO(regret): modified in REGRET.EXE (No Remorse 1200:00C8, similarity 0.60)
 std::optional<std::string> Music::file_name(int track) const {
     switch (track) {
     case kM16:
@@ -67,7 +68,8 @@ void Music::stop() {
     mixer_.stop_music();
 }
 
-// @orig 1200:0143
+// @orig 1210:01A2
+// TODO(regret): modified in REGRET.EXE (No Remorse 1200:0143, similarity 0.46)
 void Music::play(int track) {
     stop();
     if (track == kM16) m16_ = m16_ == 'c' ? 'a' : static_cast<char>(m16_ + 1);

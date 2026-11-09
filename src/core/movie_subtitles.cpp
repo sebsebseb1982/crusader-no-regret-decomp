@@ -24,7 +24,8 @@ std::int32_t frame_number(std::string_view s, std::size_t at) {
 }
 
 // FUN_1470_0398: the line after the one at `at`, if it is a subtitle.
-// @orig 1470:0398
+// @orig ?: No Remorse 1470:0398, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::optional<std::string> text_after(std::string_view s, std::size_t at) {
     const std::size_t cr = s.find('\r', at);
     if (cr == std::string_view::npos) return std::nullopt;
@@ -38,7 +39,8 @@ std::optional<std::string> text_after(std::string_view s, std::size_t at) {
 
 }  // namespace
 
-// @orig 1470:0239
+// @orig ?: No Remorse 1470:0239, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::vector<MovieSubtitle> parse_movie_subtitles(std::string_view s, const FontSet& fonts, int font) {
     std::vector<MovieSubtitle> out;
     const TextWriter writer(fonts, font);
@@ -59,7 +61,8 @@ std::vector<MovieSubtitle> parse_movie_subtitles(std::string_view s, const FontS
     return out;
 }
 
-// @orig 1470:00FB
+// @orig ?: No Remorse 1470:00FB, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::vector<MovieSubtitle> load_movie_subtitles(const std::filesystem::path& path, const FontSet& fonts, int font) {
     std::ifstream in(path, std::ios::binary);
     if (!in) return {};

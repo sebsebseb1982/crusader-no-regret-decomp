@@ -23,7 +23,8 @@ void PickupArea::draw_gump(Surface8& screen, std::uint16_t shape, std::uint16_t 
 }
 
 // GumpShape_rect, then the name's width (HUGE_12c0_02aa).
-// @orig 1190:049C
+// @orig 11A0:049C
+// TODO(regret): constants in REGRET.EXE (No Remorse 1190:049C, similarity 0.94)
 int PickupArea::width(const PickupEntry& entry) const {
     const Shape* s = gumps_->get(entry.icon_shape);
     const int icon = s && entry.icon_frame < s->frames().size() ? s->frames()[entry.icon_frame].width : 1;
@@ -31,7 +32,7 @@ int PickupArea::width(const PickupEntry& entry) const {
     return (right / kTile + 2) * kTile;
 }
 
-// @orig 1190:010F
+// @orig 11A0:010F
 void PickupArea::draw(Surface8& screen, const PickupList& list) const {
     for (int i = 0; i < PickupList::kEntries; ++i) {
         const PickupEntry& e = list.entries()[static_cast<std::size_t>(i)];

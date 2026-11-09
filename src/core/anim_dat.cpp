@@ -8,7 +8,7 @@
 
 namespace crusader {
 
-// @orig 1180:0013
+// @orig 1190:0013
 AnimFrame AnimFrame::decode(std::span<const std::uint8_t, 8> d) {
     AnimFrame f;
     std::copy(d.begin(), d.end(), f.raw.begin());
@@ -31,7 +31,7 @@ AnimFrame AnimFrame::decode(std::span<const std::uint8_t, 8> d) {
     return f;
 }
 
-// @orig 1168:0106
+// @orig 1178:0509
 const AnimFrame* AnimAction::frame(int dir16, std::size_t index) const {
     int dir = dir16 & 0xFF;
     if (!sixteen_directions()) dir >>= 1;
@@ -47,7 +47,8 @@ AnimDat AnimDat::load(const std::filesystem::path& path) {
     return parse(data);
 }
 
-// @orig 1170:0615 1168:0041
+// @orig 1180:0615 1178:0444
+// TODO(regret): modified in REGRET.EXE (No Remorse 1170:0615, similarity 0.97)
 AnimDat AnimDat::parse(std::span<const std::uint8_t> data) {
     AnimDat dat;
     for (std::size_t shape = 0; shape < kShapes; ++shape) {

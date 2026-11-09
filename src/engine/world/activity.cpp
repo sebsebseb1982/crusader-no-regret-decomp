@@ -31,7 +31,7 @@ std::uint16_t word_at(std::span<const std::uint8_t> r, std::size_t at) {
 
 // TYPE_1108_026e: in the combat zone (the screen), with a default activity 1 it is not doing yet,
 // the NPC that sees the controlled NPC takes its default activity 1.
-// @orig 1108:026E
+// @orig 1118:033E
 bool spot_controlled(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc) {
     const Item* self = world.get(npc);
     const auto r = world.npc_record(npc);
@@ -45,7 +45,8 @@ bool spot_controlled(Kernel& kernel, World& world, const AnimDat& anims, ObjId n
 
 // TYPE_1108_0000: the common start of activity processes. They are timer
 // processes (TimerProcess, 11E8:1814); only the loiter one starts its timer.
-// @orig 1108:0000
+// @orig 1118:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 1108:0000, similarity 0.68)
 class ActivityProcess : public TimedProcess {
 public:
     ActivityProcess(World& world, const AnimDat& anims, ObjId npc, std::uint16_t type) : world_(world), anims_(anims) {
@@ -59,7 +60,8 @@ protected:
     // TYPE_1108_0d3e, event 2 (a timer period): a placed, living NPC that
     // sees the controlled NPC takes its default activity 1 (spot_controlled).
     // Event 1 (idle actions 0x33 / 0x34) is sent by nothing in this version.
-    // @orig 1108:0D3E
+    // @orig 1118:0CEC
+    // TODO(regret): constants in REGRET.EXE (No Remorse 1108:0D3E, similarity 0.98)
     void tick() override {
         const Item* self = world_.get(owner());
         if (!self || (self->z & 0xFF) == 0xFE || world_.is_dead(owner()) || kernel().failing_all()) return;
@@ -78,7 +80,7 @@ protected:
 };
 
 // Activity 1 (1108:0359).
-// @orig 1108:0359
+// @orig 1118:0429
 class StandProcess : public ActivityProcess {
 public:
     StandProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, 0x258) {}
@@ -90,7 +92,8 @@ protected:
 };
 
 // Activity 2 (1108:0BFA): `count` walks (0xFFFF: no end).
-// @orig 1108:0BFA
+// @orig 1118:0BA8
+// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0BFA, similarity 0.95)
 class LoiterProcess : public ActivityProcess {
 public:
     LoiterProcess(World& w, const AnimDat& a, ObjId npc, std::uint16_t count)
@@ -126,7 +129,9 @@ private:
 };
 
 // Activity 3 (1108:0708).
-// @orig 1108:0708 1108:0693
+// @orig 1118:06B6 1118:0641
+// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0708, similarity 0.97)
+// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0693, similarity 0.92)
 class WalkProcess : public ActivityProcess {
 public:
     WalkProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, 0x255) {}
@@ -166,7 +171,10 @@ private:
 };
 
 // Activity 7 (1108:0383 / 04AB / 0437).
-// @orig 1108:0383 1108:04AB 1108:0437
+// @orig 1118:0453 1118:0576 1118:0502
+// TODO(regret): modified in REGRET.EXE (No Remorse 1108:0383, similarity 0.89)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1108:04AB, similarity 0.49)
+// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0437, similarity 0.92)
 class SurrenderProcess : public ActivityProcess {
 public:
     SurrenderProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, 0x25F) {}
@@ -227,7 +235,7 @@ private:
 };
 
 // Activity 8 (1108:0A0E).
-// @orig 1108:0A0E
+// @orig 1118:09BC
 class GuardProcess : public ActivityProcess {
 public:
     GuardProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, 0x25E) {}
@@ -255,7 +263,8 @@ protected:
 
 }  // namespace
 
-// @orig 1108:00C2
+// @orig 1118:0192
+// TODO(regret): constants in REGRET.EXE (No Remorse 1108:00C2, similarity 0.99)
 bool sees_controlled(const World& world, const AnimDat& anims, ObjId npc, bool look_turn) {
     const ObjId controlled = world.state.controlled_npc;
     const Item* self = world.get(npc);
@@ -284,7 +293,8 @@ bool sees_controlled(const World& world, const AnimDat& anims, ObjId npc, bool l
     return !muzzle_found && range_if_visible(world, npc, controlled) != 0;
 }
 
-// @orig 1130:1C01
+// @orig 1140:258E
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:1C01, similarity 0.90)
 int range_if_visible(const World& world, ObjId item_id, ObjId other_id) {
     const Item* item = world.get(item_id);
     const Item* other = world.get(other_id);
@@ -302,7 +312,8 @@ int range_if_visible(const World& world, ObjId item_id, ObjId other_id) {
     return distance < 0x31 ? distance : 0;
 }
 
-// @orig 1138:2DAF
+// @orig 1148:3BD3
+// TODO(regret): constants in REGRET.EXE (No Remorse 1138:2DAF, similarity 0.98)
 void wake_npcs_on_screen(Kernel& kernel, World& world, const AnimDat& anims) {
     const ObjId controlled = world.state.controlled_npc;
     for (ObjId id = 2; id < 0x100; ++id) {
@@ -334,7 +345,8 @@ void fidget(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc) {
     do_anim(kernel, world, anims, npc, 0, kDirCurrent, 1, false);
 }
 
-// @orig 10F0:2D02
+// @orig 10F8:33B5
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2D02, similarity 0.84)
 Pid start_activity_process(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, std::uint16_t activity) {
     std::unique_ptr<Process> p;
     switch (activity) {

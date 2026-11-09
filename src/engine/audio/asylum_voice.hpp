@@ -34,6 +34,7 @@ struct AsylumVoice {
     // Adds `count` samples at volume v (0..128) to `sum`. Returns false when
     // the channel reached its end (and stopped).
     // @orig ASYLUM.DLL:1000:0166
+    // TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:0166)
     bool mix(std::int32_t* sum, std::size_t count, int v) {
         if (!active || length == 0) return true;
         const bool loops = loop_length > 2;

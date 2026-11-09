@@ -12,7 +12,7 @@ constexpr std::size_t kShapeHeader = 6;
 constexpr std::size_t kFrameEntry = 8;
 constexpr int kMaxDimension = 4096;
 
-// @orig 1078:0116; frame header, the pixels are read by the asm blitters
+// @orig 1080:0116; frame header, the pixels are read by the asm blitters
 ShapeFrame parse_frame(std::span<const std::uint8_t> data, std::size_t i, std::size_t prefix) {
     const std::size_t entry = kShapeHeader + kFrameEntry * i;
     const std::uint32_t offset = read_u24(data, entry);
@@ -81,7 +81,8 @@ ShapeLayout layout_for_archive(const std::string& filename) {
                : ShapeLayout::World;
 }
 
-// @orig 1378:0105; pixel test of ShapeButton_contains
+// @orig 1370:0105; pixel test of ShapeButton_contains
+// TODO(regret): modified in REGRET.EXE (No Remorse 1378:0105, similarity 0.52)
 int ShapeFrame::pixel(int fx, int fy) const {
     if (fx < 0 || fy < 0 || fx >= width || fy >= height) return -1;
     std::size_t p = lines[fy];

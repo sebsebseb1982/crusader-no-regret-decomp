@@ -16,7 +16,7 @@ SoundSources::SoundSources(SoundManager& voices) : voices_(voices) {
     voices_.set_on_steal([this](SoundManager::Handle h) { release(h); });
 }
 
-// @orig 1450:0000
+// @orig 1428:0000
 int SoundSources::volume_for(const World& world, ObjId item) {
     const Item* it = item ? world.get(item) : nullptr;
     if (!it || world.is_partly_on_screen(*it)) return 0x40;
@@ -29,7 +29,7 @@ int SoundSources::volume_for(const World& world, ObjId item) {
     return 0x32;
 }
 
-// @orig 1450:01D0
+// @orig 1428:01D0
 void SoundSources::refresh() {
     voices_.update();
     for (Source& s : sources_) {
@@ -37,7 +37,7 @@ void SoundSources::refresh() {
     }
 }
 
-// @orig 1450:07B9
+// @orig 1428:07B9
 void SoundSources::release(SoundManager::Handle handle) {
     for (Source& s : sources_) {
         if (s.handle == handle) {
@@ -48,7 +48,7 @@ void SoundSources::release(SoundManager::Handle handle) {
     }
 }
 
-// @orig 1450:021E
+// @orig 1428:021E
 void SoundSources::start(Source& s, const World& world, int sfx, ObjId item, bool loop) {
     const int volume = volume_for(world, item);
     s.item = item;
@@ -59,7 +59,7 @@ void SoundSources::start(Source& s, const World& world, int sfx, ObjId item, boo
     s.handle = voices_.play(sfx, volume, 0, loop);
 }
 
-// @orig 1450:021E
+// @orig 1428:021E
 void SoundSources::play(const World& world, int sfx, ObjId item) {
     refresh();
     auto free = std::find_if(sources_.begin(), sources_.begin() + kFirstLoop,
@@ -67,7 +67,7 @@ void SoundSources::play(const World& world, int sfx, ObjId item) {
     if (free != sources_.begin() + kFirstLoop && valid_sfx(sfx)) start(*free, world, sfx, item, false);
 }
 
-// @orig 1450:02C5
+// @orig 1428:02C5
 void SoundSources::play_ambient(const World& world, int sfx, ObjId item) {
     refresh();
     const auto sample = voices_.sample(sfx);
@@ -82,7 +82,7 @@ void SoundSources::play_ambient(const World& world, int sfx, ObjId item) {
     if (free != sources_.end() && valid_sfx(sfx)) start(*free, world, sfx, item, true);
 }
 
-// @orig 1450:03AD
+// @orig 1428:03AD
 void SoundSources::retrigger(const World& world, int sfx, ObjId item) {
     if (!valid_sfx(sfx)) return;
     for (int i = 0; i < kFirstLoop; ++i) {
@@ -97,7 +97,7 @@ void SoundSources::retrigger(const World& world, int sfx, ObjId item) {
     play(world, sfx, item);
 }
 
-// @orig 1450:0486
+// @orig 1428:0486
 void SoundSources::stop(int sfx, ObjId item) {
     if (!valid_sfx(sfx)) return;
     for (Source& s : sources_) {
@@ -110,7 +110,7 @@ void SoundSources::stop(int sfx, ObjId item) {
     }
 }
 
-// @orig 1450:0551
+// @orig 1428:0551
 void SoundSources::stop_item(ObjId item) {
     for (Source& s : sources_) {
         if (s.item != item) continue;
@@ -120,7 +120,7 @@ void SoundSources::stop_item(ObjId item) {
     }
 }
 
-// @orig 1450:05B1
+// @orig 1428:05B1
 void SoundSources::stop_item_loops(ObjId item) {
     for (Source& s : sources_) {
         if (s.item != item || !s.loop) continue;
@@ -137,7 +137,7 @@ void SoundSources::detach(ObjId item) {
     }
 }
 
-// @orig 1450:0633
+// @orig 1428:0633
 bool SoundSources::is_playing(int sfx, ObjId item) {
     if (!valid_sfx(sfx)) return false;
     refresh();
@@ -146,7 +146,7 @@ bool SoundSources::is_playing(int sfx, ObjId item) {
     });
 }
 
-// @orig 1450:06C0
+// @orig 1428:06C0
 bool SoundSources::is_playing_anywhere(int sfx) {
     if (!valid_sfx(sfx)) return false;
     refresh();
@@ -155,7 +155,7 @@ bool SoundSources::is_playing_anywhere(int sfx) {
     });
 }
 
-// @orig 1450:0750
+// @orig 1428:0750
 void SoundSources::set_volume(int sfx, ObjId item, int volume) {
     if (!valid_sfx(sfx)) return;
     for (const Source& s : sources_) {
@@ -166,7 +166,7 @@ void SoundSources::set_volume(int sfx, ObjId item, int volume) {
     }
 }
 
-// @orig 1450:0813
+// @orig 1428:0813
 void SoundSources::update_volumes(const World& world) {
     for (int i = kFirstLoop; i < kSources; ++i) {
         Source& s = sources_[static_cast<std::size_t>(i)];

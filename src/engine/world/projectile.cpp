@@ -42,7 +42,9 @@ int crt_rnd(World& w, int n) { return crt_rand_below(w.state.crt_rand_state, n);
 // DeathSilence (CRUSADER_1130_000e, type 0x261): started by the player's
 // death, a 1 Hz timer held back (flag 1) until its third period (1130:00D6),
 // then plays sound 9 and ends (1130:00B1): three seconds after the death.
-// @orig 1130:000E 1130:00D6 1130:00B1
+// @orig 1140:025B 1140:0329 1140:02FE
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:000E, similarity 0.94)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:00B1, similarity 0.90)
 class DeathSilence : public TimedProcess {
 public:
     static constexpr std::uint16_t kType = 0x261;
@@ -79,7 +81,8 @@ bool is_female(World& world, ObjId npc) {
 }
 
 // CRUSADER_1130_01f7: shapes that take full damage from bullets (not robots).
-// @orig 1130:01F7
+// @orig 1140:044A
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:01F7, similarity 0.60)
 bool takes_full_bullet_damage(std::uint16_t shape) {
     switch (shape) {
     case 0x4C8: case 0x338: case 0x45D: case 0x2CB: case 0x4E6: case 0x383: case 0x385:
@@ -90,7 +93,8 @@ bool takes_full_bullet_damage(std::uint16_t shape) {
 }
 
 // Sprite frame of the projectile by fire type (Item::I_fireWeapon).
-// @orig 1130:11DA
+// @orig 1140:1A86
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:11DA, similarity 0.74)
 std::uint8_t projectile_frame(int fire_type, int dir, World& w) {
     switch (fire_type) {
     case 3: case 9: case 10: return static_cast<std::uint8_t>(dir + 0x11);
@@ -103,7 +107,8 @@ std::uint8_t projectile_frame(int fire_type, int dir, World& w) {
 }
 
 // SPRITE_1140_09c9: divisor of the aiming spread.
-// @orig 1140:09C9
+// @orig 1150:0A7A
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:09C9, similarity 0.68)
 int spread_divisor(const World& w, ObjId shooter, int fire_type, std::uint32_t now) {
     if (shooter == w.state.controlled_npc) {
         switch (fire_type) {
@@ -126,7 +131,7 @@ int spread_divisor(const World& w, ObjId shooter, int fire_type, std::uint32_t n
 
 }  // namespace
 
-// @orig 1128:0158
+// @orig 1138:0158
 ObjId find_target(const World& world, ObjId shooter, int dir, bool sixteen_directions) {
     const Item* from = world.get(shooter);
     if (!from) return 0;
@@ -162,7 +167,7 @@ ObjId find_target(const World& world, ObjId shooter, int dir, bool sixteen_direc
     return best_distance > 0x400 ? 0 : best;
 }
 
-// @orig 1130:00EE
+// @orig 1140:0341
 World::Point aim_point(const World& world, ObjId shooter, ObjId target) {
     const Item* item = world.get(target);
     const Item* from = world.get(shooter);
@@ -182,7 +187,8 @@ World::Point aim_point(const World& world, ObjId shooter, ObjId target) {
     return {static_cast<std::uint16_t>(item->x - fx * 8), static_cast<std::uint16_t>(item->y - fy * 8), z & 0xFF};
 }
 
-// @orig 1130:11DA
+// @orig 1140:1A86
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:11DA, similarity 0.74)
 Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shooter, int dx, int dy, int dz,
                 int dir, int fire_type, bool aim) {
     const Item* item = world.get(shooter);
@@ -278,7 +284,8 @@ Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shoote
     return last;
 }
 
-// @orig 1130:026B
+// @orig 1140:04EF
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:026B, similarity 0.46)
 void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId target, ObjId attacker, int dir,
                   int damage, int fire_type, const World::Point* at) {
     Item* item = world.get(target);
@@ -515,7 +522,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     record[npc::kFlags13] |= 0x01;  // Actor::I_setDead
 }
 
-// @orig 1140:06CE 1140:08C2
+// @orig 1150:077F 1150:0973
 ProjectileProcess::ProjectileProcess(World& world, const AnimDat& anims, ObjId shooter, World::Point start,
                                      World::Point target, int fire_type, int damage, std::uint8_t frame)
     : world_(world),
@@ -538,7 +545,9 @@ ProjectileProcess::ProjectileProcess(World& world, const AnimDat& anims, ObjId s
     range_ = (ft ? ft->range() : 0) + kStepsBeyondRange;
 }
 
-// @orig 1140:09C9 1140:0E01 1140:0E88
+// @orig 1150:0A7A 1150:0EA9 1150:0F30
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:09C9, similarity 0.68)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:0E88, similarity 0.56)
 void ProjectileProcess::on_added() {
     sprite_ = world_.create(kProjectileShape, frame_);
     if (sprite_) {
@@ -552,7 +561,8 @@ void ProjectileProcess::on_terminate() {
     sprite_ = 0;
 }
 
-// @orig 1140:1098 1140:1E09
+// @orig 1150:123B 1150:1FFA
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:1098, similarity 0.98)
 void ProjectileProcess::impact(ObjId hit) {
     if (hit != 0) {
         // An NPC is hit from the shot's direction; an item from a random one
@@ -575,7 +585,8 @@ void ProjectileProcess::impact(ObjId hit) {
     terminate();
 }
 
-// @orig 1140:09C9
+// @orig 1150:0A7A
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:09C9, similarity 0.68)
 void ProjectileProcess::set_homing(ObjId target, int dir) {
     // SPRITE_1140_09c9, first launch of fire type 9.
     homing_ = true;
@@ -584,7 +595,8 @@ void ProjectileProcess::set_homing(ObjId target, int dir) {
     velocity_ = {kDirectionDx[dir_] * 16, kDirectionDy[dir_] * 16, 0};
 }
 
-// @orig 1140:151D
+// @orig 1150:16C1
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:151D, similarity 0.95)
 World::Point ProjectileProcess::homing_step() {
     // SPRITE_1140_151d: within the fire type's range the velocity turns
     // towards the target (or keeps the launch direction): a step per axis,
@@ -627,7 +639,8 @@ World::Point ProjectileProcess::homing_step() {
     return next;
 }
 
-// @orig 1140:151D
+// @orig 1150:16C1
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:151D, similarity 0.95)
 bool ProjectileProcess::ricochet(ObjId blocker, const World::Point& at) {
     // SPRITE_1140_151d: fire type 5 bounces off items whose TYPEFLAG byte 1
     // has bit 2, five times at most: the x or y part of the flight is
@@ -656,7 +669,8 @@ bool ProjectileProcess::ricochet(ObjId blocker, const World::Point& at) {
     return true;
 }
 
-// @orig 1140:151D
+// @orig 1150:16C1
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:151D, similarity 0.95)
 void ProjectileProcess::run() {
     World::Point next = homing_ ? homing_step()
                                 : World::Point{start_.x + (target_.x - start_.x) * step_ / steps_,

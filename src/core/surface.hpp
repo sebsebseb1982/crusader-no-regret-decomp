@@ -25,7 +25,7 @@ struct Surface8 {
 
 // One-pixel outline of the rectangle (x0, y0)-(x1, y1), corners included,
 // clipped to the surface (vport_draw_rect, 1280:06D9).
-// @orig 1280:06D9
+// @orig 1288:06D9
 inline void outline(Surface8& s, int x0, int y0, int x1, int y1, std::uint8_t c) {
     auto put = [&](int x, int y) {
         if (x >= 0 && y >= 0 && x < s.width && y < s.height) s.row(y)[x] = c;

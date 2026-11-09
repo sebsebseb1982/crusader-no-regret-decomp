@@ -9,7 +9,8 @@
 
 namespace crusader {
 
-// @orig 12D0:0000
+// @orig 12C0:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 12D0:0000, similarity 0.92)
 TrigTables TrigTables::load(const std::filesystem::path& path) {
     const auto data = read_file(path);
     if (data.size() < 2 * 256 * 4) throw std::runtime_error("TRIG.DAT too short");

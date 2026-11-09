@@ -13,7 +13,7 @@ void Process::sleep(std::uint32_t ticks) {
     sleep_until_ = kernel_->ticks() + ticks;
 }
 
-// @orig 11E8:0F2F 11D8:1327
+// @orig 11F8:0F2F 11E8:1327
 bool Process::add_wait_operand(Pid other, bool share_owner) {
     Process* target = kernel_ ? kernel_->get(other) : nullptr;
     if (!target || target->terminated() || target == this) {
@@ -32,7 +32,7 @@ bool Process::add_wait_operand(Pid other, bool share_owner) {
     return true;
 }
 
-// @orig 11E8:0F2F 11D8:1327
+// @orig 11F8:0F2F 11E8:1327
 void Process::wait_for(Pid other, bool share_owner) {
     const bool had_operand = !wait_expr_.empty();
     if (add_wait_operand(other, share_owner) && had_operand) {
@@ -64,7 +64,7 @@ void Process::wait_for_any(const std::vector<Pid>& others) {
     }
 }
 
-// @orig 11E8:06E0
+// @orig 11F8:06E0
 bool Process::evaluate_wait() const {
     std::vector<bool> stack;
     for (const WaitToken& t : wait_expr_) {
@@ -85,7 +85,7 @@ bool Process::evaluate_wait() const {
     return !stack.empty() && stack.back();
 }
 
-// @orig 11E8:06E0
+// @orig 11F8:06E0
 void Process::dependency_done(Pid pid, std::uint32_t result, bool failed) {
     bool changed = false;
     for (WaitToken& t : wait_expr_) {
@@ -116,7 +116,7 @@ void Process::terminate(std::uint32_t result) { finish(result, false); }
 
 void Process::fail(std::uint32_t result) { finish(result, true); }
 
-// @orig 11E8:112C 11E8:115C
+// @orig 11F8:112C 11F8:115C
 void Process::finish(std::uint32_t result, bool failed) {
     if (terminated_) {
         return;
@@ -135,7 +135,8 @@ void TimedProcess::set_rate(std::uint32_t hz) {
     accumulator_us_ = 0;
 }
 
-// @orig 11D8:2A86
+// @orig 11E8:2A86
+// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:2A86, similarity 0.96)
 void TimedProcess::accumulate(std::uint32_t elapsed_us) {
     if (period_us_ == 0) {
         return;

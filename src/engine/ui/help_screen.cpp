@@ -21,7 +21,8 @@ constexpr int kSounds[] = {0xB8, 0x62, 0x67, 0xA, 0xB};
 
 }  // namespace
 
-// @orig 13E8:3BA5
+// @orig 1008:3B08
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3BA5, similarity 0.65)
 HelpScreen::Pictures HelpScreen::Pictures::load(const std::filesystem::path& static_dir) {
     Pictures p;
     for (int i = 0; i < 3; ++i) {
@@ -43,7 +44,8 @@ HelpScreen::HelpScreen(ShapeCache& gumps, const Pictures& pictures, std::functio
     show();
 }
 
-// @orig 13E8:3BA5
+// @orig 1008:3B08
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3BA5, similarity 0.65)
 bool HelpScreen::show() {
     if (page_ == -1) {
         page_ = 0;
@@ -65,7 +67,8 @@ const Palette* HelpScreen::palette() const {
     return &pictures_->pages[picture_]->palette;
 }
 
-// @orig 13E8:3BA5
+// @orig 1008:3B08
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3BA5, similarity 0.65)
 void HelpScreen::draw(Surface8& screen) const {
     screen.clear(0);
     if (picture_ >= 0 && pictures_->pages[picture_]) {
@@ -76,7 +79,8 @@ void HelpScreen::draw(Surface8& screen) const {
     buttons_.draw(screen);
 }
 
-// @orig 13E8:3D99
+// @orig 1008:3D42
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3D99, similarity 0.42)
 void HelpScreen::key(std::uint16_t code) {
     if (closed_) return;
     if (page_ == kHiddenPage) page_ = 0;
@@ -115,7 +119,8 @@ void HelpScreen::key(std::uint16_t code) {
     sequence_ = 0;
 }
 
-// @orig 13E8:3D53
+// @orig 1008:3CFE
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3D53, similarity 0.95)
 void HelpScreen::mouse_up(int x, int y) {
     if (closed_) return;
     const int id = buttons_.mouse_up(x, y);
@@ -129,7 +134,8 @@ void HelpScreen::mouse_up(int x, int y) {
     }
 }
 
-// @orig 13E8:3EC8
+// @orig ?: No Remorse 13E8:3EC8, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void HelpScreen::update(std::uint32_t ticks) {
     if (!last_tick_) last_tick_ = ticks;
     for (; *last_tick_ < ticks; ++*last_tick_) {

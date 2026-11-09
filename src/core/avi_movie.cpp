@@ -21,7 +21,8 @@ class BitReader {
 public:
     explicit BitReader(std::span<const std::uint8_t> d) : d_(d) {}
 
-    // @orig 1460:0000
+    // @orig ?: No Remorse 1460:0000, no counterpart found in REGRET.EXE
+    // TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
     std::uint32_t get(int n) {
         std::uint32_t window = 0;
         const std::size_t byte = pos_ >> 3;
@@ -44,7 +45,8 @@ struct RiffChunk {
     std::uint32_t size;
 };
 
-// @orig 1468:2188
+// @orig ?: No Remorse 1468:2188, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::vector<RiffChunk> riff_chunks(std::span<const std::uint8_t> d, std::size_t from, std::size_t to) {
     std::vector<RiffChunk> out;
     std::size_t p = from;
@@ -72,7 +74,8 @@ AviMovie AviMovie::load(const std::filesystem::path& path) {
     return parse(std::move(bytes));
 }
 
-// @orig 1468:2188 1468:17B0
+// @orig ?: No Remorse 1468:2188 1468:17B0, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 AviMovie AviMovie::parse(std::vector<std::uint8_t> bytes) {
     AviMovie m;
     m.bytes_ = std::move(bytes);

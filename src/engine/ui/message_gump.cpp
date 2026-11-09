@@ -8,7 +8,7 @@ namespace {
 
 // 1300:004B: outline, fill, shade along the top and left, light along the
 // bottom and right.
-// @orig 1300:004B
+// @orig 12F8:004B
 void draw_raised(Surface8& s, const MessageGump::Rect& r, std::uint8_t c) {
     outline(s, r.x0, r.y0, r.x1, r.y1, 0);
     fill_rect(s, r.x0 + 1, r.y0 + 1, r.x1 - 1, r.y1 - 1, c);
@@ -19,7 +19,7 @@ void draw_raised(Surface8& s, const MessageGump::Rect& r, std::uint8_t c) {
 }
 
 // 1300:01A5: outline, fill, light along the top and left.
-// @orig 1300:01A5
+// @orig 12F8:01A5
 void draw_pressed(Surface8& s, const MessageGump::Rect& r, std::uint8_t c) {
     outline(s, r.x0, r.y0, r.x1, r.y1, 0);
     fill_rect(s, r.x0 + 1, r.y0 + 1, r.x1 - 1, r.y1 - 1, c);
@@ -29,7 +29,7 @@ void draw_pressed(Surface8& s, const MessageGump::Rect& r, std::uint8_t c) {
 
 }  // namespace
 
-// @orig 1358:0046 1388:0000
+// @orig 1350:0046 1380:0000
 MessageGump::MessageGump(const FontSet& fonts, std::string text, int screen_width, int screen_height)
     : fonts_(&fonts), text_(std::move(text)) {
     const TextWriter font(fonts, kFont);
@@ -53,7 +53,7 @@ MessageGump::Rect MessageGump::button() const {
     return {box_.x0 + button_.x0, box_.y0 + button_.y0, box_.x0 + button_.x1, box_.y0 + button_.y1};
 }
 
-// @orig 1358:02DF 1388:00CC
+// @orig 1350:02DF 1380:00CC
 void MessageGump::draw(Surface8& screen) const {
     draw_raised(screen, box_, kColour);
     TextWriter font(*fonts_, kFont);

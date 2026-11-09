@@ -46,7 +46,8 @@ bool on_map_40(const World& w, ObjId npc) {
 }
 
 // NPC_10f0_395e: first item of the player's 30 equipment slots with this shape.
-// @orig 10F0:395E
+// @orig 10F8:4056
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId find_equipped(const World& w, std::uint16_t shape) {
     for (int slot = 0; slot < 30; ++slot) {
         const ObjId id = w.npc_equip(1, slot);
@@ -57,7 +58,7 @@ ObjId find_equipped(const World& w, std::uint16_t shape) {
 
 }  // namespace
 
-// @orig 1138:00E3
+// @orig 1148:0121
 CombatControl::CombatControl(World& world, const AnimDat& anims, const Keyboard& keyboard, AvatarMover& mover)
     : world_(world), anims_(anims), keyboard_(keyboard), mover_(mover) {
     set_type(kType);
@@ -65,7 +66,7 @@ CombatControl::CombatControl(World& world, const AnimDat& anims, const Keyboard&
     set_rate(60);
 }
 
-// @orig 10F0:3A1F
+// @orig 10F8:4117
 int CombatControl::rounds(const World& world, ObjId npc) {
     const Item* weapon = world.get(world.active_weapon(npc));
     if (!weapon) return 0;
@@ -76,7 +77,7 @@ int CombatControl::rounds(const World& world, ObjId npc) {
     return weapon->quality;
 }
 
-// @orig 10F0:3AB2
+// @orig 10F8:41AA
 void CombatControl::use_round(ObjId npc) {
     Item* weapon = world_.get(world_.active_weapon(npc));
     if (!weapon) return;
@@ -99,7 +100,7 @@ void CombatControl::play_at(ObjId npc, int sfx) {
     if (Audio* audio = world_.audio()) audio->sources.retrigger(world_, sfx, npc);
 }
 
-// @orig 10F0:3BA3
+// @orig 10F8:429B
 void CombatControl::reload(ObjId npc) {
     if (rounds(world_, npc) != 0) return;
     Item* weapon = world_.get(world_.active_weapon(npc));
@@ -124,7 +125,8 @@ bool CombatControl::fire_key_down() const {
     return keyboard_.down(kKeySpace, false) != 0 || keyboard_.down(kKeyInsert, false) != 0;
 }
 
-// @orig 1138:220A
+// @orig ?: No Remorse 1138:220A, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void CombatControl::handle_key(const GameKeyEvent& e) {
     const ObjId npc = world_.state.controlled_npc;
     if (npc == 0 || world_.is_dead(npc)) return;
@@ -144,7 +146,10 @@ void CombatControl::handle_key(const GameKeyEvent& e) {
     fire(false);
 }
 
-// @orig 1138:220A 13E8:0C72 13E8:0DC0
+// @orig 1008:0D71 1008:0EB5
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C72, similarity 0.68)
+// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0DC0, similarity 0.84)
+// TODO(regret): No Remorse 1138:220A has no counterpart in REGRET.EXE
 bool CombatControl::keypad_command(const GameKeyEvent& e) {
     if (e.scancode == 0x0F || e.scancode == 0x24) {  // Tab, J: at every repeat
         jump(kernel(), world_, anims_);
@@ -170,7 +175,8 @@ bool CombatControl::keypad_command(const GameKeyEvent& e) {
     }
 }
 
-// @orig 1138:2789
+// @orig 1148:30F1
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:2789, similarity 0.73)
 bool CombatControl::fire(bool explicit_call) {
     const ObjId npc = world_.state.controlled_npc;
     const ObjId weapon_id = world_.active_weapon(npc);
@@ -238,7 +244,7 @@ bool CombatControl::fire(bool explicit_call) {
     return fired;
 }
 
-// @orig 1138:2F9F
+// @orig 1148:3DC3
 void CombatControl::reset_fire() {
     wanted_ = firing_ = single_ = false;
     burst_left_ = 0;
@@ -250,7 +256,7 @@ void CombatControl::run() {
     if (!asleep_) refresh_crosshair(world_, anims_);
 }
 
-// @orig 1138:087F
+// @orig 1148:08D9
 void CombatControl::tick() {
     if (asleep_) {
         if (kernel().ticks() < wake_at_) return;

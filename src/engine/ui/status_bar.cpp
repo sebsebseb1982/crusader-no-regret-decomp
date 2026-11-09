@@ -24,7 +24,8 @@ ObjId equipped(const World& world, std::size_t slot_field) {
 }
 
 // NPC_10f0_395e: first item of the player's 30 equipment slots with this shape.
-// @orig 10F0:395E
+// @orig 10F8:4056
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId find_equipped_shape(const World& world, std::uint16_t shape) {
     for (int slot = 0; slot < 30; ++slot) {
         const ObjId id = world.npc_equip(kPlayer, slot);
@@ -41,7 +42,8 @@ int signed_quality(const Item& item) { return static_cast<std::int16_t>(item.qua
 
 }  // namespace
 
-// @orig 11B8:000C
+// @orig 11C8:0222
+// TODO(regret): modified in REGRET.EXE (No Remorse 11B8:000C, similarity 0.94)
 StatusBar::StatusBar(ShapeCache& gumps, const FontSet& fonts, const XformTable& xform,
                      const dtable::NpcTypes& npc_types)
     : gumps_(&gumps), fonts_(&fonts), xform_(&xform), npc_types_(&npc_types) {
@@ -63,7 +65,8 @@ void StatusBar::draw_gump(Surface8& screen, std::uint16_t shape, std::uint16_t f
     s->frames()[frame].draw(screen, x, y, false, xform);
 }
 
-// @orig 11B8:0192
+// @orig 11C8:03A3
+// TODO(regret): modified in REGRET.EXE (No Remorse 11B8:0192, similarity 0.72)
 StatusBar::Contents StatusBar::contents(const World& world) const {
     Contents c;
     c.weapon = equipped(world, npc::kWeapon);
@@ -91,7 +94,8 @@ StatusBar::Contents StatusBar::contents(const World& world) const {
     return c;
 }
 
-// @orig 11B8:0192
+// @orig 11C8:03A3
+// TODO(regret): modified in REGRET.EXE (No Remorse 11B8:0192, similarity 0.72)
 void StatusBar::draw(Surface8& screen, const World& world) const {
     if (!world.state.status_bar_visible) return;
     const bool player = world.state.controlled_npc == kPlayer;

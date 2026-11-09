@@ -7,7 +7,8 @@
 
 namespace crusader {
 
-// @orig 1258:0000 1258:026C
+// @orig ?: No Remorse 1258:0000 1258:026C, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 SoundFlex SoundFlex::open(const std::filesystem::path& path) {
     SoundFlex s;
     s.flex_ = FlexArchive::open(path);
@@ -20,7 +21,7 @@ SoundFlex SoundFlex::open(const std::filesystem::path& path) {
     return s;
 }
 
-// @orig 12F8:052D
+// @orig 12F0:0533
 std::optional<SoundSample> SoundFlex::sample(int sfx) const {
     if (sfx <= 0) return std::nullopt;
     const auto e = flex_.entry(static_cast<std::size_t>(sfx));

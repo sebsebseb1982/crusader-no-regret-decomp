@@ -45,6 +45,7 @@ int GameConfig::next_view_zoom(int current_pct, int limit_pct) {
 }
 
 // @orig 1020:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0000, similarity 0.73)
 GameConfig GameConfig::load(const std::filesystem::path& path) {
     std::ifstream in(path, std::ios::binary);
     if (!in) return {};
@@ -54,6 +55,7 @@ GameConfig GameConfig::load(const std::filesystem::path& path) {
 }
 
 // @orig 1020:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0000, similarity 0.73)
 GameConfig GameConfig::parse(std::string_view text) {
     GameConfig c;
     while (!text.empty()) {
@@ -99,7 +101,8 @@ GameConfig GameConfig::parse(std::string_view text) {
     return c;
 }
 
-// @orig 1020:0C7F
+// @orig 1020:0DB7
+// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0C7F, similarity 0.73)
 std::string GameConfig::text() const {
     GameConfig out = *this;
     out.set("musicvolume", std::to_string(music_volume));
@@ -157,7 +160,8 @@ std::string GameConfig::text() const {
     return s;
 }
 
-// @orig 1020:0C7F
+// @orig 1020:0DB7
+// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0C7F, similarity 0.73)
 void GameConfig::save(const std::filesystem::path& path) const {
     std::ofstream out(path, std::ios::binary | std::ios::trunc);
     const std::string s = text();

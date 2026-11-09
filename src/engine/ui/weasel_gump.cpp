@@ -41,7 +41,7 @@ std::uint16_t word_at(const std::vector<std::uint8_t>& d, std::size_t at) {
 }
 
 // DTABLE_1120_056a: the name of an inventory item, "INVALID" for none.
-// @orig 1120:056A
+// @orig 1130:056A
 const char* item_name(std::uint16_t shape) {
     if (dtable::weapon_index(shape)) return dtable::weapon_name(shape);
     if (dtable::inventory_item_index(shape)) return dtable::item_name(shape);
@@ -50,7 +50,7 @@ const char* item_name(std::uint16_t shape) {
 }
 
 // DTABLE_1120_05dc: the icon frame of an inventory item.
-// @orig 1120:05DC
+// @orig 1130:05DC
 std::uint16_t icon_frame(std::uint16_t shape) {
     if (const std::uint16_t f = dtable::weapon_icon(shape)) return f;
     if (const std::uint16_t f = dtable::item_icon(shape)) return f;
@@ -59,7 +59,8 @@ std::uint16_t icon_frame(std::uint16_t shape) {
 }
 
 // The icon's shape in GUMPS.FLX, 0 for none.
-// @orig 13E0:19EF
+// @orig ?: No Remorse 13E0:19EF, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 std::uint16_t icon_shape(const World& world, std::uint16_t shape) {
     if (shape == 0x111) return 5;
     if (shape == WeaselGump::kCredits) return 3;
@@ -81,7 +82,8 @@ std::string format(const char* f, Args... args) {
 
 }  // namespace
 
-// @orig 13E0:005C 1378:0000
+// @orig 1370:0000
+// TODO(regret): No Remorse 13E0:005C has no counterpart in REGRET.EXE
 WeaselGump::WeaselGump(World& world, ShapeCache& gumps, const FontSet& fonts, std::vector<std::uint8_t> stuff_dat,
                        int level, bool& intro_played, bool movies, Hooks hooks, int screen_width, int screen_height)
     : world_(&world),
@@ -120,7 +122,7 @@ const ShapeFrame* WeaselGump::frame(std::uint16_t shape, int frame) const {
 }
 
 // GumpShape_rect of frame 0, at the button's place.
-// @orig 1378:0000
+// @orig 1370:0000
 WeaselGump::Rect WeaselGump::button_rect(int button) const {
     const ButtonState& b = buttons_[static_cast<std::size_t>(button)];
     const ShapeFrame* f = frame(b.shape, 0);
@@ -129,7 +131,8 @@ WeaselGump::Rect WeaselGump::button_rect(int button) const {
     return {x0, y0, x0 + (f ? f->width : 1) - 1, y0 + (f ? f->height : 1) - 1};
 }
 
-// @orig 13E0:0B39
+// @orig ?: No Remorse 13E0:0B39, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::load_items(int level) {
     level_ = level;
     items_.clear();
@@ -150,7 +153,7 @@ void WeaselGump::load_items(int level) {
     }
 }
 
-// @orig 10F0:3D74
+// @orig 10F8:446C
 void WeaselGump::reset_credits() {
     const ObjId c = carried(*world_, kCredits);
     credits_ = c ? world_->get(c)->quality : 0;
@@ -161,7 +164,8 @@ void WeaselGump::empty_cart() {
     cart_count_ = 0;
 }
 
-// @orig 13E0:07BB 1378:0093 1368:05D4
+// @orig 1370:0093 1360:05D4
+// TODO(regret): No Remorse 13E0:07BB has no counterpart in REGRET.EXE
 void WeaselGump::draw(Surface8& screen) const {
     if (hidden_) return;
     for (const ButtonPlace& p : kBackground) {
@@ -202,7 +206,8 @@ void WeaselGump::draw(Surface8& screen) const {
 
 // The step sent at the opening and after each change (13E0:0E78) comes back
 // at the next pass of the modal loop.
-// @orig 1328:1588
+// @orig 1320:159A
+// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void WeaselGump::update(std::uint32_t) {
     if (closed_ || !step_pending_) return;
     step_pending_ = false;
@@ -210,14 +215,16 @@ void WeaselGump::update(std::uint32_t) {
 }
 
 // One of `count` movies at random; nothing with "noweasel=true".
-// @orig 13E0:0CD8
+// @orig ?: No Remorse 13E0:0CD8, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::play_movie(const char* const* names, int count) {
     if (!movies_) return;
     const int i = hooks_.random ? hooks_.random(count) : 0;
     if (hooks_.play_movie) hooks_.play_movie(names[i]);
 }
 
-// @orig 13E0:0EB7
+// @orig ?: No Remorse 13E0:0EB7, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::step() {
     switch (state_) {
     case kOpening:
@@ -264,7 +271,8 @@ void WeaselGump::step() {
     }
 }
 
-// @orig 13E0:0608
+// @orig ?: No Remorse 13E0:0608, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::browsing_mode() {
     buttons_[kYes].hidden = true;
     buttons_[kNo].hidden = true;
@@ -272,20 +280,23 @@ void WeaselGump::browsing_mode() {
     in_cart_ = false;
 }
 
-// @orig 13E0:0486
+// @orig ?: No Remorse 13E0:0486, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::question_mode() {
     for (int i = kBuy; i <= kWeapons; ++i) buttons_[static_cast<std::size_t>(i)].hidden = true;
     buttons_[kYes].hidden = false;
     buttons_[kNo].hidden = false;
 }
 
-// @orig 13E0:0C97
+// @orig ?: No Remorse 13E0:0C97, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::clamp_current() {
     if (current_ >= static_cast<int>(items_.size())) current_ = static_cast<int>(items_.size()) - 1;
     if (current_ < 0) current_ = 0;
 }
 
-// @orig 13E0:10B5
+// @orig ?: No Remorse 13E0:10B5, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::button(int index) {
     switch (index) {
     case kNo:
@@ -360,7 +371,8 @@ void WeaselGump::button(int index) {
     }
 }
 
-// @orig 13E0:1767
+// @orig ?: No Remorse 13E0:1767, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::buy() {
     if (current_ >= static_cast<int>(items_.size())) return;
     const Item& item = items_[static_cast<std::size_t>(current_)];
@@ -375,7 +387,8 @@ void WeaselGump::buy() {
     if (cart_count_ < kCartSize) cart_[static_cast<std::size_t>(cart_count_++)] = item.shape;
 }
 
-// @orig 13E0:1895
+// @orig ?: No Remorse 13E0:1895, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::buy_cart() {
     for (const std::uint16_t shape : cart_) {
         if (shape == 0) continue;
@@ -391,7 +404,8 @@ void WeaselGump::buy_cart() {
     empty_cart();
 }
 
-// @orig 13E0:19A8
+// @orig ?: No Remorse 13E0:19A8, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::previous() {
     const int count = static_cast<int>(items_.size());
     for (int i = 0; i < count; ++i) {
@@ -401,7 +415,8 @@ void WeaselGump::previous() {
     clamp_current();
 }
 
-// @orig 13E0:1956
+// @orig ?: No Remorse 13E0:1956, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::next() {
     const int count = static_cast<int>(items_.size());
     for (int i = 0; i < count; ++i) {
@@ -411,21 +426,24 @@ void WeaselGump::next() {
     clamp_current();
 }
 
-// @orig 13E0:15D4
+// @orig ?: No Remorse 13E0:15D4, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 int WeaselGump::in_cart(std::uint16_t shape) const {
     int n = 0;
     for (int i = 0; i < cart_count_; ++i) n += cart_[static_cast<std::size_t>(i)] == shape;
     return n;
 }
 
-// @orig 13E0:1610
+// @orig ?: No Remorse 13E0:1610, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 int WeaselGump::owned(std::uint16_t shape) const {
     const ObjId c = carried(*world_, shape);
     if (!c) return 0;
     return world_->family_of(shape) == kFamilyWeapon ? 1 : world_->get(c)->quality;
 }
 
-// @orig 13E0:168A
+// @orig ?: No Remorse 13E0:168A, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 bool WeaselGump::may_buy_more(std::uint16_t shape) const {
     const std::uint8_t fam = world_->family_of(shape);
     int limit = 10;
@@ -435,7 +453,8 @@ bool WeaselGump::may_buy_more(std::uint16_t shape) const {
     return in_cart(shape) + owned(shape) < limit;
 }
 
-// @orig 13E0:13D3
+// @orig ?: No Remorse 13E0:13D3, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void WeaselGump::key(std::uint16_t code) {
     if (closed_) return;
     const bool answering = state_ == kQuestion || state_ == kConfirm || state_ == kRefused || state_ == kBought;
@@ -470,7 +489,8 @@ void WeaselGump::key(std::uint16_t code) {
 }
 
 // In its rectangle, then on a pixel of the frame.
-// @orig 1378:0105
+// @orig 1370:0105
+// TODO(regret): modified in REGRET.EXE (No Remorse 1378:0105, similarity 0.52)
 bool WeaselGump::on_button(int index, int x, int y) const {
     const Rect r = button_rect(index);
     if (x < r.x0 || x > r.x1 || y < r.y0 || y > r.y1) return false;
@@ -480,7 +500,7 @@ bool WeaselGump::on_button(int index, int x, int y) const {
 }
 
 // The shown button under the point, -1 for none.
-// @orig 1368:0955
+// @orig 1360:0955
 int WeaselGump::button_at(int x, int y) const {
     if (hidden_) return -1;
     for (int i = 0; i < kButtons; ++i) {
@@ -489,7 +509,7 @@ int WeaselGump::button_at(int x, int y) const {
     return -1;
 }
 
-// @orig 1310:001D 1378:00CD
+// @orig 1308:001D 1370:00CD
 void WeaselGump::mouse_down(int x, int y) {
     if (closed_ || captured_ >= 0) return;
     const int i = button_at(x, y);
@@ -498,13 +518,13 @@ void WeaselGump::mouse_down(int x, int y) {
     buttons_[static_cast<std::size_t>(i)].pressed = true;
 }
 
-// @orig 1310:0151
+// @orig 1308:0151
 void WeaselGump::mouse_move(int x, int y) {
     if (captured_ < 0) return;
     buttons_[static_cast<std::size_t>(captured_)].pressed = on_button(captured_, x, y);
 }
 
-// @orig 1310:0254 1378:00E9
+// @orig 1308:0254 1370:00E9
 void WeaselGump::mouse_up(int x, int y) {
     if (captured_ < 0) return;
     const int index = captured_;

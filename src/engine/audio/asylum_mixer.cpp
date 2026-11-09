@@ -20,6 +20,7 @@ int AsylumMixer::scale(int volume, int global) {
 }
 
 // @orig ASYLUM.DLL:1018:0629
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:0629)
 void AsylumMixer::play(int channel, const SoundSample& sample, int volume, int pitch, bool loop) {
     if (!valid(channel)) return;
     std::lock_guard lock(mutex_);
@@ -106,6 +107,7 @@ std::size_t AsylumMixer::buffered() const {
 }
 
 // @orig ASYLUM.DLL:1000:0A42
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:0A42)
 void AsylumMixer::apply_requests() {
     for (std::size_t i = 0; i < requests_.size(); ++i) {
         Request& r = requests_[i];
@@ -136,6 +138,7 @@ void AsylumMixer::apply_requests() {
 }
 
 // @orig ASYLUM.DLL:1000:0D6C
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:0D6C)
 void AsylumMixer::fill() {
     buffer_.assign(static_cast<std::size_t>(std::max(music_.tick_length(), 1)), 0);
     next_ = 0;
@@ -151,6 +154,8 @@ void AsylumMixer::fill() {
 }
 
 // @orig ASYLUM.DLL:1018:00F6 ASYLUM.DLL:1000:0D6C
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:00F6)
+// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:0D6C)
 void AsylumMixer::mix(std::int16_t* out, std::size_t count) {
     std::lock_guard lock(mutex_);
     for (std::size_t i = 0; i < count; ++i) {

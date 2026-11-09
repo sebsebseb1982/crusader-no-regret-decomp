@@ -41,7 +41,8 @@ struct SortBox {
     int x, y, z, dx, dy, dz;
 };
 
-// @orig 11A0:095D (the box part of the display entry)
+// @orig 11B0:095D (the box part of the display entry)
+// TODO(regret): constants in REGRET.EXE (No Remorse 11A0:095D, similarity 0.98)
 SortBox sort_box(const DrawItem& d) {
     int dz = d.z_top - d.z;
     if (dz == 0 && !(d.shape_flags & ShapeInfo::kFixed)) dz = 1;
@@ -57,7 +58,7 @@ enum class Order { kNone, kOtherFirst, kThisFirst };
 // that intersect are ordered by the sum x + y + 2z of their far bottom
 // corners, the smaller first. Equal sums leave them unordered. No shape
 // property (roof, land, flat, translucent) takes part.
-// @orig 11A0:0000
+// @orig 11B0:0000
 Order compare(const DrawItem& self, const DrawItem& other) {
     const SortBox a = sort_box(self), b = sort_box(other);
     const bool overlap = a.x - a.z - a.dx - a.dz < b.x - b.z && b.x - b.z - b.dx - b.dz < a.x - a.z &&
@@ -80,7 +81,7 @@ Order compare(const DrawItem& self, const DrawItem& other) {
 }  // namespace
 
 // The edge that 1198:08A0 adds between two display entries.
-// @orig 1198:08A0
+// @orig 11A8:08A0
 std::optional<bool> draw_before(const DrawItem& a, const DrawItem& b) {
     if (!screen_overlap(a, b)) return std::nullopt;
     switch (compare(a, b)) {
@@ -219,7 +220,8 @@ std::vector<std::size_t> pick(const std::vector<DrawItem>& list, int x, int y) {
     return hits;
 }
 
-// @orig 11A0:02E4 (blitter choice; the walk over the list is not located)
+// @orig 11B0:02E4 (blitter choice; the walk over the list is not located)
+// TODO(regret): constants in REGRET.EXE (No Remorse 11A0:02E4, similarity 0.98)
 void draw_display_list(Surface8& screen, const std::vector<DrawItem>& list, const XformTable* xform,
                        const std::function<void(Surface8&, const DrawItem&)>& after) {
     for (const DrawItem& d : list) {

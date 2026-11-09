@@ -34,7 +34,8 @@ bool in(std::uint16_t v, std::initializer_list<std::uint16_t> set) {
 
 }  // namespace
 
-// @orig 1138:0070
+// @orig 1148:00A8
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0070, similarity 0.76)
 bool stance_not_moving(const World& world, ObjId id) {
     const auto r = world.npc_record(id);
     const std::uint16_t last =
@@ -42,7 +43,8 @@ bool stance_not_moving(const World& world, ObjId id) {
     return !in(last, {1, 0, 0x3A, 3, 0x30, 0x31, 0xB, 0x10, 0x37}) && !in(last, {0x26, 0x22, 0x23});
 }
 
-// @orig 1138:0F8D
+// @orig 1148:1624
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0F8D, similarity 0.74)
 bool action_redirectable(GameState::MouseTurn& mouse, std::uint32_t now, std::uint16_t a) {
     // A walk or a run turned by the mouse: at most once every
     // 60 / (speed * 3 + 3) ticks.
@@ -65,7 +67,8 @@ bool AvatarMover::kneeling() const {
     return !r.empty() && (r[npc::kFlags13] & 0x04);
 }
 
-// @orig 1138:12CF
+// @orig 1148:1A03
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:12CF, similarity 0.58)
 bool AvatarMover::handle_key(const GameKeyEvent& e) {
     const ObjId a_id = actor();
     if (a_id == 0 || world_.is_dead(a_id) || !world_.get(a_id)) return false;

@@ -6,7 +6,7 @@ std::uint8_t luminance(std::uint8_t r, std::uint8_t g, std::uint8_t b) {
     return static_cast<std::uint8_t>((r * 299u + g * 587u + b * 114u) / 1000u);
 }
 
-// @orig 1440:05BE
+// @orig 1418:05F3
 Palette greyscale(const Palette& p) {
     std::array<std::uint8_t, 768> vga = p.to_vga();
     for (std::size_t i = 0; i < 256; ++i) {
@@ -19,7 +19,7 @@ Palette greyscale(const Palette& p) {
 PaletteFade::PaletteFade(const Palette& from, const Palette& target, int count, int step)
     : current_(from.to_vga()), target_(target.to_vga()), count_(count), step_(step) {}
 
-// @orig 1440:03A0
+// @orig 1418:03D5
 bool PaletteFade::tick(Palette& out) {
     int equal = 0;
     for (std::size_t i = 0; i < current_.size(); ++i) {
@@ -41,7 +41,8 @@ bool PaletteFade::tick(Palette& out) {
     return true;
 }
 
-// @orig 1440:0000
+// @orig 1418:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 1440:0000, similarity 0.78)
 PaletteFaderProcess::PaletteFaderProcess(Palette& screen, const Palette& target, std::uint32_t rate, int count,
                                          int step, bool* cycle_paused, bool resume_cycle)
     : screen_(&screen),
@@ -61,7 +62,8 @@ PaletteFaderProcess::PaletteFaderProcess(Palette& screen, const Palette& target,
     }
 }
 
-// @orig 1440:0000
+// @orig 1418:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 1440:0000, similarity 0.78)
 void PaletteFaderProcess::on_added() {
     if (rate_ == 0) {
         *screen_ = target_;

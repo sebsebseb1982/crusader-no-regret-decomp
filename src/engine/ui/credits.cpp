@@ -46,7 +46,7 @@ Palette read_bmp_palette(const std::vector<std::uint8_t>& file) {
     return Palette::from_vga(vga);
 }
 
-// @orig 13F0:003A
+// @orig 13D0:003A
 CreditsData CreditsData::load(const std::filesystem::path& static_dir) {
     CreditsData c;
     c.background = read_bmp8(read_file(static_dir / "CRED.DAT"));
@@ -64,7 +64,7 @@ void Credits::frame(std::uint32_t timer_ticks) {
     palette_step();
 }
 
-// @orig 13F0:0776
+// @orig 13D0:072D
 void Credits::start_effect(bool fade_in) {
     // WORLD_13f0_0776 then an immediate palette step.
     effect_ = true;
@@ -73,7 +73,7 @@ void Credits::start_effect(bool fade_in) {
     palette_step();
 }
 
-// @orig 13F0:0753
+// @orig 13D0:070A
 void Credits::palette_step() {
     if (!effect_) return;
     if (fade_in_ && level_ < 0) level_ = 0;
@@ -93,7 +93,7 @@ void Credits::palette_step() {
     }
 }
 
-// @orig 13F0:041D
+// @orig 13D0:03D4
 void Credits::line(int font, std::size_t& pos, int& y) {
     const auto& s = data_->script;
     std::size_t end = pos;
@@ -106,7 +106,7 @@ void Credits::line(int font, std::size_t& pos, int& y) {
     pos = end + 1;
 }
 
-// @orig 13F0:041D
+// @orig 13D0:03D4
 void Credits::text_step(std::uint32_t timer_ticks) {
     if (effect_) return;
     if (clear_page_) screen_ = data_->background;

@@ -43,7 +43,8 @@ ObjId target_in(const World& world, int dir) { return find_target(world, world.s
 
 // 1138:0459 / Item_I_move: where the marker of `target` goes when the target
 // is at (x, y, z).
-// @orig 1138:0459
+// @orig 1148:04A5
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0459, similarity 0.65)
 World::Point marker_place(const World& world, ObjId target, std::int32_t x, std::int32_t y, std::int32_t z) {
     const Item* item = world.get(target);
     const ShapeInfo* info = item ? world.shape_info(item->shape) : nullptr;
@@ -64,7 +65,7 @@ World::Point marker_place(const World& world, ObjId target, std::int32_t x, std:
 // SPRITE_1150_065D: height of the muzzle in the first firing frame of the
 // NPC's shot facing `dir` (0 when there is none; the original then adds an
 // unset value).
-// @orig 1150:065D
+// @orig 1160:087B
 int muzzle_height(const World& world, const AnimDat& anims, ObjId id, int dir) {
     const Item* item = world.get(id);
     if (!item) return 0;
@@ -92,7 +93,8 @@ bool aim_action(std::uint16_t a) {
 
 bool turn_action(std::uint16_t a) { return in(a, {0x17, 0x18, 0x19, 0x1C, 0x1D, 0x27, 0x3D, 0x3E}); }
 
-// @orig 10F0:0245
+// @orig 10F8:039A
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:0245, similarity 0.77)
 void aim_after_do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action,
                        Pid pid) {
     const Item* item = world.get(actor);
@@ -108,7 +110,8 @@ void aim_after_do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId
     }
 }
 
-// @orig 1138:0299
+// @orig 1148:02D7
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0299, similarity 0.84)
 void enter_aim_mode(Kernel& kernel, World& world, const AnimDat& anims) {
     GameState::Aim& aim = world.state.aim;
     const Item* npc = world.get(world.state.controlled_npc);
@@ -121,7 +124,7 @@ void enter_aim_mode(Kernel& kernel, World& world, const AnimDat& anims) {
     redesignate(kernel, world, anims);
 }
 
-// @orig 1138:0692
+// @orig 1148:06EC
 void leave_aim_mode(Kernel& kernel, World& world) {
     GameState::Aim& aim = world.state.aim;
     if (!aim.active) return;
@@ -139,7 +142,7 @@ void leave_aim_mode(Kernel& kernel, World& world) {
     aim.target = 0;
 }
 
-// @orig 1138:0708
+// @orig 1148:0762
 void place_crosshair(World& world, const AnimDat& anims) {
     GameState::Aim& aim = world.state.aim;
     const ObjId id = world.state.controlled_npc;
@@ -164,7 +167,8 @@ void refresh_crosshair(World& world, const AnimDat& anims) {
     if (world.state.aim.active && world.state.aim.crosshair_dirty) place_crosshair(world, anims);
 }
 
-// @orig 1138:10C8
+// @orig 1148:1768
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:10C8, similarity 0.68)
 void turn_crosshair(Kernel& kernel, World& world, const AnimDat& anims, std::uint8_t scancode, bool walk_only,
                     int& dir, int& action) {
     GameState::Aim& aim = world.state.aim;
@@ -250,7 +254,8 @@ std::optional<World::Point> crosshair_aim(const World& world, int z) {
     return World::Point{cross->x, cross->y, z & 0xFF};
 }
 
-// @orig 1138:0459
+// @orig 1148:04A5
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0459, similarity 0.65)
 void designate(Kernel& kernel, World& world, const AnimDat& anims, ObjId target) {
     GameState::Aim& aim = world.state.aim;
     if (!world.state.target_designation || aim.target == target) return;
@@ -278,7 +283,7 @@ void designate(Kernel& kernel, World& world, const AnimDat& anims, ObjId target)
     aim.marked_dir = dir;
 }
 
-// @orig 1138:03D0
+// @orig 1148:041C
 void redesignate(Kernel& kernel, World& world, const AnimDat& anims) {
     if (!world.state.target_designation) return;
     if (world.state.aim.target != 0) designate(kernel, world, anims, 0);
@@ -287,7 +292,7 @@ void redesignate(Kernel& kernel, World& world, const AnimDat& anims) {
     if (found != 0 && markable(world, found)) designate(kernel, world, anims, found);
 }
 
-// @orig 1138:02F3
+// @orig 1148:033F
 void check_designation(Kernel& kernel, World& world, const AnimDat& anims) {
     GameState::Aim& aim = world.state.aim;
     if (!world.state.target_designation) {
@@ -303,7 +308,9 @@ void check_designation(Kernel& kernel, World& world, const AnimDat& anims) {
     else if (found != aim.target && markable(world, found)) designate(kernel, world, anims, found);
 }
 
-// @orig 10A8:1531 1138:0459
+// @orig 10B0:1575 1148:04A5
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:1531, similarity 0.99)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0459, similarity 0.65)
 void designated_target_moved(Kernel& kernel, World& world, const AnimDat& anims, ObjId target, std::int32_t x,
                              std::int32_t y, std::int32_t z) {
     const ObjId npc = world.state.controlled_npc;
@@ -317,7 +324,7 @@ void designated_target_moved(Kernel& kernel, World& world, const AnimDat& anims,
     designate(kernel, world, anims, found != 0 && markable(world, found) ? found : 0);
 }
 
-// @orig 1430:0313
+// @orig 1408:03FD
 void DumbTimer::run() {
     const std::uint32_t now = kernel().ticks();
     if (world_.state.aim.timer_at + kRecheckTicks < now) {

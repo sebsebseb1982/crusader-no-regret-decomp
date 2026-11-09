@@ -2,7 +2,7 @@
 
 namespace crusader {
 
-// @orig 1328:0935
+// @orig 1320:0947
 MouseInput::Kind MouseInput::kind() const {
     switch (code & 0x7F) {
     case kMove: return kMotionKind;
@@ -12,17 +12,17 @@ MouseInput::Kind MouseInput::kind() const {
     }
 }
 
-// @orig 1330:0652
+// @orig 1328:0652
 void MouseQueue::send(const MouseInput& e) {
     if (queue_.size() < kCapacity) queue_.push_back(e);
 }
 
-// @orig 1360:045D; motion branch
+// @orig 1358:045D; motion branch
 void MouseQueue::move(int x, int y, std::uint16_t buttons) {
     motion_ = MouseInput{MouseInput::kMotion, MouseInput::kMove, buttons, x, y};
 }
 
-// @orig 1360:045D; press branches
+// @orig 1358:045D; press branches
 void MouseQueue::press(bool right, int x, int y, std::uint16_t buttons) {
     const int b = right ? 1 : 0;
     MouseInput e{MouseInput::kPress, right ? MouseInput::kRightDown : MouseInput::kLeftDown, buttons, x, y};
@@ -44,7 +44,7 @@ void MouseQueue::press(bool right, int x, int y, std::uint16_t buttons) {
     held_[b] = Held{e, 0, std::nullopt};
 }
 
-// @orig 1360:045D; release branches
+// @orig 1358:045D; release branches
 void MouseQueue::release(bool right, int x, int y, std::uint16_t buttons) {
     const int b = right ? 1 : 0;
     const MouseInput e{MouseInput::kRelease, right ? MouseInput::kRightUp : MouseInput::kLeftUp, buttons, x, y};
@@ -52,7 +52,7 @@ void MouseQueue::release(bool right, int x, int y, std::uint16_t buttons) {
     else send(e);
 }
 
-// @orig 1360:045D; timer branch
+// @orig 1358:045D; timer branch
 void MouseQueue::tick() {
     for (auto& held : held_) {
         if (!held || ++held->ticks != kClickDelay) continue;
@@ -62,7 +62,7 @@ void MouseQueue::tick() {
     }
 }
 
-// @orig 1360:0E1F
+// @orig 1358:0E1F
 std::optional<MouseInput> MouseQueue::next() {
     if (!queue_.empty()) {
         const MouseInput e = queue_.front();

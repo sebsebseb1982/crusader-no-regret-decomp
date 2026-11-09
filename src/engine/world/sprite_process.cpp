@@ -19,7 +19,7 @@ constexpr std::array<int, 10> kOverlayDy = {0xA2, 0x94, 0x4E, 0x93, 0x53, 0xA3, 
 int rnd(World& w, int n) { return crt_rand_below(w.state.crt_rand_state, n); }
 
 // SPRITE_1140_0007: same screen place at z 240, then the shape's offset.
-// @orig 1140:0007
+// @orig 1150:0007
 void raise_overlay(const World& world, std::uint16_t shape, World::Point& at) {
     for (std::size_t i = 0; i < kOverlayShapes.size(); ++i) {
         if (kOverlayShapes[i] != shape) continue;
@@ -44,7 +44,9 @@ SpriteProcess::SpriteProcess(World& world, std::uint16_t shape, int first, int l
     set_type(kType);
 }
 
-// @orig 1140:029F 1140:00DE
+// @orig 1150:0343 1150:00DE
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:029F, similarity 0.98)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:00DE, similarity 0.59)
 void SpriteProcess::on_added() {
     if (shape_ == kTargetMarker) {
         GameState::Aim& aim = world_.state.aim;
@@ -64,7 +66,8 @@ void SpriteProcess::on_added() {
     }
 }
 
-// @orig 1140:04E2
+// @orig 1150:0593
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:04E2, similarity 0.98)
 void SpriteProcess::run() {
     if (last_ < first_) --frame_;
     else ++frame_;
@@ -79,7 +82,8 @@ void SpriteProcess::run() {
     }
 }
 
-// @orig 1140:0444
+// @orig 1150:04E8
+// TODO(regret): modified in REGRET.EXE (No Remorse 1140:0444, similarity 0.81)
 void SpriteProcess::on_terminate() {
     if (sprite_ && world_.get(sprite_)) world_.destroy(sprite_);
     sprite_ = 0;
@@ -101,7 +105,8 @@ Pid create_sprite(Kernel& kernel, World& world, std::uint16_t shape, int first, 
     return kernel.add(std::make_unique<SpriteProcess>(world, shape, first, last, delay, at));
 }
 
-// @orig 1150:02DF
+// @orig 1160:02F8
+// TODO(regret): modified in REGRET.EXE (No Remorse 1150:02DF, similarity 0.59)
 void impact_sprite(Kernel& kernel, World& world, int fire_type, World::Point at) {
     // Sounds: DS:2A7A (bullets), DS:2A74 (explosions), DS:2A86 (electric).
     static constexpr int kBullet[] = {0x26, 0x27, 0x41, 0x42, 0x45, 0x46};

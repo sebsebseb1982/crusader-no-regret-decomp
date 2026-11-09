@@ -13,7 +13,7 @@ constexpr std::uint16_t kType = 0x254;
 constexpr int kPlayerMaxHp = 150;  // NPC_10f0_3375
 
 // One of the two stations: `read` / `write` the value it raises by `step`.
-// @orig 1130:1D70 1130:1E7B 1130:1F1A 1130:2025
+// @orig 1140:2723 1140:282E 1140:28CD 1140:29D8
 class Charger : public Process {
 public:
     Charger(World& world, int target, int step, int busy_sfx, int tick_sfx, std::size_t offset)
@@ -57,7 +57,8 @@ private:
 
 }  // namespace
 
-// @orig 10F0:348B
+// @orig 10F8:3B81
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:348B, similarity 0.96)
 int max_energy(const World& world, ObjId npc) {
     if (npc != kPlayer) return 0;
     switch (world.state.battery) {

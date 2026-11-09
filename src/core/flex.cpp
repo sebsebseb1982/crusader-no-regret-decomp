@@ -20,7 +20,7 @@ std::vector<std::uint8_t> read_file(const std::filesystem::path& path) {
     return data;
 }
 
-// @orig 1248:0142 1248:01C8
+// @orig 1258:0142 1258:01C8
 FlexArchive FlexArchive::open(const std::filesystem::path& path) {
     constexpr std::size_t kCountOffset = 0x54;
     constexpr std::size_t kIndexOffset = 0x80;
@@ -92,7 +92,7 @@ void FlexWriter::write(const std::filesystem::path& path) const {
     std::filesystem::rename(tmp, path);
 }
 
-// @orig 1248:02A8
+// @orig 1258:02A8
 
 std::span<const std::uint8_t> FlexArchive::entry(std::size_t i) const {
     if (i >= index_.size() || index_[i].offset == 0) {

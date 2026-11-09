@@ -6,7 +6,7 @@
 
 namespace crusader {
 
-// @orig 1150:076C
+// @orig 1160:098A
 const AnimFrame* firing_frame(const World& world, const AnimDat& anims) {
     const ObjId npc = world.state.controlled_npc;
     const Item* item = world.get(npc);
@@ -23,7 +23,8 @@ const AnimFrame* firing_frame(const World& world, const AnimDat& anims) {
     return nullptr;
 }
 
-// @orig 1138:2FFB
+// @orig 1148:3E1F
+// TODO(regret): constants in REGRET.EXE (No Remorse 1138:2FFB, similarity 0.97)
 AutoFirer::AutoFirer(World& world, const AnimDat& anims, Fire fire)
     : world_(world), anims_(anims), fire_(std::move(fire)) {
     set_type(kType);
@@ -31,7 +32,8 @@ AutoFirer::AutoFirer(World& world, const AnimDat& anims, Fire fire)
     set_rate(6);
 }
 
-// @orig 1138:30B0
+// @orig 1148:3ED4
+// TODO(regret): modified in REGRET.EXE (No Remorse 1138:30B0, similarity 0.88)
 void AutoFirer::tick() {
     const ObjId npc = world_.state.controlled_npc;
     const Item* weapon = world_.get(world_.active_weapon(npc));
@@ -47,12 +49,12 @@ void AutoFirer::tick() {
     }
 }
 
-// @orig 1138:3162
+// @orig 1148:3F96
 void AutoFirer::on_terminate() {
     if (world_.state.auto_firer == pid()) world_.state.auto_firer = 0;
 }
 
-// @orig 1138:2F9F
+// @orig 1148:3DC3
 void stop_auto_firer(Kernel& kernel, World& world) {
     if (world.state.auto_firer == 0) return;
     if (Process* p = kernel.get(world.state.auto_firer)) p->terminate();

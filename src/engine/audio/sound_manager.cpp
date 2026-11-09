@@ -4,7 +4,7 @@ namespace crusader {
 
 SoundManager::SoundManager(const SoundFlex& flex, AsylumMixer& mixer) : flex_(flex), mixer_(mixer) {}
 
-// @orig 12F0:0102
+// @orig 12E8:0102
 int SoundManager::find(Handle handle) const {
     if (handle == kNoHandle) return -1;
     for (int v = 0; v < kVoices; ++v) {
@@ -17,7 +17,7 @@ bool SoundManager::over(int voice) const {
     return voices_[static_cast<std::size_t>(voice)].stopped || !mixer_.busy(voice);
 }
 
-// @orig 12F0:0367
+// @orig 12E8:0367
 int SoundManager::allocate(bool loop) {
     const int first = loop ? kOneShotVoices : 0;
     const int end = loop ? kVoices : kOneShotVoices;
@@ -39,7 +39,7 @@ int SoundManager::allocate(bool loop) {
     return voice;
 }
 
-// @orig 12F0:0136
+// @orig 12E8:0136
 SoundManager::Handle SoundManager::play(int sfx, int volume, int owner, bool loop) {
     update();
     const int v = allocate(loop);
@@ -54,7 +54,7 @@ SoundManager::Handle SoundManager::play(int sfx, int volume, int owner, bool loo
     return voice.handle;
 }
 
-// @orig 12F0:026A
+// @orig 12E8:026A
 SoundManager::Handle SoundManager::retrigger(Handle handle, int sfx, int volume, int owner) {
     if (handle == kNoHandle) return kNoHandle;
     const int v = find(handle);
@@ -66,7 +66,7 @@ SoundManager::Handle SoundManager::retrigger(Handle handle, int sfx, int volume,
     return handle;
 }
 
-// @orig 12F0:02EB
+// @orig 12E8:02EB
 void SoundManager::stop(Handle handle) {
     const int v = find(handle);
     if (v == -1) return;
@@ -82,7 +82,7 @@ void SoundManager::stop_all() {
     }
 }
 
-// @orig 12F0:04D8
+// @orig 12E8:04D8
 void SoundManager::stop_sfx(int sfx) {
     for (int v = 0; v < kVoices; ++v) {
         const Voice& voice = voices_[static_cast<std::size_t>(v)];
@@ -95,7 +95,7 @@ void SoundManager::stop_sfx(int sfx) {
     }
 }
 
-// @orig 12F0:0543
+// @orig 12E8:0543
 void SoundManager::set_volume(Handle handle, int volume) {
     const int v = find(handle);
     if (v == -1) return;
@@ -114,7 +114,7 @@ int SoundManager::sfx_of(Handle handle) const {
     return voices_[static_cast<std::size_t>(v)].sfx;
 }
 
-// @orig 12F0:05BC
+// @orig 12E8:05BC
 SoundManager::Handle SoundManager::handle_playing(int sfx) const {
     for (const Voice& voice : voices_) {
         if (voice.handle != kNoHandle && voice.sfx == sfx) return voice.handle;
@@ -122,7 +122,7 @@ SoundManager::Handle SoundManager::handle_playing(int sfx) const {
     return kNoHandle;
 }
 
-// @orig 12F0:0428
+// @orig 12E8:0428
 void SoundManager::update() {
     for (int v = 0; v < kVoices; ++v) {
         Voice& voice = voices_[static_cast<std::size_t>(v)];

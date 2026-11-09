@@ -24,7 +24,7 @@ std::uint16_t walk_action(const World& world, ObjId npc) { return in_combat(worl
 
 }  // namespace
 
-// @orig 1118:0000 1118:01DC
+// @orig 1128:0000 1128:01DC
 PathfinderProcess::PathfinderProcess(World& world, const AnimDat& anims, ObjId npc, ObjId item, World::Point goal,
                                      int max_steps, int stop_distance, bool final_turn)
     : world_(world),
@@ -45,7 +45,7 @@ PathfinderProcess::PathfinderProcess(World& world, const AnimDat& anims, ObjId n
     if (const Item* self = world.get(npc)) best_ = distance_xy({self->x, self->y, 0}, goal_);
 }
 
-// @orig 1118:0000 1118:01DC
+// @orig 1128:0000 1128:01DC
 Pid walk_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, ObjId item, World::Point goal,
             int max_steps, int stop_distance, bool final_turn) {
     auto r = world.npc_record(npc);
@@ -60,7 +60,8 @@ Pid walk_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, ObjId
     return pid;
 }
 
-// @orig 1118:08E4
+// @orig 1128:08DC
+// TODO(regret): modified in REGRET.EXE (No Remorse 1118:08E4, similarity 0.84)
 int PathfinderProcess::choose_direction(World::Point& pos) {
     const ObjId npc = owner();
     const std::uint16_t action = walk_action(world_, npc);
@@ -135,7 +136,8 @@ int PathfinderProcess::choose_direction(World::Point& pos) {
     return candidate_;
 }
 
-// @orig 1118:0428
+// @orig 1128:0428
+// TODO(regret): modified in REGRET.EXE (No Remorse 1118:0428, similarity 0.90)
 void PathfinderProcess::run() {
     Kernel& k = kernel();
     const ObjId npc = owner();
@@ -171,7 +173,8 @@ void PathfinderProcess::run() {
     ++steps_;
 }
 
-// @orig 1118:072E
+// @orig 1128:0726
+// TODO(regret): constants in REGRET.EXE (No Remorse 1118:072E, similarity 0.99)
 void PathfinderProcess::on_terminate() {
     // ATTACK_1118_072e.
     const ObjId npc = owner();

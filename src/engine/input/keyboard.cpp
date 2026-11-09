@@ -2,7 +2,8 @@
 
 namespace crusader {
 
-// @orig 11D8:3574
+// @orig ?: No Remorse 11D8:3574, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Keyboard::key(std::uint8_t scancode, bool extended, bool pressed, std::uint16_t flags, std::uint8_t ascii,
                    std::uint32_t now) {
     scancode &= 0x7F;
@@ -20,7 +21,7 @@ void Keyboard::key(std::uint8_t scancode, bool extended, bool pressed, std::uint
     send({ascii, scancode, flags, now, pressed, extended, k.count});
 }
 
-// @orig 11C0:0129
+// @orig 11D0:0129
 void Keyboard::repeat(std::uint32_t now) {
     // KDAEMON.C tick (11C0:0129): every key held since `repeat_delay_` ticks
     // or more gets one more event, normal keys first, then extended ones.

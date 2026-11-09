@@ -13,7 +13,7 @@ const ShapeFrame* gump_frame(ShapeCache& gumps, std::uint16_t frame) {
 
 }  // namespace
 
-// @orig 13A0:0034
+// @orig 1390:003E
 ComputerGump::ComputerGump(ShapeCache& gumps, const FontSet& fonts, const std::string& text,
                            std::function<void(int)> play_sfx, int screen_width, int screen_height)
     : gumps_(&gumps), fonts_(&fonts), play_sfx_(std::move(play_sfx)), text_(wrap(text)) {
@@ -26,7 +26,7 @@ ComputerGump::ComputerGump(ShapeCache& gumps, const FontSet& fonts, const std::s
     y_ = (screen_height - height) >> 1;
 }
 
-// @orig 13A0:03C8
+// @orig 1390:03D2
 std::string ComputerGump::wrap(const std::string& text) {
     std::string s = text;
     int space = -1;
@@ -48,7 +48,7 @@ std::string ComputerGump::wrap(const std::string& text) {
     return s;
 }
 
-// @orig 13A0:0487
+// @orig 1390:0491
 void ComputerGump::layout() {
     column_ = 0;
     row_ = 0;
@@ -72,7 +72,8 @@ void ComputerGump::layout() {
     cursor_ = !skip_;
 }
 
-// @orig 13A0:08D2
+// @orig 1390:08DC
+// TODO(regret): modified in REGRET.EXE (No Remorse 13A0:08D2, similarity 0.95)
 void ComputerGump::run() {
     if (ended()) {
         layout();  // a redraw: the last character in place of the cursor
@@ -98,14 +99,16 @@ void ComputerGump::run() {
 }
 
 // Gump_run_modal: the gump's run at each pass, here once its wait is over.
-// @orig 1328:1588
+// @orig 1320:159A
+// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void ComputerGump::update(std::uint32_t ticks) {
     if (closed_ || ticks < next_run_) return;
     next_run_ = ticks;
     run();
 }
 
-// @orig 13A0:02D1 13A0:0487
+// @orig 1390:02DB 1390:0491
+// TODO(regret): modified in REGRET.EXE (No Remorse 13A0:02D1, similarity 0.99)
 void ComputerGump::draw(Surface8& screen) const {
     if (const ShapeFrame* f = gump_frame(*gumps_, 0)) f->draw(screen, x_, y_);
     if (const ShapeFrame* f = gump_frame(*gumps_, 1)) f->draw(screen, x_, y_ + kBottomY);
@@ -139,7 +142,7 @@ void ComputerGump::draw(Surface8& screen) const {
     if (page_full_) writer.print(screen, x_ + kTextX, y_ + kTextY + row_ * kRowHeight, more());
 }
 
-// @orig 13A0:0A2A
+// @orig 1390:0A2A
 void ComputerGump::key(std::uint16_t code) {
     if (page_full_) {
         page_full_ = false;
@@ -153,7 +156,7 @@ void ComputerGump::key(std::uint16_t code) {
     else if (code == gump_key::kEscape) skip_ = true;
 }
 
-// @orig 13A0:0887
+// @orig 1390:0891
 void ComputerGump::mouse_down(int, int) {
     if (ended()) closed_ = true;
     else skip_ = true;

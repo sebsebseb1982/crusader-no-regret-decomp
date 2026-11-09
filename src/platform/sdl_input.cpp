@@ -75,7 +75,7 @@ std::uint16_t bios_flags(Uint16 mod) {
 // Keypad characters as in the original's tables (key_event_to_ascii,
 // 11D0:0013, DS:2F4C..31E3): * - + always; the digits with Num Lock, Shift or
 // Caps Lock, none otherwise (the keys move then); '.' (0x53) none.
-// @orig 11D0:0013
+// @orig 11E0:0013
 std::uint8_t keypad_ascii(SDL_Keycode key, std::uint16_t flags) {
     switch (key) {
     case SDLK_KP_MULTIPLY: return '*';

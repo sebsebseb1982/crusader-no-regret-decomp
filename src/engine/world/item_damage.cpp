@@ -24,7 +24,7 @@ int crt_rnd(World& w, int n) { return crt_rand_below(w.state.crt_rand_state, n);
 
 }  // namespace
 
-// @orig 10C0:030C
+// @orig 10C8:030C
 bool damage_item(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int damage) {
     Item* item = world.get(id);
     if (!item) return false;
@@ -71,7 +71,7 @@ bool damage_item(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, i
     return true;
 }
 
-// @orig 10A8:275F
+// @orig 10B0:27A3
 void got_hit(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, ObjId other, std::uint16_t force) {
     const Item* item = world.get(id);
     if (!item) return;
@@ -102,12 +102,13 @@ void got_hit(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, ObjId
     if (item && (item->z & 0xFF) != 0xFE) damage_item(kernel, world, anims, id, damage);
 }
 
-// @orig 10A8:275F
+// @orig 10B0:27A3
 void hit_item(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int damage, int fire_type) {
     got_hit(kernel, world, anims, id, kHitByDamage, static_cast<std::uint16_t>((fire_type & 0xFF) << 8 | (damage & 0xFF)));
 }
 
-// @orig 1150:0891
+// @orig 1160:0AAF
+// TODO(regret): modified in REGRET.EXE (No Remorse 1150:0891, similarity 0.92)
 void explode(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int size, bool destroy, bool splash) {
     Item* item = world.get(id);
     if (!item || (item->z & 0xFF) == 0xFE) return;
@@ -149,7 +150,7 @@ void explode(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int s
     if (destroy && world.get(id)) world.destroy(id);
 }
 
-// @orig 1128:039C
+// @orig 1138:039C
 void splash_damage(Kernel& kernel, World& world, const AnimDat& anims, const World::Point& at, int radius,
                    int damage, int fire_type, ObjId exclude, ObjId exclude2) {
     const int reach = radius * 16;

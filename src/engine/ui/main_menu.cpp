@@ -25,7 +25,8 @@ constexpr std::array<Point, 4> kBackgroundCorners = {{{1, 120}, {320, 120}, {1, 
 
 }  // namespace
 
-// @orig 13D0:0000
+// @orig 13B8:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0000, similarity 0.96)
 MainMenu::MainMenu(const Resources& res, Shared& shared, bool no_game)
     : res_(res),
       gumps_(res.gumps),
@@ -64,7 +65,8 @@ void MainMenu::draw_version(Surface8& screen, int y, const std::string& text) co
     }
 }
 
-// @orig 13D0:04EE 13D0:2C6B
+// @orig 13B8:04F9 13B8:2EB9
+// TODO(regret): constants in REGRET.EXE (No Remorse 13D0:04EE, similarity 0.98)
 void MainMenu::draw(Surface8& screen) const {
     if (credits_) {
         screen.pixels = credits_->screen().pixels;
@@ -97,7 +99,8 @@ void MainMenu::draw(Surface8& screen) const {
     draw_version(screen, kVersionY0 + kVersionLineHeight, res_.data_version);
 }
 
-// @orig 13D0:06CD
+// @orig 13B8:06D8
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:06CD, similarity 0.67)
 void MainMenu::key(std::uint16_t code) {
     if (result_) return;
     if (credits_) {  // any key stops them (DS:322A)
@@ -148,7 +151,7 @@ void MainMenu::key(std::uint16_t code) {
     }
 }
 
-// @orig 1310:001D
+// @orig 1308:001D
 void MainMenu::mouse_down(int x, int y) {
     if (credits_) return;  // the mouse driver is shut down
     if (load_) {
@@ -175,7 +178,7 @@ void MainMenu::mouse_down(int x, int y) {
     }
 }
 
-// @orig 1310:0151
+// @orig 1308:0151
 void MainMenu::mouse_move(int x, int y) {
     if (options_) {
         options_->mouse_move(x, y);
@@ -191,7 +194,7 @@ void MainMenu::mouse_move(int x, int y) {
     if (captured_ >= 0 && buttons_[captured_].contains(x, y)) select(captured_);
 }
 
-// @orig 1310:001D
+// @orig 1308:001D
 void MainMenu::mouse_up(int x, int y) {
     if (options_) {
         options_->mouse_up(x, y);
@@ -209,7 +212,8 @@ void MainMenu::mouse_up(int x, int y) {
     if (buttons_[i].contains(x, y)) activate(i);
 }
 
-// @orig 13D0:082E
+// @orig 13B8:08A8
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:082E, similarity 0.98)
 void MainMenu::activate(int i) {
     switch (i) {
     case kQuit:
@@ -249,7 +253,8 @@ void MainMenu::update(std::uint32_t ticks) {
     if (options_) options_->update(ticks);
 }
 
-// @orig 13D0:082E
+// @orig 13B8:08A8
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:082E, similarity 0.98)
 void MainMenu::after_sub_screen() {
     if (difficulty_ && difficulty_->result()) {
         if (*difficulty_->result() != 0) {

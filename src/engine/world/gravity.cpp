@@ -16,7 +16,7 @@ struct Footprint {
     int w, d, h;
 };
 
-// @orig 1040:0072
+// @orig 1048:0072
 Footprint footprint(const ShapeInfo* info) {
     if (!info) return {0, 0, 0};
     int h = info->footpad_z * 8;
@@ -29,7 +29,7 @@ constexpr std::uint8_t kFalling = 0x02;  // NPC record +0x59
 
 }  // namespace
 
-// @orig 1040:0072
+// @orig 1048:0072
 std::uint8_t support_mask(const World& world, std::uint16_t shape, std::int32_t x, std::int32_t y, std::int32_t z,
                           bool slack, ObjId ignore) {
     if (z == 0) return 0x1F;
@@ -75,7 +75,8 @@ std::uint8_t support_mask(const World& world, std::uint16_t shape, std::int32_t 
     return result;
 }
 
-// @orig 1040:0395
+// @orig 1048:0395
+// TODO(regret): modified in REGRET.EXE (No Remorse 1040:0395, similarity 0.92)
 GravityProcess::GravityProcess(World& world, ObjId item, int vx_, int vy_, int vz_, int gravity_)
     : vx(vx_), vy(vy_), vz(vz_), gravity(gravity_), world_(world) {
     set_owner(item);
@@ -89,7 +90,8 @@ GravityProcess::GravityProcess(World& world, ObjId item, int vx_, int vy_, int v
     }
 }
 
-// @orig 1040:06D2
+// @orig 1048:06D7
+// TODO(regret): modified in REGRET.EXE (No Remorse 1040:06D2, similarity 0.79)
 void GravityProcess::run() {
     const ObjId id = owner();
     Item* item = world_.get(id);
@@ -274,7 +276,8 @@ void GravityProcess::run() {
     sleep(4 * k);
 }
 
-// @orig 1040:04BC
+// @orig 1048:04C1
+// TODO(regret): constants in REGRET.EXE (No Remorse 1040:04BC, similarity 0.98)
 void GravityProcess::on_terminate() {
     // 1040:04BC: the NPC no longer falls.
     const ObjId id = owner();
@@ -291,19 +294,19 @@ void GravityProcess::on_terminate() {
     if (world_.hooks().hard_landing) world_.hooks().hard_landing(id);
 }
 
-// @orig 10A8:0020
+// @orig 10B0:0020
 ReleaseProcess::ReleaseProcess(World& world, ObjId item) : world_(world) {
     set_owner(item);
     set_type(kType);
 }
 
-// @orig 10A8:0078
+// @orig 10B0:0078
 void ReleaseProcess::run() {
     if (world_.get(owner()) && world_.hooks().start_event) world_.hooks().start_event(owner(), 9);
     terminate();
 }
 
-// @orig 10A8:2970
+// @orig 10B0:2959
 void leave_surface(Kernel& kernel, World& world, ObjId mover) {
     static constexpr std::uint8_t kAll[] = {'$'};
     std::vector<std::uint8_t> sides;
@@ -314,13 +317,14 @@ void leave_surface(Kernel& kernel, World& world, ObjId mover) {
     }
 }
 
-// @orig 1040:06D2; branche 08D8
+// @orig 1048:06D7; branche 08D8
+// TODO(regret): modified in REGRET.EXE (No Remorse 1040:06D2, similarity 0.79)
 void drop_items_on_top(Kernel& kernel, World& world, ObjId item) {
     static constexpr std::uint8_t kAll[] = {'$'};
     for (ObjId id : world.surface_search(item, 1, kAll)) fall(kernel, world, id);
 }
 
-// @orig 1040:11FD
+// @orig 1048:12A6
 void drop_out_of_fast_area(Kernel& kernel, World& world, ObjId item) {
     Process* p = kernel.find_process(item, GravityProcess::kType);
     if (!p) return;
@@ -331,7 +335,8 @@ void drop_out_of_fast_area(Kernel& kernel, World& world, ObjId item) {
     if (!p->terminated()) p->terminate();
 }
 
-// @orig 1040:12A6
+// @orig 1048:134F
+// TODO(regret): modified in REGRET.EXE (No Remorse 1040:12A6, similarity 0.93)
 Pid hurl(Kernel& kernel, World& world, ObjId item, int vx, int vy, int vz, int gravity) {
     GravityProcess* existing = nullptr;
     kernel.for_each_process([&](const Process& p) {
@@ -349,7 +354,8 @@ Pid hurl(Kernel& kernel, World& world, ObjId item, int vx, int vy, int vz, int g
     return g.pid();
 }
 
-// @orig 1040:1334
+// @orig 1048:13EB
+// TODO(regret): modified in REGRET.EXE (No Remorse 1040:1334, similarity 0.85)
 Pid fall(Kernel& kernel, World& world, ObjId item) {
     const Item* i = world.get(item);
     const ShapeInfo* info = i ? world.shape_info(i->shape) : nullptr;
@@ -357,7 +363,7 @@ Pid fall(Kernel& kernel, World& world, ObjId item) {
     return hurl(kernel, world, item, 0, 0, 0, 2);
 }
 
-// @orig 1048:00A6
+// @orig 1050:00A6
 ThrowPath throw_path(const World::Point& from, const World::Point& to, int speed, int gravity) {
     // 16-bit arithmetic, as in the original.
     const auto s16 = [](int v) { return static_cast<int>(static_cast<std::int16_t>(v)); };
@@ -393,7 +399,7 @@ ThrowPath throw_path(const World::Point& from, const World::Point& to, int speed
     return t;
 }
 
-// @orig 10A8:38D1 1048:0290
+// @orig 10B0:38F1 1050:0290
 void shoot(Kernel& kernel, World& world, ObjId item, const World::Point& target, int speed, int gravity) {
     const Item* i = world.get(item);
     if (!i) return;

@@ -75,7 +75,8 @@ constexpr std::array<W, OptionsScreen::kQuitLine> kRightOf = {
 
 // First step not below `volume`. The original keeps the volume itself as the
 // step when it is above every step; the port takes the last one.
-// @orig 13D0:0ECE
+// @orig 13B8:0F53
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0ECE, similarity 0.95)
 int step_for(const std::array<std::uint8_t, OptionsScreen::kSteps>& steps, int volume) {
     for (int i = 0; i < OptionsScreen::kSteps; ++i) {
         if (volume <= steps[i]) return i;
@@ -84,7 +85,8 @@ int step_for(const std::array<std::uint8_t, OptionsScreen::kSteps>& steps, int v
 }
 
 // One step up or down within the table; false at its end.
-// @orig 13D0:236E
+// @orig 13B8:25CF
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:236E, similarity 0.88)
 bool step(int& s, bool up) {
     const int next = s + (up ? 1 : -1);
     if (next < 0 || next >= OptionsScreen::kSteps) return false;
@@ -94,7 +96,8 @@ bool step(int& s, bool up) {
 
 }  // namespace
 
-// @orig 13D0:0ECE
+// @orig 13B8:0F53
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0ECE, similarity 0.95)
 OptionsScreen::OptionsScreen(ShapeCache& gumps, GameConfig& config, Audio* audio, int& focus, const FontSet* fonts,
                              std::function<void()> vibration_preview)
     : gumps_(&gumps), config_(&config), audio_(audio), focus_(&focus), fonts_(fonts),
@@ -119,7 +122,7 @@ int OptionsScreen::index(Widget w) {
     return 0;
 }
 
-// @orig 13D0:1D81
+// @orig 13B8:1FE2
 int OptionsScreen::line_of(Widget w) {
     for (int i = 0; i < kQuitLine; ++i) {
         if (kLeftOf[i] == w || kRightOf[i] == w) return i;
@@ -127,7 +130,8 @@ int OptionsScreen::line_of(Widget w) {
     return kQuitLine;
 }
 
-// @orig 13D0:0ECE
+// @orig 13B8:0F53
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0ECE, similarity 0.95)
 bool OptionsScreen::chosen(Widget w) const {
     const GameConfig& c = *config_;
     switch (w) {
@@ -155,7 +159,8 @@ void OptionsScreen::draw_shape(Surface8& screen, std::uint16_t shape, int frame,
     if (s && static_cast<std::size_t>(frame) < s->frames().size()) s->frames()[frame].draw(screen, x, y);
 }
 
-// @orig 13D0:17C5
+// @orig 13B8:1851
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:17C5, similarity 0.40)
 void OptionsScreen::draw(Surface8& screen) const {
     if (enh_) {
         enh_->draw(screen);
@@ -220,7 +225,8 @@ void OptionsScreen::open_enhancements() {
     enh_ = std::make_unique<EnhancementsScreen>(*fonts_, *config_, pad_focus_, vibration_preview_);
 }
 
-// @orig 13D0:20B7
+// @orig ?: No Remorse 13D0:20B7, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void OptionsScreen::key(std::uint16_t code) {
     if (enh_) {
         enh_->key(code);
@@ -278,7 +284,8 @@ void OptionsScreen::key(std::uint16_t code) {
     }
 }
 
-// @orig 1378:0105
+// @orig 1370:0105
+// TODO(regret): modified in REGRET.EXE (No Remorse 1378:0105, similarity 0.52)
 const OptionsScreen::Item* OptionsScreen::hit(int x, int y) const {
     // The last created is on top.
     for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
@@ -287,7 +294,7 @@ const OptionsScreen::Item* OptionsScreen::hit(int x, int y) const {
     return nullptr;
 }
 
-// @orig 13D0:0DC0 1310:0371
+// @orig 13B8:0E45 1308:0371
 void OptionsScreen::mouse_down(int x, int y) {
     if (enh_) {
         enh_->mouse_down(x, y);
@@ -319,7 +326,7 @@ void OptionsScreen::mouse_down(int x, int y) {
     widget_acted(it->id);
 }
 
-// @orig 1310:0151 1310:04CD
+// @orig 1308:0151 1308:04CD
 void OptionsScreen::mouse_move(int x, int y) {
     if (enh_ || closed_) return;
     if (pad_pressed_) pad_pressed_ = pad_rect_.contains(x, y);
@@ -330,7 +337,7 @@ void OptionsScreen::mouse_move(int x, int y) {
     update(now_);
 }
 
-// @orig 1310:001D 1310:0371
+// @orig 1308:001D 1308:0371
 void OptionsScreen::mouse_up(int x, int y) {
     if (enh_) return;
     if (pad_pressed_) {  // acts at the release inside, like the quit button
@@ -345,7 +352,7 @@ void OptionsScreen::mouse_up(int x, int y) {
     if (it.id == kQuit && it.rect.contains(x, y)) widget_acted(kQuit);
 }
 
-// @orig 1310:04FD
+// @orig 1308:04FD
 void OptionsScreen::update(std::uint32_t ticks) {
     now_ = ticks;
     if (enh_) {
@@ -365,7 +372,8 @@ void OptionsScreen::widget_acted(Widget w) {
     act(w);
 }
 
-// @orig 13D0:236E
+// @orig 13B8:25CF
+// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:236E, similarity 0.88)
 void OptionsScreen::act(Widget w) {
     GameConfig& c = *config_;
     auto click = [this] {

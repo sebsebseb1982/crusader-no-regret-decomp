@@ -47,7 +47,8 @@ bool weapon_keeps_actions(const World& w, ObjId id) {
 }
 
 // NPC_10f0_1f9a: hit within the last 120 ticks.
-// @orig 10F0:1F9A
+// @orig 10F8:2231
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:1F9A, similarity 0.84)
 bool recently_hit(const World& w, ObjId id, std::uint32_t now) {
     const auto r = w.npc_record(id);
     if (r.empty()) return false;
@@ -80,7 +81,7 @@ bool weapon_drawn(const World& world, ObjId id) {
     return !r.empty() && (r[npc::kStance] & 0x02);
 }
 
-// @orig 10F0:1F40
+// @orig 10F8:21D7
 bool in_combat_stance(const World& world, ObjId id) {
     const auto r = world.npc_record(id);
     const std::uint16_t a = r.empty() ? 0 : static_cast<std::uint16_t>(r[npc::kLastAnim] | r[npc::kLastAnim + 1] << 8);
@@ -91,7 +92,7 @@ bool controlled_npc_still(const World& world, std::uint32_t now) {
     return world.state.player_moved_at == 0 || now >= world.state.player_moved_at + world.state.player_move_window;
 }
 
-// @orig 1138:2C02
+// @orig 1148:3A26
 void set_controlled_npc(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc) {
     const ObjId old = world.state.controlled_npc;
     if (old == npc) return;
@@ -113,7 +114,8 @@ void set_controlled_npc(Kernel& kernel, World& world, const AnimDat& anims, ObjI
     world.set_camera(item->x, item->y, item->z & 0xFF);
 }
 
-// @orig 10F0:31A9
+// @orig 10F8:389F
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:31A9, similarity 0.94)
 void clear_in_combat(Kernel& kernel, World& world, const AnimDat& anims, ObjId id) {
     auto r = world.npc_record(id);
     if (r.empty()) return;
@@ -125,7 +127,8 @@ void clear_in_combat(Kernel& kernel, World& world, const AnimDat& anims, ObjId i
     kernel.fail_processes(id, AttackProcess::kType, 1);
 }
 
-// @orig 10F0:2D02
+// @orig 10F8:33B5
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2D02, similarity 0.84)
 void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, std::uint16_t activity) {
     auto r = world.npc_record(id);
     if (r.empty() || world.is_dead(id) || (r[npc::kStance] & 0x01)) return;
@@ -180,7 +183,8 @@ void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, 
     }
 }
 
-// @orig 10F0:1E71
+// @orig 10F8:2107
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:1E71, similarity 0.91)
 void set_target(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, ObjId target) {
     auto r = world.npc_record(id);
     if (r.empty() || world.is_dead(id) || id == 1 || id == world.state.controlled_npc) return;
@@ -192,7 +196,8 @@ void set_target(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, Ob
 }
 
 // The NPC part of Item_I_enterFastArea (ITEM.C 2CA8).
-// @orig 10A8:2B30
+// @orig 10B0:2B34
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:2B30, similarity 0.93)
 void restart_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id) {
     auto r = world.npc_record(id);
     const Item* item = world.get(id);
@@ -206,7 +211,8 @@ void restart_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId 
     set_activity(kernel, world, anims, id, activity);
 }
 
-// @orig 1150:009C
+// @orig 1160:00BF
+// TODO(regret): modified in REGRET.EXE (No Remorse 1150:009C, similarity 0.76)
 Pid turn_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int dir, bool always, bool relaxed) {
     const Item* item = world.get(id);
     if (!item) return 0;
@@ -243,7 +249,7 @@ Pid turn_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int di
     return last;
 }
 
-// @orig 1130:1755
+// @orig 1140:20CB
 int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId target, int dir, int dx, int dy,
                   int dz, bool* muzzle_found) {
     if (muzzle_found) *muzzle_found = false;
@@ -284,7 +290,8 @@ int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId
     return 0;
 }
 
-// @orig 1110:0000
+// @orig 1120:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 1110:0000, similarity 0.74)
 AttackProcess::AttackProcess(World& world, const AnimDat& anims, ObjId id) : world_(world), anims_(anims) {
     set_owner(id);
     set_type(kType);
@@ -313,7 +320,8 @@ void AttackProcess::set_timed(std::uint32_t now, int seconds_minus_8) {
     timeout_ = now + static_cast<std::uint32_t>(seconds_minus_8 + 8) * 60;
 }
 
-// @orig 1110:03AA
+// @orig 1120:0321
+// TODO(regret): modified in REGRET.EXE (No Remorse 1110:03AA, similarity 0.71)
 bool AttackProcess::recently_started(std::uint32_t now) {
     const std::uint32_t limit = double_time_ ? 240 : 120;
     if (started_ != 0) {
@@ -325,7 +333,8 @@ bool AttackProcess::recently_started(std::uint32_t now) {
     return false;
 }
 
-// @orig 1110:0334
+// @orig 1120:1403
+// TODO(regret): modified in REGRET.EXE (No Remorse 1110:0334, similarity 0.61)
 bool AttackProcess::bark_timer(std::uint32_t now) {
     if (bark_time_ == 0 || now >= bark_time_ + 0x1E0) {
         bark_time_ = now;
@@ -343,7 +352,8 @@ bool AttackProcess::sighting_old(std::uint32_t now) const {
     return now >= seen_ + (double_time_ ? 120u : 60u);
 }
 
-// @orig 1110:13B7
+// @orig 1120:1330
+// TODO(regret): modified in REGRET.EXE (No Remorse 1110:13B7, similarity 0.90)
 bool AttackProcess::can_hit(int dir, std::uint32_t now) {
     if (recently_started(now)) return true;
     if (sighted_) return true;
@@ -351,7 +361,8 @@ bool AttackProcess::can_hit(int dir, std::uint32_t now) {
     return fire_distance(world_, anims_, owner(), r.empty() ? 0 : word_at(r, npc::kTarget), dir) != 0;
 }
 
-// @orig 1110:141B
+// @orig 1120:1396
+// TODO(regret): constants in REGRET.EXE (No Remorse 1110:141B, similarity 0.89)
 void AttackProcess::approach() {
     // ATTACK_1110_141b: walk towards the target (at most 12 steps, stopping
     // within 0x40), waited for.
@@ -428,7 +439,8 @@ void AttackProcess::fire(std::uint32_t now, ObjId weapon_id) {
     if (--burst_left_ != 0) listening_ = pid;
 }
 
-// @orig 1110:22CA
+// @orig 1120:2225
+// TODO(regret): modified in REGRET.EXE (No Remorse 1110:22CA, similarity 0.82)
 void AttackProcess::next_burst_shot() {
     // Message handler 1110:22CA, on the end of the animation listened to.
     const ObjId id = owner();
@@ -460,7 +472,9 @@ void AttackProcess::next_burst_shot() {
     }
 }
 
-// @orig 1110:06B9 1110:14F6
+// @orig 1120:0632 1120:1485
+// TODO(regret): constants in REGRET.EXE (No Remorse 1110:06B9, similarity 0.98)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1110:14F6, similarity 0.52)
 void AttackProcess::run() {
     if (listening_ != 0) {
         listening_ = 0;

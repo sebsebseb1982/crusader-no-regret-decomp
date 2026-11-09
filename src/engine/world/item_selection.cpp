@@ -37,7 +37,8 @@ bool selectable(const World& world, const Item& item) {
 void finish(World& world);
 
 // 13E8:37B4.
-// @orig 13E8:37B4
+// @orig 1008:37EC
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:37B4, similarity 0.72)
 void next(World& world) {
     auto& sel = world.state.selection;
     if (sel.items.empty()) return;
@@ -54,7 +55,8 @@ void next(World& world) {
 }
 
 // 13E8:388F.
-// @orig 13E8:388F
+// @orig 1008:38BA
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:388F, similarity 0.62)
 void previous(World& world) {
     auto& sel = world.state.selection;
     sel.chosen = 0;
@@ -63,7 +65,8 @@ void previous(World& world) {
     if (sel.current < 0) sel.current = static_cast<int>(sel.items.size()) - 1;
 }
 
-// @orig 13E8:1710
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:1710, similarity 0.44)
 void finish(World& world) {
     auto& sel = world.state.selection;
     const ObjId chosen = sel.chosen;
@@ -73,7 +76,8 @@ void finish(World& world) {
 }
 
 // Enter, Space, Ins (13E8:1710): a selectable item is used, another chosen.
-// @orig 13E8:1710
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:1710, similarity 0.44)
 void take(World& world) {
     auto& sel = world.state.selection;
     const ObjId id = selected_item(world);
@@ -96,12 +100,14 @@ ObjId selected_item(const World& world) {
     return world.get(sel.items[sel.current]) ? sel.items[sel.current] : 0;
 }
 
-// @orig 13E8:2B74; flag 0x100
+// @orig 1008:2C27; flag 0x100
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:2B74, similarity 0.75)
 void selection_click(World& world) {
     take(world);
 }
 
-// @orig 13E8:33D9
+// @orig 1008:3430
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:33D9, similarity 0.81)
 void start_selection(World& world, bool pick_all) {
     auto& sel = world.state.selection;
     sel.pick_all = pick_all;
@@ -142,7 +148,7 @@ void start_selection(World& world, bool pick_all) {
     sel.active = true;
 }
 
-// @orig 13E8:3796
+// @orig 1008:37CE
 void cancel_selection(World& world) {
     auto& sel = world.state.selection;
     sel.chosen = 0;
@@ -150,7 +156,8 @@ void cancel_selection(World& world) {
     finish(world);
 }
 
-// @orig 13E8:14B4
+// @orig 1008:1565
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void selection_key(World& world, std::uint16_t code) {
     auto& sel = world.state.selection;
     switch (code) {

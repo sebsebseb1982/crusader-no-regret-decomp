@@ -20,7 +20,7 @@ bool g_returning = false;
 
 // Process DS:1006 (1098:0000 / 0047): raises the busy flag while it lives;
 // it waits for the teleport, then ends at once, putting the flag back.
-// @orig 1098:0000 1098:0047
+// @orig 10A0:0000 10A0:0047
 class BusyUntilTeleported : public Process {
 public:
     explicit BusyUntilTeleported(World& world) : world_(world), was_busy_(world.state.avatar_in_stasis) {
@@ -38,7 +38,8 @@ private:
     bool was_busy_;
 };
 
-// @orig 1098:011F 1098:022D
+// @orig 10A0:011F 10A0:0223
+// TODO(regret): modified in REGRET.EXE (No Remorse 1098:011F, similarity 0.91)
 class TeleportToEgg : public Process {
 public:
     TeleportToEgg(Kernel& kernel, World& world, int map, std::uint16_t egg)
@@ -89,7 +90,7 @@ private:
 
 // SHAPHAND_1098_01f4: the player's animations end; with `wait`, the busy
 // flag is up until the teleport is over.
-// @orig 1098:01F4
+// @orig 10A0:01EA
 Pid spawn_teleport(Kernel& kernel, World& world, int map, std::uint16_t egg, bool wait) {
     kernel.fail_processes(kPlayer, kPlayerAnimType, 1);
     Process& teleport = kernel.spawn<TeleportToEgg>(kernel, world, map, egg);
@@ -97,7 +98,8 @@ Pid spawn_teleport(Kernel& kernel, World& world, int map, std::uint16_t egg, boo
     return teleport.pid();
 }
 
-// @orig 1098:068B 1098:0718
+// @orig 10A0:0681 10A0:070E
+// TODO(regret): modified in REGRET.EXE (No Remorse 1098:0718, similarity 0.73)
 class EggHatcher : public Process {
 public:
     static constexpr std::uint16_t kType = 0x20F;
@@ -133,7 +135,7 @@ protected:
     }
 
 private:
-    // @orig 1098:05FD
+    // @orig 10A0:05F3
     void hatch(const Item& egg) {
         if (world_.family_of(egg.shape) == 8) {
             spawn_teleport(kernel_, world_, egg.map_number, egg.quality & 0xFF, (egg.quality >> 8) != 0);
@@ -148,7 +150,8 @@ private:
 };
 
 // Process DS:0566 (1028:0477).
-// @orig 1028:0436 1028:0477 1138:3181
+// @orig 1030:0BCA 1030:0C0B 1148:3FB5
+// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0477, similarity 0.62)
 class SwitchMap : public Process {
 public:
     SwitchMap(Kernel& kernel, World& world, int map) : kernel_(kernel), world_(world), map_(map) {}
@@ -183,7 +186,7 @@ private:
 
 }  // namespace
 
-// @orig 1098:022D
+// @orig 10A0:0223
 ObjId find_teleport_egg(const World& world, std::uint16_t egg) {
     const std::array<std::uint8_t, 18> script = {
         ':', '%', kFamilyEgg, 0, '=', '`', '%', 1, 0, '=', '&', '*', '%', 0xFF, 0, '&', '%', 0,
@@ -202,7 +205,7 @@ ObjId find_teleport_egg(const World& world, std::uint16_t egg) {
     return 0;
 }
 
-// @orig 1098:0072 1098:019C
+// @orig 10A0:0072 10A0:0192
 Pid start_teleport_to_egg(Kernel& kernel, World& world, int map, std::uint16_t egg, bool wait, bool stop_sounds) {
     const Pid pid = spawn_teleport(kernel, world, map, egg, wait);
     // Only the explicit-map constructor stops the sounds (1098:011F); the

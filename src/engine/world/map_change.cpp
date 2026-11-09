@@ -7,7 +7,8 @@
 
 namespace crusader {
 
-// @orig 10B0:04C9
+// @orig 10B8:04C9
+// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:04C9, similarity 0.86)
 void World::unload_map() {
     // Cell by cell, x inner, y outer, each in chain order.
     for (int cy = 0; cy < kGridSize; ++cy) {
@@ -31,7 +32,8 @@ void World::unload_map() {
     }
 }
 
-// @orig 10B0:05D6
+// @orig 10B8:05E3
+// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:05D6, similarity 0.87)
 void World::load_map(int map) {
     if (map <= 0 || !fixed_) {
         current_map_ = map;
@@ -104,7 +106,7 @@ void World::load_map(int map) {
     current_map_ = map;
 }
 
-// @orig 10B0:13BE
+// @orig 10B8:13E7
 void World::move_camera_to(std::int32_t x, std::int32_t y, std::int32_t z, int map) {
     // A scripted view takes precedence over the smooth follow's last goal.
     // Following resumes when the controlled target next moves.
@@ -122,7 +124,8 @@ void World::move_camera_to(std::int32_t x, std::int32_t y, std::int32_t z, int m
     set_camera(x, y, z);
 }
 
-// @orig 10F0:29FA
+// @orig 10F8:30B8
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:29FA, similarity 0.98)
 void World::teleport(ObjId npc, std::int32_t x, std::int32_t y, std::int32_t z, int map) {
     Item* item = get(npc);
     if (!item) return;

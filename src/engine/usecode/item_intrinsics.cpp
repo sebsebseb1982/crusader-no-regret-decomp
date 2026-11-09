@@ -41,7 +41,7 @@ Item* item_arg(UCMachine& m, World& w, Args a, std::size_t pos = 0) {
 // (TYPEFLAG byte 7) and what it holds in turn. Only families 6 and 7 have
 // contents (ITEM.C 0DF6). The original skips the item of DS:0F86, which
 // nothing sets in this version.
-// @orig 1090:0603
+// @orig 1098:0603
 int contents_weight(const World& w, const Item& item) {
     const std::uint8_t family = w.family_of(item.shape);
     if (family != kFamilyContainer && family != kFamilyActorContainer) return 0;
@@ -56,7 +56,7 @@ int contents_weight(const World& w, const Item& item) {
 }
 
 // ITEM.C 04AE: the item's own weight plus its contents'.
-// @orig 10A8:04AE
+// @orig 10B0:04AE
 int total_weight(const World& w, const Item& item) {
     const ShapeInfo* info = w.shape_info(item.shape);
     return (info ? info->weight : 0) + contents_weight(w, item);
@@ -78,7 +78,8 @@ bool drops_what_rests_on_it(std::uint16_t shape) {
 // fall (Item::I_fall, ITEMFIND_10c8_0f73: a surface search above, every item)
 // before it goes; the fall only starts here and runs once the crate is gone.
 // Not reproduced: shape 0x4FE with a controlled robot (CRUSYS_1060_02da).
-// @orig 10A8:1365
+// @orig 10B0:13D7
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:1365, similarity 0.82)
 void destroy_item(Kernel& kernel, World& w, ObjId id) {
     const Item* item = w.get(id);
     if (!item) return;

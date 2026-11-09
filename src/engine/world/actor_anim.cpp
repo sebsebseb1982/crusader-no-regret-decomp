@@ -33,7 +33,8 @@ bool skips_frames(const World& world, ObjId actor, const Item& item) {
 }
 
 // The actions that the controlled NPC tests before playing them (016F).
-// @orig 1158:016F
+// @orig 1168:0174
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
 bool tested_at_start(std::uint16_t action) {
     switch (action) {
     case 1: case 2: case 3: case 0x17: case 0x18: case 0x22: case 0x23: case 0x24: case 0x26: case 0x2C:
@@ -55,7 +56,8 @@ bool tested_at_start(std::uint16_t action) {
 // a place, the action becomes 0x40 (nothing, shape 1398), 0x2E (kneeling),
 // 4 with the aim mode (after an action other than standing, walking, 0x3A,
 // 0xB, 0x10) or 0, remapped for the weapon.
-// @orig 1158:016F
+// @orig 1168:0174
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
 std::uint16_t fit_start(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action,
                         int dir) {
     const Item* item = world.get(actor);
@@ -116,7 +118,8 @@ std::uint16_t fit_start(Kernel& kernel, World& world, const AnimDat& anims, ObjI
     return remap_action(world, actor, fallback);
 }
 
-// @orig 1160:01F0
+// @orig 1170:03C7
+// TODO(regret): modified in REGRET.EXE (No Remorse 1160:01F0, similarity 0.41)
 void special_frame(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor) {
     const Item* item = world.get(actor);
     const auto r = world.npc_record(actor);
@@ -157,7 +160,8 @@ void special_frame(Kernel& kernel, World& world, const AnimDat& anims, ObjId act
     }
 }
 
-// @orig 1158:0000
+// @orig 1168:0000
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:0000, similarity 0.84)
 ActorAnimProcess::ActorAnimProcess(World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
                                    Pid previous)
     : world_(world), anims_(anims), action_(action), dir_(dir), previous_(previous) {
@@ -173,7 +177,8 @@ void ActorAnimProcess::on_added() {
     if (previous_ != 0) wait_for(previous_);
 }
 
-// @orig 1158:31DA
+// @orig 1168:3AE0
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:31DA, similarity 0.88)
 void ActorAnimProcess::set_direction(int dir) {
     // ANIMPRIM.C 31DA: the codes 0x10..0x12 start from the actor's direction;
     // 8-direction actions use even directions and turn by 2.
@@ -194,7 +199,8 @@ void ActorAnimProcess::set_direction(int dir) {
     if (auto record = world_.npc_record(owner()); !record.empty()) record[npc::kDirection] = static_cast<std::uint8_t>(d);
 }
 
-// @orig 1158:016F
+// @orig 1168:0174
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
 const AnimAction* ActorAnimProcess::start() {
     // ANIMPRIM.C 016F / 17B2.
     set_direction(dir_);
@@ -234,7 +240,8 @@ const AnimAction* ActorAnimProcess::start() {
     return found;
 }
 
-// @orig 11D8:17DB
+// @orig 11E8:17DB
+// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:17DB, similarity 0.99)
 const ActorAnimProcess* ActorAnimProcess::next_queued() const {
     const ActorAnimProcess* next = nullptr;
     kernel().for_each_process([&](const Process& p) {
@@ -244,7 +251,8 @@ const ActorAnimProcess* ActorAnimProcess::next_queued() const {
     return next;
 }
 
-// @orig 1158:1908 1158:2F21
+// @orig 1168:1FCD 1168:373F
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:1908, similarity 0.76)
 void ActorAnimProcess::run() {
     // ANIMPRIM.C 1908: out of the fast area the animation waits, without
     // sleeping, for the actor to come back (Item_I_inFastArea). Played out
@@ -274,7 +282,8 @@ void ActorAnimProcess::run() {
     sleep((a ? std::max<std::uint8_t>(a->ticks_per_frame(), 1) : 1) * (skipped_frames ? 2 : 1));
 }
 
-// @orig 1158:1908
+// @orig 1168:1FCD
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:1908, similarity 0.76)
 bool ActorAnimProcess::step(bool skip_frames, bool& skipped_frames) {
     skipped_frames = false;
     Item* item = world_.get(owner());
@@ -432,7 +441,8 @@ bool ActorAnimProcess::step(bool skip_frames, bool& skipped_frames) {
     return true;
 }
 
-// @orig 1158:3091
+// @orig 1168:38DE
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:3091, similarity 0.67)
 bool ActorAnimProcess::fall_if_unsupported(const World::Point& from, const World::Point& to) {
     // ANIMPRIM.C 3091: when no two opposite quarters of the footprint rest on
     // something (ground down to 9 below), the actor stumbles (action 0x3B,
@@ -453,7 +463,10 @@ bool ActorAnimProcess::fall_if_unsupported(const World::Point& from, const World
     return true;
 }
 
-// @orig 1158:2B4D 1158:016F 1158:1908
+// @orig 1168:336B 1168:0174 1168:1FCD
+// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2B4D, similarity 0.72)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
+// TODO(regret): modified in REGRET.EXE (No Remorse 1158:1908, similarity 0.76)
 ActionTest test_action(const World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
                        World::Point pos, ObjId goal) {
     ActionTest out;
@@ -523,7 +536,8 @@ ActionTest test_action(const World& world, const AnimDat& anims, ObjId actor, st
 }
 
 // CRUSADER_1138_32a8: shows the first frame of `action` in the NPC's direction.
-// @orig 1138:32A8
+// @orig 1148:40DC
+// TODO(regret): constants in REGRET.EXE (No Remorse 1138:32A8, similarity 0.97)
 void set_pose(World& w, const AnimDat& anims, ObjId id, std::uint16_t action) {
     Item* item = w.get(id);
     auto r = w.npc_record(id);
@@ -544,7 +558,7 @@ bool actor_busy(const Kernel& kernel, ObjId actor) {
     return kernel.count_processes(actor, ActorAnimProcess::kType) != 0;
 }
 
-// @orig 11D8:151D
+// @orig 11E8:151D
 ActorAnimProcess* current_anim(const Kernel& kernel, ObjId actor) {
     ActorAnimProcess* current = nullptr;
     kernel.for_each_process([&](const Process& p) {
@@ -556,7 +570,8 @@ ActorAnimProcess* current_anim(const Kernel& kernel, ObjId actor) {
     return current;
 }
 
-// @orig 1130:2105
+// @orig 1140:2AB8
+// TODO(regret): modified in REGRET.EXE (No Remorse 1130:2105, similarity 0.84)
 std::uint16_t remap_action(const World& world, ObjId actor, std::uint16_t action) {
     struct Pair {
         std::uint16_t from, to;
@@ -595,7 +610,8 @@ namespace {
 
 // Actor::I_doAnim (NPC.C 10F0:0245), for the controlled NPC: moving actions
 // make NPC shots less accurate for a while (see GameState::player_moved_at).
-// @orig 10F0:0245
+// @orig 10F8:039A
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:0245, similarity 0.77)
 void note_player_movement(World& world, std::uint16_t action, std::uint32_t now) {
     std::uint32_t window = 0;
     std::uint16_t accuracy = 0;
@@ -627,7 +643,9 @@ constexpr std::uint16_t kKneelingActions[] = {0x28, 0x2E, 0x2F, 0x2A, 0x2B, 0x3D
 // NPC_10f0_221b / 226d, for the player only: record +0x13 bit 2
 // (Actor::I_isKneeling) and the footpad height of his shape, 6 kneeling and
 // 10 standing.
-// @orig 10F0:221B 10F0:226D
+// @orig 10F8:24B9 10F8:250B
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:221B, similarity 0.96)
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:226D, similarity 0.96)
 void set_kneeling(World& world, ObjId actor, bool kneel) {
     if (actor != 1) return;
     const Item* item = world.get(actor);
@@ -640,7 +658,8 @@ void set_kneeling(World& world, ObjId actor, bool kneel) {
 
 }  // namespace
 
-// @orig 10F0:0245
+// @orig 10F8:039A
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:0245, similarity 0.77)
 Pid do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
             std::uint32_t max_queued, bool replace) {
     const Item* item = world.get(actor);
@@ -689,7 +708,10 @@ void ActorAnimProcess::mark_turning() {
     ++world_.state.aim.turns;
 }
 
-// @orig 1158:2E66 1158:2D09 1158:2DC6
+// @orig 1168:3684 1168:3527 1168:35E4
+// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2E66, similarity 0.94)
+// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2D09, similarity 0.83)
+// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2DC6, similarity 0.91)
 void ActorAnimProcess::on_terminate() {
     // 2DC6: failed by the kernel's fail_all (new game, map switch), the
     // animation does nothing more.

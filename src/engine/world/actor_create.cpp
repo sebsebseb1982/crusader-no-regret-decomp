@@ -18,7 +18,8 @@ void set_word(std::span<std::uint8_t> r, std::size_t at, std::uint16_t v) {
 
 }  // namespace
 
-// @orig 10A8:3B10
+// @orig 10B0:3A71
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:3B10, similarity 0.45)
 int hard_weapon(World& w, std::uint16_t shape) {
     switch (shape) {
     case 899: return rnd(w, 3) == 0 ? 10 : 7;
@@ -37,7 +38,8 @@ int hard_weapon(World& w, std::uint16_t shape) {
     }
 }
 
-// @orig 10F0:27FB
+// @orig 10F8:2EB9
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:27FB, similarity 0.99)
 bool set_equip(World& world, ObjId npc, int slot, ObjId item_id) {
     Item* item = world.get(item_id);
     auto r = world.npc_record(npc);
@@ -54,7 +56,8 @@ bool set_equip(World& world, ObjId npc, int slot, ObjId item_id) {
     return true;
 }
 
-// @orig 10F0:25B9 10F0:2610 10F0:0145
+// @orig 10F8:280E 10F8:2CCE 10F8:029A
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:2610, similarity 0.95)
 ObjId create_plain_actor(World& world, const dtable::NpcTypes& types, std::uint16_t shape, std::uint16_t frame) {
     const ObjId npc = world.create_npc(shape, frame);
     if (npc == 0) return 0;
@@ -91,7 +94,8 @@ struct ActorSpec {
     bool start_default;      // Actor::I_setActivity(0x70) once placed
 };
 
-// @orig 10A8:3D3F
+// @orig 10B0:3CD8
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:3D3F, similarity 0.76)
 ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtable::NpcTypes& types,
                  const World::Point& at, const ActorSpec& spec) {
     const std::uint16_t shape = types.word(spec.type, 0x3E);
@@ -145,7 +149,8 @@ ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtabl
 
 }  // namespace
 
-// @orig 10A8:3D3F
+// @orig 10B0:3CD8
+// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:3D3F, similarity 0.76)
 ObjId create_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtable::NpcTypes& types, ObjId egg_id,
                    ObjId kind_id) {
     const Item* egg = world.get(egg_id);
@@ -165,7 +170,7 @@ ObjId create_actor(Kernel& kernel, World& world, const AnimDat& anims, const dta
     return make_actor(kernel, world, anims, types, {egg->x, egg->y, egg->z & 0xFF}, spec);
 }
 
-// @orig 10E0:0247
+// @orig 10E8:0491
 ObjId spawn_from_egg(Kernel& kernel, World& world, const AnimDat& anims, const dtable::NpcTypes& types, ObjId egg_id) {
     Item* egg = world.get(egg_id);
     if (!egg || egg->frame == 1) return 0;

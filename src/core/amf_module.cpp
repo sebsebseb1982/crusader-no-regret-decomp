@@ -23,7 +23,7 @@ std::optional<AmfModule> AmfModule::load(const std::filesystem::path& path) {
     return parse(data);
 }
 
-// @orig 12E8:00A6
+// @orig 12E0:0396
 std::optional<AmfModule> AmfModule::parse(std::span<const std::uint8_t> d) {
     if (d.size() < kHeader || std::memcmp(d.data(), "ASYLUM", 6) != 0) return std::nullopt;
     AmfModule m;

@@ -20,7 +20,8 @@ constexpr std::uint16_t kDatalink = 0x4D4;
 
 }  // namespace
 
-// @orig 10F0:395E
+// @orig 10F8:4056
+// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId carried(const World& world, std::uint16_t shape) {
     for (int slot = 0; slot < 30; ++slot) {
         const ObjId id = world.npc_equip(kPlayer, slot);
@@ -33,7 +34,10 @@ ObjId carried(const World& world, std::uint16_t shape) {
 namespace {
 
 // NPC_10f0_2b03 / 2b2d / 2b62: the first empty slot of first..first+count-1.
-// @orig 10F0:2B03 10F0:2B2D 10F0:2B62
+// @orig 10F8:31C1 10F8:31EA 10F8:321A
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B03, similarity 0.71)
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B2D, similarity 0.71)
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B62, similarity 0.71)
 int free_slot(const World& world, int first, int count) {
     for (int slot = first; slot < first + count; ++slot) {
         if (world.npc_equip(kPlayer, slot) == 0) return slot;
@@ -43,7 +47,7 @@ int free_slot(const World& world, int first, int count) {
 
 // NPC_10f0_379a: energy added, clamped to 0..max; nothing when full and
 // the amount is not negative.
-// @orig 10F0:379A
+// @orig 10F8:3E92
 void add_energy(World& world, int amount) {
     const int max = max_energy(world, kPlayer);
     const int energy = world.npc_mana(kPlayer);
@@ -66,7 +70,8 @@ void take(World& world, ObjId item, int slot) {
 
 // One more on the item carried, up to `limit`; the picked-up one is shown
 // (when `show`), then destroyed.
-// @orig 13E8:0330
+// @orig 1008:03AB
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0330, similarity 0.88)
 bool add_one(World& world, ObjId item, ObjId carried_id, int limit, bool show) {
     const std::uint16_t q = world.get(carried_id)->quality;
     if (q >= limit) return false;
@@ -78,12 +83,16 @@ bool add_one(World& world, ObjId item, ObjId carried_id, int limit, bool show) {
 
 }  // namespace
 
-// @orig 10F0:2B03 10F0:2B2D 10F0:2B62
+// @orig 10F8:31C1 10F8:31EA 10F8:321A
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B03, similarity 0.71)
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B2D, similarity 0.71)
+// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B62, similarity 0.71)
 int free_equip_slot(const World& world, int first, int count) {
     return free_slot(world, first, count);
 }
 
-// @orig 13E8:0330 10A8:2AD2
+// @orig 1008:03AB 10B0:2ABB
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0330, similarity 0.88)
 void set_quality_and_combine(World& world, ObjId item, std::uint16_t quality) {
     Item* it = world.get(item);
     if (!it) return;
@@ -91,7 +100,8 @@ void set_quality_and_combine(World& world, ObjId item, std::uint16_t quality) {
     if (world.hooks().start_event) world.hooks().start_event(item, 0x0C);
 }
 
-// @orig 13E8:0330
+// @orig 1008:03AB
+// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0330, similarity 0.88)
 bool add_item_cru(World& world, ObjId item_id, bool show) {
     const Item* item = world.get(item_id);
     if (!item) return false;
@@ -191,7 +201,8 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
 
 // The original reads the quality of the item it is given for the credits;
 // Weasel's shop gives a new one, whose quality is 0.
-// @orig 13E8:00C8
+// @orig ?: No Remorse 13E8:00C8, no counterpart found in REGRET.EXE
+// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 bool may_add_item(const World& world, std::uint16_t shape) {
     const ObjId c = carried(world, shape);
     const int quality = c ? world.get(c)->quality : 0;
