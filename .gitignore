@@ -1,0 +1,9 @@
+build*/
+dist/
+data/
+data_us/
+iso/
+isos/
+__pycache__/
+private/
+mods/

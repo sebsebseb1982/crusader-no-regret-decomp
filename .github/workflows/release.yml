@@ -1,0 +1,143 @@
+name: Release
+
+# Every push to the main branch is analysed with Conventional Commits:
+#   fix: / perf:            -> patch
+#   feat:                   -> minor
+#   BREAKING CHANGE / "!"   -> minor while 0.x, major from 1.0.0 (see .releaserc.json)
+#   docs:, chore:, ci:...   -> no release
+# When a release is due, Linux and Windows binaries are built and tested, the
+# PortMaster (aarch64 handhelds) binary is cross-built, and all of them are
+# attached to the GitHub release created for the new vX.Y.Z tag.
+
+on:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Compute next version
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.semrel.outputs.new_release_published }}
+      version: ${{ steps.semrel.outputs.new_release_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: semrel
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@8.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: version
+    if: needs.version.outputs.published == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { name: linux-x64, os: ubuntu-22.04 }
+          - { name: windows-x64, os: windows-latest }
+          - { name: portmaster-aarch64, os: ubuntu-22.04 }
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL2 (Linux)
+        if: matrix.name == 'linux-x64'
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Configure
+        if: matrix.name != 'portmaster-aarch64'
+        shell: bash
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCRUSADER_VERSION="v$VERSION"
+      - name: Build
+        if: matrix.name != 'portmaster-aarch64'
+        run: cmake --build build --config Release --parallel
+      - name: Test
+        if: matrix.name != 'portmaster-aarch64'
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Cross-build (PortMaster)
+        if: matrix.name == 'portmaster-aarch64'
+        run: |
+          pip install ziglang ninja
+          python3 tools/portmaster/build.py --out build-portmaster --version "v$VERSION"
+      - name: Package (PortMaster)
+        if: matrix.name == 'portmaster-aarch64'
+        shell: bash
+        run: |
+          set -eu
+          pkg="crusader-${VERSION}-${{ matrix.name }}"
+          # Layout expected by PortMaster: Crusader.sh next to the crusader/ game folder.
+          mkdir -p "dist/$pkg/crusader/licenses" "dist/$pkg/crusader/data"
+          cp tools/portmaster/port/Crusader.sh "dist/$pkg/"
+          cp tools/portmaster/port/crusader/licenses/* "dist/$pkg/crusader/licenses/"
+          cp build-portmaster/crusader "dist/$pkg/crusader/"
+          cp tools/release/PUT_GAME_DATA_HERE.txt "dist/$pkg/crusader/data/"
+          cp tools/portmaster/port/{port.json,README.md,gameinfo.xml} "dist/$pkg/"
+          [ -f tools/portmaster/port/screenshot.png ] && cp tools/portmaster/port/screenshot.png "dist/$pkg/"
+          cd dist
+          (cd "$pkg" && zip -qr "../$pkg.zip" .)
+          rm -rf "$pkg"
+      - name: Package
+        if: matrix.name != 'portmaster-aarch64'
+        shell: bash
+        run: |
+          set -eu
+          pkg="crusader-${VERSION}-${{ matrix.name }}"
+          mkdir -p "dist/$pkg"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp build/Release/crusader.exe build/Release/crusader-editor.exe "dist/$pkg/"
+          else
+            cp build/crusader build/crusader-editor "dist/$pkg/"
+          fi
+          mkdir "dist/$pkg/data"
+          cp tools/release/PUT_GAME_DATA_HERE.txt "dist/$pkg/data/"
+          cp README.md "dist/$pkg/"
+          cd dist
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            7z a -tzip "$pkg.zip" "$pkg" > /dev/null
+          else
+            tar czf "$pkg.tar.gz" "$pkg"
+          fi
+          rm -rf "$pkg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum *.zip *.tar.gz > SHA256SUMS
+      - uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@8.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

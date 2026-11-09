@@ -1,0 +1,9 @@
+Put the game data of Crusader: No Remorse in this folder (it is not distributed
+with the port). Either:
+
+  - the files of an install of the game, French 1.08 or US 1.23
+    (STATIC, USECODE, SOUND, FLICS, CRUSADER.EXE...), or
+  - the .iso image of the CD, French 1.08 or US 1.23: the game extracts it
+    here on its first launch.
+
+Then run the game. See README.md.
