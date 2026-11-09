@@ -1,5 +1,6 @@
 #include "engine/usecode/intrinsic_numbering.hpp"
 
+#include "engine/usecode/regret_intrinsic_numbering.hpp"
 #include "engine/usecode/v101_intrinsic_numbering.hpp"
 
 #include <array>
@@ -332,8 +333,12 @@ std::span<const std::uint16_t> us_intrinsic_numbering() { return kUsToFrench; }
 // @orig none: the 1.01 usecode, likewise
 std::span<const std::uint16_t> v101_intrinsic_numbering() { return kV101ToFrench; }
 
+// @orig none: the No Regret usecode, likewise
+std::span<const std::uint16_t> regret_intrinsic_numbering() { return kRegretToFrench; }
+
 // @orig none: port-only choice of the numbering
 std::span<const std::uint16_t> intrinsic_numbering(const DataInfo& info) {
+    if (info.regret) return regret_intrinsic_numbering();
     if (info.v101()) return v101_intrinsic_numbering();
     if (info.us()) return us_intrinsic_numbering();
     return {};

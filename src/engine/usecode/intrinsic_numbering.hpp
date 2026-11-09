@@ -24,6 +24,11 @@ std::span<const std::uint16_t> us_intrinsic_numbering();
 // Index: number called by the 1.01 usecode; value: French number or 0xFFFF.
 std::span<const std::uint16_t> v101_intrinsic_numbering();
 
+// Index: number called by the No Regret usecode; value: French number or
+// 0xFFFF (regret_intrinsic_numbering.hpp, generated from the matching of
+// REGRET.EXE with the French CRUSADER.EXE).
+std::span<const std::uint16_t> regret_intrinsic_numbering();
+
 // The numbering of the usecode of the data `info` describes; empty for the
 // French data (its own numbers).
 std::span<const std::uint16_t> intrinsic_numbering(const DataInfo& info);

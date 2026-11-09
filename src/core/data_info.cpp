@@ -14,12 +14,36 @@ namespace {
 constexpr std::uintmax_t kFrenchUnkcoffSize = 309 * 4;
 constexpr std::uintmax_t kUsUnkcoffSize = 311 * 4;
 constexpr std::uintmax_t kV101UnkcoffSize = 308 * 4;
+constexpr std::uintmax_t kRegretUnkcoffSize = 350 * 4;
+
+// The version string of REGRET.EXE: "V1.06" between two NULs of the data
+// segment (the banner "CRUSADER:  No Regret %s" takes it as an argument).
+std::string regret_version(const std::string& bytes) {
+    for (std::size_t at = bytes.find('V'); at != std::string::npos; at = bytes.find('V', at + 1)) {
+        if (at == 0 || bytes[at - 1] != '\0') continue;
+        std::size_t end = at + 1;
+        while (end < bytes.size() && (std::isdigit(static_cast<unsigned char>(bytes[end])) || bytes[end] == '.')) ++end;
+        if (end - at >= 4 && end < bytes.size() && bytes[end] == '\0' && bytes[at + 2] == '.') {
+            return bytes.substr(at + 1, end - at - 1);
+        }
+    }
+    return {};
+}
 
 }  // namespace
 
 // @orig none: port-only data version detection
 DataInfo detect_data_info(const std::filesystem::path& data) {
     DataInfo info;
+    if (std::ifstream regret(data / "REGRET.EXE", std::ios::binary); regret) {
+        const std::string bytes((std::istreambuf_iterator<char>(regret)), std::istreambuf_iterator<char>());
+        if (bytes.find("No Regret") != std::string::npos) {
+            info.regret = true;
+            info.language = "US";  // the English release; other languages are not supported yet
+            info.version = regret_version(bytes);
+            return info;
+        }
+    }
     std::ifstream in(data / "CRUSADER.EXE", std::ios::binary);
     if (!in) {
         // Without the executable, the size of the intrinsic table tells the
@@ -28,7 +52,10 @@ DataInfo detect_data_info(const std::filesystem::path& data) {
         std::error_code error;
         const std::uintmax_t size = std::filesystem::file_size(data / "USECODE/UNKCOFF.DAT", error);
         if (error) return info;
-        if (size == kFrenchUnkcoffSize) info.language = "FR";
+        if (size == kRegretUnkcoffSize) {
+            info.regret = true;
+            info.language = "US";
+        } else if (size == kFrenchUnkcoffSize) info.language = "FR";
         else if (size == kUsUnkcoffSize) info.language = "US";
         else if (size == kV101UnkcoffSize) {
             info.language = "US";
