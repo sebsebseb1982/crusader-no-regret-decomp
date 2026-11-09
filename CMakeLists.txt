@@ -210,7 +210,7 @@ endif()
 enable_testing()
 # tests/: no game data needed, run by the GitHub CI.
 # e2e/: end-to-end tests on the original game data and on saved games, none of
-# which is in the repository. They are registered only with
+# which is in the repository. The No Regret ones are registered only with
 # CRUSADER_GAME_DATA_TESTS=ON, the default when the game data is found.
 set(CRUSADER_DATA_DIR "${CMAKE_SOURCE_DIR}/data" CACHE PATH "Original game data used by the e2e tests")
 set(CRUSADER_TEST_SAVES_DIR "${CMAKE_SOURCE_DIR}/private/e2e/saves" CACHE PATH "Saved games used by the e2e tests")
@@ -272,14 +272,25 @@ target_link_libraries(game_tests PRIVATE crusader_game crusader_editor_core)
 target_include_directories(game_tests PRIVATE e2e)
 target_compile_definitions(game_tests PRIVATE CRUSADER_TEST_SAVES="${CRUSADER_TEST_SAVES_DIR}")
 
+# No Regret data (data/): regret_data_tests.
+add_executable(regret_data_tests e2e/regret_data_tests.cpp)
+target_link_libraries(regret_data_tests PRIVATE crusader_game)
 if(CRUSADER_GAME_DATA_TESTS)
+    add_test(NAME regret_data_tests COMMAND regret_data_tests ${CRUSADER_DATA_DIR})
+endif()
+
+# The tests inherited from the No Remorse port check that engine with the No
+# Remorse data (French 1.08) and saved games. They guard the code both games
+# share, and are registered as remorse_* when that data is found.
+set(CRUSADER_REMORSE_DATA_DIR "${CMAKE_SOURCE_DIR}/data_remorse" CACHE PATH "No Remorse (French 1.08) data used by the inherited e2e tests")
+if(EXISTS "${CRUSADER_REMORSE_DATA_DIR}/STATIC")
     foreach(t core_data_tests world_data_tests audio_data_tests editor_data_tests game_tests)
-        add_test(NAME ${t} COMMAND ${t} ${CRUSADER_DATA_DIR})
+        add_test(NAME remorse_${t} COMMAND ${t} ${CRUSADER_REMORSE_DATA_DIR})
     endforeach()
 endif()
 
-# The US data (v1.23), when found: the same game through the US usecode and texts.
-set(CRUSADER_US_DATA_DIR "${CMAKE_SOURCE_DIR}/data_us" CACHE PATH "US game data used by us_data_tests")
+# The No Remorse US data (v1.23), when found: that game through the US usecode and texts.
+set(CRUSADER_US_DATA_DIR "${CMAKE_SOURCE_DIR}/data_us" CACHE PATH "No Remorse US game data used by us_data_tests")
 add_executable(us_data_tests e2e/us_data_tests.cpp)
 target_link_libraries(us_data_tests PRIVATE crusader_game)
 if(EXISTS "${CRUSADER_US_DATA_DIR}/STATIC")
