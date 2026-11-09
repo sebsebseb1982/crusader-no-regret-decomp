@@ -62,6 +62,8 @@ std::vector<std::uint16_t> register_world_intrinsics(UCMachine& m, World& w, con
 
     // Ultima8Engine::I_getCurrentTimerTick: kernel ticks (60 Hz).
     bind({0x0B4}, [](UCMachine& machine, UCProcess&, Args) { return machine.kernel().ticks(); });
+    // No Regret 0x076, 0x0C2, 0x112 (10B0:2952): returns 0.
+    bind({0x476}, [](UCMachine&, UCProcess&, Args) -> std::uint32_t { return 0; });
     // UCMachine::I_rndRange(lo, hi): arguments in reverse push order, signed.
     bind({0x018}, [&s](UCMachine&, UCProcess&, Args a) -> std::uint32_t {
         const auto lo = static_cast<std::int16_t>(arg16(a, 0)), hi = static_cast<std::int16_t>(arg16(a, 2));

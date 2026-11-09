@@ -13,7 +13,11 @@ const Shape* ShapeCache::get(std::uint16_t shape) {
         const auto data = archive_.entry(shape);
         if (!data.empty()) {
             try {
-                parsed = Shape::parse(data, layout_);
+                // The original reads a frame when it draws it. No Regret's
+                // SHAPES.FLX has a shape with two frames of garbage (1122,
+                // frames 23 and 24): they become empty frames, and the rest
+                // of the shape stays usable.
+                parsed = Shape::parse(data, layout_, true);
             } catch (const std::exception&) {
                 parsed.reset();
             }

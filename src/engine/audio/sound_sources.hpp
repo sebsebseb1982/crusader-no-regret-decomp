@@ -69,8 +69,11 @@ private:
         bool loop = false;
     };
 
+public:
     // 1450:01D0: frees the sources whose voice no longer plays their sound.
     void refresh();
+
+private:
     void release(SoundManager::Handle handle);  // 1450:07B9
     void start(Source& s, const World& world, int sfx, ObjId item, bool loop);
     static bool valid_sfx(int sfx) { return sfx > 0 && sfx <= 0x200; }

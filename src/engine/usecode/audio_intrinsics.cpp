@@ -53,6 +53,31 @@ std::vector<std::uint16_t> register_audio_intrinsics(UCMachine& m, World& w) {
         Audio* audio = w.audio();
         return audio && audio->sources.is_playing(arg16(a, 4), item_id(machine, a));
     });
+    // No Regret only (numbers 0x400 + the No Regret number; the routines exist
+    // in No Remorse, where no intrinsic calls them).
+    // AudioProcess::I_setVolumeForObjectSFX(item, sfx, volume) (10B0:3A33):
+    // the volume of the item's source of `sfx` (1428:0750).
+    m.set_intrinsic(0x433, [&w](UCMachine& machine, UCProcess&, Args a) -> std::uint32_t {
+        if (Audio* audio = w.audio()) audio->sources.set_volume(arg16(a, 4), item_id(machine, a), a.size() > 6 ? a[6] : 0);
+        return 0;
+    });
+    // AudioProcess::I_isSFXPlaying(sfx) (12D8:05BA): the sources are
+    // refreshed (1428:01D0), then whether a voice plays `sfx` (12E8:05BC).
+    m.set_intrinsic(0x540, [&w](UCMachine&, UCProcess&, Args a) -> std::uint32_t {
+        Audio* audio = w.audio();
+        return audio && audio->is_sfx_playing(arg16(a, 0));
+    });
+    // MusicProcess::I_pauseMusic (1210:02A3) and I_unpauseMusic (1210:02C1):
+    // flag 8 of the music state, _ASS_PauseMusic / _ASS_ResumeMusic.
+    m.set_intrinsic(0x46C, [&w](UCMachine&, UCProcess&, Args) -> std::uint32_t {
+        if (Audio* audio = w.audio()) audio->music.pause();
+        return 0;
+    });
+    m.set_intrinsic(0x46E, [&w](UCMachine&, UCProcess&, Args) -> std::uint32_t {
+        if (Audio* audio = w.audio()) audio->music.resume();
+        return 0;
+    });
+    bound.insert(bound.end(), {0x433, 0x540, 0x46C, 0x46E});
     // AudioProcess::I_stopSFXCru (10A8:39CF): every sound of the item.
     m.set_intrinsic(0x077, [&w](UCMachine& machine, UCProcess&, Args a) -> std::uint32_t {
         if (Audio* audio = w.audio()) audio->sources.stop_item(item_id(machine, a));

@@ -31,6 +31,12 @@ public:
         const SoundManager::Handle h = voices.handle_playing(sfx);
         if (h != SoundManager::kNoHandle) voices.stop(h);
     }
+    // REGRET.EXE 12D8:05BA (AudioProcess::I_isSFXPlaying, No Regret): the
+    // sources whose voice ended are freed, then whether a voice plays `sfx`.
+    bool is_sfx_playing(int sfx) {
+        sources.refresh();
+        return voices.handle_playing(sfx) != SoundManager::kNoHandle;
+    }
     // 12E0:0539 / AudioProcess::I_stopAllSFX (0x0D1).
     void stop_all() { voices.stop_all(); }
 

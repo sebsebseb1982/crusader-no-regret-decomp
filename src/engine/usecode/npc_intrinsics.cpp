@@ -170,6 +170,11 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
     bound.push_back(0x058);
     // Actor::I_getHp (10F0:32F4): record +0.
     bind({0x07D}, [&w](ObjId id, Args) -> std::uint32_t { return w.npc_hp(id); });
+    // Actor::I_setHp(npc, hp) (No Regret, 10F8:3C56): record +0.
+    bind({0x4FC}, [&w](ObjId id, Args a) -> std::uint32_t {
+        w.set_npc_word(id, 0x00, arg16(a, 4));
+        return 0;
+    });
     // Actor::I_createActorCru(egg, kind) (10A8:3D3F): the new NPC or 0.
     if (types) {
         // Actor::I_addHp(npc, hp) (10F0:3748): 0 when the hit points are at
@@ -182,6 +187,13 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
             if (hp == max) return 0;
             w.set_npc_word(id, 0x00, static_cast<std::uint16_t>(std::min(max, hp + static_cast<std::int16_t>(arg16(a, 4)))));
             return 1;
+        });
+        // Actor::I_getMaxHp(npc) (No Regret, 10F8:3A6B): 150 for the player,
+        // else the NPC type's.
+        bind({0x4FB}, [&w, types](ObjId id, Args) -> std::uint32_t {
+            if (id == 1) return 150;
+            const Item* npc = w.get(id);
+            return types->max_hp(types->index(npc ? npc->shape : 0));
         });
         m.set_intrinsic(0x129, [&w, &anims, types](UCMachine& machine, UCProcess&, Args a) -> std::uint32_t {
             std::array<std::uint8_t, 2> id{};
