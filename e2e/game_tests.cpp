@@ -1069,7 +1069,7 @@ void test_auto_firer(const std::filesystem::path& data) {
     if (!weapon) return;
     weapon->shape = AutoFirer::kWeapon;
     weapon->quality = 200;
-    w.set_npc_word(1, 0x57, 1000);  // energy
+    w.set_npc_word(1, npc::kEnergy, 1000);  // energy
     CHECK(dtable::weapon(weapon->shape).fire_type() == 6);
     settle(game);
     std::set<Pid> alive;
@@ -1684,11 +1684,11 @@ void test_cheats(const std::filesystem::path& data) {
     };
     // Disabled: F10 and ~ do nothing.
     const std::uint16_t energy = game.world().npc_mana(1);
-    game.world().set_npc_word(1, 0x57, 0);
+    game.world().set_npc_word(1, npc::kEnergy, 0);
     f10(0);
     press(game, 0x29, false, '~');
     CHECK(!game.message() && game.world().npc_mana(1) == 0 && !game.world().state.cheats.on);
-    game.world().set_npc_word(1, 0x57, energy);
+    game.world().set_npc_word(1, npc::kEnergy, energy);
     // "JA" then "J": the code starts again at its second letter.
     const std::uint8_t typed[] = {0x24, 0x1E, 0x24, 0x1E, 0x1F, 0x1F, 0x17, 0x2E, 0x1E, 0x02, 0x07};
     const char ascii[] = "jajassica16";
@@ -1711,7 +1711,7 @@ void test_cheats(const std::filesystem::path& data) {
     for (const std::uint16_t shape : {std::uint16_t{0x560}, std::uint16_t{0x39A}, std::uint16_t{0x55F}, std::uint16_t{0x351}}) {
         if (carried(w, shape) == 0) stacks_not_carried.push_back(shape);
     }
-    w.set_npc_word(1, 0x57, 0);
+    w.set_npc_word(1, npc::kEnergy, 0);
     f10(0);
     for (const int weapon : {0x386, 0x38A, 0x38E, 0x388, 0x334}) {
         CHECK(carried(w, static_cast<std::uint16_t>(weapon)) != 0 || free_equip_slot(w, 1, 5) == 0);
@@ -1766,7 +1766,7 @@ void test_cheats(const std::filesystem::path& data) {
     press(game, 0x29, false, '~');
     CHECK(!c.on && c.enabled && game.message() && game.message()->text() == "CHEATS OFF");
     close_box();
-    w.set_npc_word(1, 0x57, 0);
+    w.set_npc_word(1, npc::kEnergy, 0);
     f10(0);
     CHECK(w.npc_mana(1) == 0);
     press(game, 0x29, false, '~');
@@ -3596,8 +3596,8 @@ void test_enemies(const std::filesystem::path& data) {
         };
         w.set_hooks(std::move(hooks));
         auto r = w.npc_record(1);
-        r[0x66] = 1;
-        r[0x67] = 0;
+        r[npc::kShieldLevel] = 1;
+        r[npc::kShieldLevel + 1] = 0;
         const int hp = w.npc_hp(1), energy = w.npc_mana(1);
         apply_damage(game.kernel(), w, game.animations(), 1, 2, 0, 20, 11);
         std::printf("enemies: shield: hp %d -> %u, energy %d -> %u\n", hp, w.npc_hp(1), energy, w.npc_mana(1));
@@ -3605,7 +3605,7 @@ void test_enemies(const std::filesystem::path& data) {
         apply_damage(game.kernel(), w, game.animations(), 1, 2, 0, 20, 11);  // 50 left: not enough
         CHECK(w.npc_hp(1) == hp - 4 && w.npc_mana(1) == energy - 80 && player_damage_events == 1 &&
               last_player_damage == 4);   // 20 / 5 at difficulty 1
-        r[0x66] = 0;
+        r[npc::kShieldLevel] = 0;
         r[npc::kFlags13] |= 0x02;
         apply_damage(game.kernel(), w, game.animations(), 1, 2, 0, 20, 11);
         CHECK(w.npc_hp(1) == hp - 4 && player_damage_events == 1);
@@ -3794,8 +3794,8 @@ void test_station_pads(const std::filesystem::path& data) {
             r[1] = 0;
             r[npc::kDirection] = 0;  // north
         }
-        w.npc_record(1)[0x57] = 0;  // energy
-        w.npc_record(1)[0x58] = 0;
+        w.npc_record(1)[npc::kEnergy] = 0;  // energy
+        w.npc_record(1)[npc::kEnergy + 1] = 0;
         w.move_item(1, pad->x - info->footpad_x * 8 + me->footpad_x * 8, pad->y + 100, pad->z);
         game.key(0x48, true, true, 0);
         int stasis_frames = 0;
@@ -4513,8 +4513,8 @@ void test_shield_sprites(const std::filesystem::path& data) {
         }
         CHECK(type != 0);
         if (type == 0) return;
-        w.set_npc_word(1, 0x66, static_cast<std::uint16_t>(shield));
-        w.set_npc_word(1, 0x57, 30000);
+        w.set_npc_word(1, npc::kShieldLevel, static_cast<std::uint16_t>(shield));
+        w.set_npc_word(1, npc::kEnergy, 30000);
         const Item* p = w.get(1);
         const World::Point at{p->x - 16, p->y - 16, (p->z & 0xFF) + 20};
         const std::uint16_t hp = w.npc_hp(1);
@@ -4570,7 +4570,7 @@ void test_muzzle_inside(const std::filesystem::path& data) {
     CHECK(type != 0 && shape != 0);
     if (type == 0 || shape == 0) return;
     w.npc_record(1)[npc::kFlags13] &= static_cast<std::uint8_t>(~0x02);
-    w.set_npc_word(1, 0x66, 0);
+    w.set_npc_word(1, npc::kShieldLevel, 0);
     const Item* p = w.get(1);
     const World::Point at{p->x + 48, p->y, p->z & 0xFF};
     w.create(shape, 0);

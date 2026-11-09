@@ -120,11 +120,11 @@ ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtabl
     set_word(r, npc::kTactic, 0);
     r[0x0C] = static_cast<std::uint8_t>(spec.facing * 2);
     world.pop_to_coords(at.x, at.y, at.z);
-    r[0x5E] = static_cast<std::uint8_t>(at.x);
-    r[0x5F] = static_cast<std::uint8_t>(at.x >> 8);
-    r[0x60] = static_cast<std::uint8_t>(at.y);
-    r[0x61] = static_cast<std::uint8_t>(at.y >> 8);
-    r[0x62] = static_cast<std::uint8_t>(at.z);
+    r[0x7C] = static_cast<std::uint8_t>(at.x);
+    r[0x7D] = static_cast<std::uint8_t>(at.x >> 8);
+    r[0x7E] = static_cast<std::uint8_t>(at.y);
+    r[0x7F] = static_cast<std::uint8_t>(at.y >> 8);
+    r[0x80] = static_cast<std::uint8_t>(at.z);
     r[0x12] = spec.extra;
     for (int i = 0; i < 3; ++i) set_word(r, npc::kDefaultActivity + 2 * i, spec.defaults[i]);
     if (spec.start_default) set_activity(kernel, world, anims, npc, 0x70);

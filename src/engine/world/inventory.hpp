@@ -2,7 +2,7 @@
 // The player's inventory (WORLD.C 13E8:0330); equipping is set_equip
 // (actor_create.hpp, NPC.C 10F0:27FB).
 //
-// An NPC's equipment is 30 slots of item ids in its record (+0x1B); the
+// An NPC's equipment is 45 slots (30 in No Remorse) of item ids in its record (+0x1B); the
 // player's are used by kind: 1..5 weapons (family 10), 6..10 ammunition
 // (family 11), 11..25 other items (families 12 and 13, and shape 0x4ED).
 // The active weapon's slot is at +0x15, the active item's at +0x19. An
@@ -68,6 +68,6 @@ void use_item(World& world, ObjId item);
 // Player record fields.
 constexpr std::size_t kNpcActiveWeapon = 0x15;
 constexpr std::size_t kNpcActiveItem = 0x19;
-constexpr std::size_t kNpcShieldLevel = 0x66;
+constexpr std::size_t kNpcShieldLevel = npc::kShieldLevel;
 
 }  // namespace crusader

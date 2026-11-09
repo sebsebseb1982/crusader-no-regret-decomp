@@ -255,9 +255,23 @@ struct GameState {
     std::uint16_t player_move_accuracy = 1;
 };
 
-// NPC table (NPC.C, array at 7E0A; SAVEGAME entry 10): one 121-byte record
+// NPC table (NPC.C, array at DS:8988; SAVEGAME entry 10): one 151-byte record
 // per NPC slot 0..255. Decoded so far: +0x0C direction (0..15), +0x13 bit 0 dead.
-constexpr std::size_t kNpcRecordSize = 0x79;
+//
+// No Regret's record (0x97 bytes) is the No Remorse one (0x79 bytes) with 45
+// equipment slots instead of 30: the array at +0x1B is 30 bytes longer, and
+// every field after it sits 0x1E higher (energy +0x57 -> +0x75, flags +0x59
+// -> +0x77...). The engine keeps the No Regret layout for both games; a No
+// Remorse table is converted when it is loaded or saved (World::npc_table).
+constexpr std::size_t kNpcRecordSize = 0x97;
+constexpr std::size_t kRemorseNpcRecordSize = 0x79;
+namespace npc {
+constexpr std::size_t kEquip = 0x1B;        // u16 per slot: item ids
+constexpr int kEquipSlots = 45;             // 30 in No Remorse (World::equip_slots)
+constexpr int kRemorseEquipSlots = 30;
+constexpr std::size_t kEnergy = 0x75;       // u16 (Actor::I_getMana)
+constexpr std::size_t kShieldLevel = 0x84;  // u16
+}  // namespace npc
 constexpr std::size_t kNpcSlots = 0x100;
 
 // Item::I_getDirFromTo16 (ITEMFIND.C): direction from (x1, y1) to (x2, y2)
@@ -443,8 +457,14 @@ public:
     // stack). Throws if an item has an id past the table.
     std::vector<std::uint8_t> saved_item_table() const;
     std::vector<std::uint8_t> saved_item_lists() const;
-    // Entry 10 (NPC_10f0_00bc): the NPC table as is.
-    std::span<const std::uint8_t> npc_table() const { return npcs_; }
+    // Entry 10 (NPC_10f0_00bc): the NPC table as the game the data belongs
+    // to saves it (0x97 bytes per record, or 0x79 for No Remorse).
+    std::vector<std::uint8_t> npc_table() const;
+    // The equipment slots of an NPC record: 45, or 30 with No Remorse data.
+    int equip_slots() const { return remorse_ ? npc::kRemorseEquipSlots : npc::kEquipSlots; }
+    // The data is No Remorse's (set by the game from the data it found).
+    void set_remorse(bool remorse) { remorse_ = remorse; }
+    bool remorse() const { return remorse_; }
     // Entries 50, 51, 52 (TRACKER_1128_05b7): slot count, items tracked, slots.
     std::vector<std::uint8_t> saved_tracker(int part) const;
 
@@ -631,11 +651,11 @@ public:
     std::uint8_t npc_direction(ObjId id) const;  // Actor::I_getDir
     std::span<std::uint8_t> npc_record(ObjId id);  // empty outside 0..255
     std::span<const std::uint8_t> npc_record(ObjId id) const;
-    // Actor::I_getHp (+0x00), I_getMana (+0x57), I_getEquip (+0x1B, 30 words).
+    // Actor::I_getHp (+0x00), I_getMana (+0x75), I_getEquip (+0x1B, 45 words).
     std::uint16_t npc_hp(ObjId id) const { return npc_word(id, 0x00); }
-    std::uint16_t npc_mana(ObjId id) const { return npc_word(id, 0x57); }
+    std::uint16_t npc_mana(ObjId id) const { return npc_word(id, npc::kEnergy); }
     ObjId npc_equip(ObjId id, int slot) const {
-        return slot >= 0 && slot < 30 ? npc_word(id, 0x1B + 2 * slot) : 0;
+        return slot >= 0 && slot < equip_slots() ? npc_word(id, npc::kEquip + 2 * static_cast<std::size_t>(slot)) : 0;
     }
     std::uint16_t npc_word(ObjId id, std::size_t at) const {
         const auto r = npc_record(id);
@@ -650,8 +670,8 @@ public:
     }
     // NPC_10f0_2933: every equipment slot of `npc` holding `item` emptied.
     void unequip(ObjId npc, ObjId item) {
-        for (int slot = 0; slot < 30; ++slot) {
-            if (npc_equip(npc, slot) == item) set_npc_word(npc, 0x1B + 2 * slot, 0);
+        for (int slot = 0; slot < equip_slots(); ++slot) {
+            if (npc_equip(npc, slot) == item) set_npc_word(npc, npc::kEquip + 2 * static_cast<std::size_t>(slot), 0);
         }
     }
     // Port repair of saves made before World::destroy emptied the slots of
@@ -728,6 +748,7 @@ private:
     Audio* audio_ = nullptr;
     FrameLookup frame_lookup_;
     std::vector<std::uint8_t> npcs_ = std::vector<std::uint8_t>(kNpcSlots * kNpcRecordSize);
+    bool remorse_ = false;
     const FlexArchive* globs_ = nullptr;
     const FlexArchive* fixed_ = nullptr;
     const TrigTables* trig_ = nullptr;

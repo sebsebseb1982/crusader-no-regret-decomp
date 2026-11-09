@@ -43,7 +43,7 @@
 
 namespace crusader {
 
-// Starts a path finder for `npc`, ending the one it may have (+0x59 bit 5).
+// Starts a path finder for `npc`, ending the one it may have (+0x77 bit 5).
 // Returns its pid.
 Pid walk_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, ObjId item, World::Point goal,
             int max_steps, int stop_distance, bool final_turn);

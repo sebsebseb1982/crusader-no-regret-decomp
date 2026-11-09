@@ -25,7 +25,7 @@ Footprint footprint(const ShapeInfo* info) {
 }
 
 constexpr std::size_t kStartZ = 0x11;  // NPC record: height when the fall began
-constexpr std::uint8_t kFalling = 0x02;  // NPC record +0x59
+constexpr std::uint8_t kFalling = 0x02;  // NPC record +0x77
 
 }  // namespace
 

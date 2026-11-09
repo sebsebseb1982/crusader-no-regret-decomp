@@ -96,7 +96,7 @@ void give_everything(World& world, std::uint16_t flags) {
     give(world, 0x3A3);
     give(world, 0x530);
     // NPC_10f0_34ca(npc, 0): the energy full.
-    world.set_npc_word(kPlayer, 0x57, static_cast<std::uint16_t>(max_energy(world, kPlayer)));
+    world.set_npc_word(kPlayer, npc::kEnergy, static_cast<std::uint16_t>(max_energy(world, kPlayer)));
     const std::uint16_t* table = (flags & kCtrl) ? kCtrlWeapons.data() : (flags & kAlt) ? kAltWeapons.data() : kWeapons.data();
     for (int i = 0; table[i] != kEndOfTable; ++i) {
         const int slot = free_equip_slot(world, 1, 5);  // NPC_10f0_2b03

@@ -364,6 +364,7 @@ private:
     int start_map_ = 1;
     std::uint16_t start_egg_ = 0x1E;  // kTeleportStartEgg
     std::string port_version_;
+    bool regret_ = false;       // No Regret data, else No Remorse
     std::string data_version_;  // "1.08", "1.23", "1.01"
     std::string data_language_;
     std::span<const std::uint16_t> intrinsic_numbering_;  // of the usecode (intrinsic_numbering.hpp)

@@ -49,7 +49,7 @@ bool on_map_40(const World& w, ObjId npc) {
 // @orig 10F8:4056
 // TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId find_equipped(const World& w, std::uint16_t shape) {
-    for (int slot = 0; slot < 30; ++slot) {
+    for (int slot = 0; slot < w.equip_slots(); ++slot) {
         const ObjId id = w.npc_equip(1, slot);
         if (const Item* it = id ? w.get(id) : nullptr; it && it->shape == shape) return id;
     }
@@ -87,8 +87,8 @@ void CombatControl::use_round(ObjId npc) {
         const int energy = std::max(0, static_cast<int>(world_.npc_mana(npc)) - cost);
         auto r = world_.npc_record(npc);
         if (!r.empty()) {
-            r[0x57] = static_cast<std::uint8_t>(energy);
-            r[0x58] = static_cast<std::uint8_t>(energy >> 8);
+            r[npc::kEnergy] = static_cast<std::uint8_t>(energy);
+            r[npc::kEnergy + 1] = static_cast<std::uint8_t>(energy >> 8);
         }
         return;
     }

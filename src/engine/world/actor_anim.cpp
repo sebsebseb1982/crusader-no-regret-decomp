@@ -141,10 +141,10 @@ void special_frame(Kernel& kernel, World& world, const AnimDat& anims, ObjId act
         return;
     case 0x576:  // the burning and the electrocuted: a scream, unless one plays
     case 0x596: {
-        // DS:2B12 (record +0x5A bit 2 clear) and DS:2B1A.
+        // DS:2B12 (record +0x78 bit 2 clear) and DS:2B1A.
         static constexpr int kScreams[] = {101, 102, 103};
         static constexpr int kOtherScreams[] = {11, 10};
-        const bool other = r[0x5A] & 0x04;
+        const bool other = r[npc::kStance] & 0x04;
         const std::span<const int> table = other ? std::span<const int>(kOtherScreams) : std::span<const int>(kScreams);
         const int sfx = table[static_cast<std::size_t>(crt_rand_below(world.state.crt_rand_state, static_cast<int>(table.size())))];
         Audio* audio = world.audio();
@@ -434,7 +434,7 @@ bool ActorAnimProcess::step(bool skip_frames, bool& skipped_frames) {
     if (intermediate && !play_frame_effects(*intermediate)) return false;
     if (!play_frame_effects(*f)) return false;
     // ANIMPRIM.C 1908 (US 1158:1906): a fall does not end the animation. It
-    // waits for the landing (record +0x59 bit 1, see run) and plays on: a
+    // waits for the landing (record +0x77 bit 1, see run) and plays on: a
     // jump down to a lower floor ends standing (frame 0), not on its landing
     // frame (2108). Only the stumble 0x3B, replacing it, ends it.
     if (f->ground_check && fall_if_unsupported(start, reached)) return !terminated();
@@ -668,7 +668,7 @@ Pid do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std
     // NPC.C 10F0:0245: the controlled NPC ends the item selection mode.
     if (actor == world.state.controlled_npc && world.state.selection.active) cancel_selection(world);
     if (world.is_dead(actor)) return 0;
-    // NPC_10f0_2315: record +0x59 bit 0x40 (set by NPC_10f0_2335, which
+    // NPC_10f0_2315: record +0x77 bit 0x40 (set by NPC_10f0_2335, which
     // nothing calls in this version).
     if (auto r = world.npc_record(actor); !r.empty() && (r[npc::kAnimFlags] & 0x40)) return 0;
     if (!anims.action(item->shape, action)) return 0;
@@ -690,11 +690,11 @@ Pid do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std
         if (std::find(followed.begin(), followed.end(), p) == followed.end()) last = p;
     }
     if (actor == world.state.controlled_npc) note_player_movement(world, action, kernel.ticks());
-    // Weapon drawn (record +0x5A bit 1): set by actions 7 and 0xC, cleared by
+    // Weapon drawn (record +0x78 bit 1): set by actions 7 and 0xC, cleared by
     // 0xB and 0x10.
     if (auto record = world.npc_record(actor); !record.empty()) {
-        if (action == 7 || action == 0xC) record[0x5A] |= 0x02;
-        else if (action == 0xB || action == 0x10) record[0x5A] &= static_cast<std::uint8_t>(~0x02);
+        if (action == 7 || action == 0xC) record[npc::kStance] |= 0x02;
+        else if (action == 0xB || action == 0x10) record[npc::kStance] &= static_cast<std::uint8_t>(~0x02);
     }
     set_kneeling(world, actor, std::find(std::begin(kKneelingActions), std::end(kKneelingActions), action) !=
                                    std::end(kKneelingActions));
@@ -721,7 +721,7 @@ void ActorAnimProcess::on_terminate() {
     const bool placed = item && (item->z & 0xFF) != 254;
     if (placed && (action_ == 0x22 || action_ == 0x23)) {
         // The start of a run ends on a full stride: the next action starts
-        // from the middle of its cycle (record +0x59 bit 2 cleared).
+        // from the middle of its cycle (record +0x77 bit 2 cleared).
         if (auto r = world_.npc_record(owner()); !r.empty()) r[npc::kAnimFlags] &= static_cast<std::uint8_t>(~0x04);
     }
     if (turning_) {

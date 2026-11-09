@@ -14,7 +14,7 @@
 // that does not stand on two opposite quarters of its footprint: pushed away
 // from the side that holds it, it slides on ("rolling", +0x3A) and falls
 // again. The process gives up after 200 steps. Out of the fast area it waits
-// without sleeping. While an NPC falls its record +0x59 bit 1 is set and
+// without sleeping. While an NPC falls its record +0x77 bit 1 is set and
 // +0x11 keeps the starting height.
 //
 // Also written, though never reached in this version: low-friction items

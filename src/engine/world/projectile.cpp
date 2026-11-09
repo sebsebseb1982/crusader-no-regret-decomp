@@ -74,10 +74,10 @@ void play_once(World& world, ObjId npc, int sfx) {
     if (audio && !audio->sources.is_playing(sfx, npc)) audio->sources.play(world, sfx, npc);
 }
 
-// Record +0x5A bit 2: a woman (her own cries).
+// Record +0x78 bit 2: a woman (her own cries).
 bool is_female(World& world, ObjId npc) {
     const auto record = world.npc_record(npc);
-    return !record.empty() && (record[0x5A] & 0x04);
+    return !record.empty() && (record[npc::kStance] & 0x04);
 }
 
 // CRUSADER_1130_01f7: shapes that take full damage from bullets (not robots).
@@ -121,7 +121,7 @@ int spread_divisor(const World& w, ObjId shooter, int fire_type, std::uint32_t n
     const int moving = std::max<int>(1, w.state.player_move_accuracy);
     if (is_npc_id(shooter)) {
         const auto record = w.npc_record(shooter);
-        if (!record.empty() && record[0x68] != 0) return 2;
+        if (!record.empty() && record[npc::kLongBurst] != 0) return 2;
         return controlled_npc_still(w, now) ? 8 : moving;
     }
     const auto player = w.npc_record(w.state.controlled_npc);
@@ -336,12 +336,12 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     auto record = world.npc_record(target);
     if (record.empty()) return;
     const std::uint32_t now = kernel.ticks();
-    record[0x69] = static_cast<std::uint8_t>(now);
-    record[0x6A] = static_cast<std::uint8_t>(now >> 8);
-    record[0x6B] = static_cast<std::uint8_t>(now >> 16);
-    record[0x6C] = static_cast<std::uint8_t>(now >> 24);
+    record[npc::kLastHit] = static_cast<std::uint8_t>(now);
+    record[npc::kLastHit + 1] = static_cast<std::uint8_t>(now >> 8);
+    record[npc::kLastHit + 2] = static_cast<std::uint8_t>(now >> 16);
+    record[npc::kLastHit + 3] = static_cast<std::uint8_t>(now >> 24);
     // The victim fights back: activity 5 (or its default activity 2) and the
-    // controlled NPC as target. Walking (record +0x59 bit 5) and hit by the
+    // controlled NPC as target. Walking (record +0x77 bit 5) and hit by the
     // controlled NPC within 0x280, in the combat zone, with a line of fire back to it,
     // it stops walking (its path finder, type 0x204, ends).
     if (target != world.state.controlled_npc && target != 1) {
@@ -367,7 +367,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
             }
         }
     }
-    // Shields of the player (record +0x66: 1, 2 or 3, taken as 4): when the
+    // Shields of the player (record +0x84: 1, 2 or 3, taken as 4): when the
     // fire type's mask (+0xA) has the shield's bit and the energy covers its
     // cost (+8), the energy pays, sound 0x48 plays and the shot does nothing.
     // Unless the large shield's sprite is up: shields 1 and 2 flash at the
@@ -375,13 +375,13 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     // (frames 0..8) on the player, which follows him. Not reproduced: the
     // status bar flash.
     if (target == 1) {
-        int shield = world.npc_word(1, 0x66);
+        int shield = world.npc_word(1, npc::kShieldLevel);
         if (shield == 3) shield = 4;
         const dtable::FireType* ft = dtable::fire_type(fire_type);
         if (shield != 0 && ft && (shield & ft->shield_mask()) && ft->shield_cost() <= world.npc_mana(1)) {
             const auto energy = static_cast<std::uint16_t>(world.npc_mana(1) - ft->shield_cost());
-            record[0x57] = static_cast<std::uint8_t>(energy);
-            record[0x58] = static_cast<std::uint8_t>(energy >> 8);
+            record[npc::kEnergy] = static_cast<std::uint8_t>(energy);
+            record[npc::kEnergy + 1] = static_cast<std::uint8_t>(energy >> 8);
             if (Audio* audio = world.audio()) audio->sources.retrigger(world, 0x48, 1);
             damage = 0;
             if (world.state.shield_sprite == 0) {

@@ -9,7 +9,7 @@
 // actor run one after the other: a new one waits for the last queued one
 // (Process_suspend_by_type). The frame index lives in the NPC record (+0x10)
 // and carries over between animations; looping walks are cut in half strides
-// (record +0x59 bit 2), so that a queued animation can start when a foot is
+// (record +0x77 bit 2), so that a queued animation can start when a foot is
 // down.
 //
 // At its end (2E66 cleanup, 2D09 / 2DC6), the start of a run (0x22, 0x23)
@@ -59,7 +59,7 @@ constexpr std::size_t kAnimFrame = 0x10;
 constexpr std::size_t kFlags13 = 0x13;    // bit 0 dead, bit 2 kneeling
 constexpr std::size_t kWeapon = 0x15;     // u16, equipment slot of the active weapon (0 = none)
 constexpr std::size_t kActiveItem = 0x19; // u16, equipment slot of the active inventory item
-constexpr std::size_t kAnimFlags = 0x59;  // bit 2: half stride done
+constexpr std::size_t kAnimFlags = 0x77;  // bit 2: half stride done
 }  // namespace npc
 
 class ActorAnimProcess : public Process {
@@ -127,7 +127,7 @@ std::uint16_t remap_action(const World& world, ObjId actor, std::uint16_t action
 // (random_range), else attacks (5). Robots 0x385 and 0x4E6 (their deaths)
 // explode (size 2, splash damage) without being destroyed, then lose the
 // exploded and broken flags (0x40, 0x100). The burning and the electrocuted
-// (0x576, 0x596) scream: one of sounds 101-103 (record +0x5A bit 2 clear) or
+// (0x576, 0x596) scream: one of sounds 101-103 (record +0x78 bit 2 clear) or
 // 11, 10 (set), drawn by rand(), unless one of them plays for the actor.
 void special_frame(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor);
 

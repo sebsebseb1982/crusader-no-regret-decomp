@@ -375,8 +375,21 @@ std::size_t World::load_saved_items(const FlexArchive& save) {
 
     // Entry 10: NPC table.
     const auto npcs = save.entry(10);
-    if (npcs.size() == npcs_.size()) {
+    if (npcs.size() == kNpcSlots * kRemorseNpcRecordSize) {
+        // No Remorse records: the fields after the 30 equipment slots move
+        // behind the 45 slots of the engine's record.
+        constexpr std::size_t kHead = npc::kEquip + 2 * npc::kRemorseEquipSlots;
+        std::ranges::fill(npcs_, std::uint8_t{0});
+        for (std::size_t id = 0; id < kNpcSlots; ++id) {
+            const auto from = npcs.subspan(id * kRemorseNpcRecordSize, kRemorseNpcRecordSize);
+            const auto to = std::span(npcs_).subspan(id * kNpcRecordSize, kNpcRecordSize);
+            std::ranges::copy(from.first(kHead), to.begin());
+            std::ranges::copy(from.subspan(kHead), to.begin() + static_cast<std::ptrdiff_t>(npc::kEquip + 2 * npc::kEquipSlots));
+        }
+    } else if (npcs.size() == npcs_.size()) {
         std::ranges::copy(npcs, npcs_.begin());
+    }
+    if (npcs.size() == npcs_.size() || npcs.size() == kNpcSlots * kRemorseNpcRecordSize) {
         // High byte of the NPCs' frames.
         for (ObjId id = 1; id < kNpcSlots; ++id) {
             if (Item* npc = get(id)) npc->frame |= static_cast<std::uint16_t>(npcs_[id * kNpcRecordSize + 0x0F] << 8);
@@ -1251,17 +1264,31 @@ ObjId World::pop() {
     return pop_to_coords(item.x, item.y, item.z);
 }
 
+// @orig none: the NPC table in the layout of the data's game
+std::vector<std::uint8_t> World::npc_table() const {
+    if (!remorse_) return npcs_;
+    constexpr std::size_t kHead = npc::kEquip + 2 * npc::kRemorseEquipSlots;
+    std::vector<std::uint8_t> out(kNpcSlots * kRemorseNpcRecordSize);
+    for (std::size_t id = 0; id < kNpcSlots; ++id) {
+        const auto from = std::span(npcs_).subspan(id * kNpcRecordSize, kNpcRecordSize);
+        const auto to = std::span(out).subspan(id * kRemorseNpcRecordSize, kRemorseNpcRecordSize);
+        std::ranges::copy(from.first(kHead), to.begin());
+        std::ranges::copy(from.subspan(npc::kEquip + 2 * npc::kEquipSlots), to.begin() + static_cast<std::ptrdiff_t>(kHead));
+    }
+    return out;
+}
+
 // @orig none: port repair of saves made before World::destroy unequipped
 int World::forget_lost_equipment() {
     int forgotten = 0;
     for (ObjId npc = 1; npc < 256; ++npc) {
         if (!get(npc)) continue;
-        for (int slot = 1; slot < 30; ++slot) {
+        for (int slot = 1; slot < equip_slots(); ++slot) {
             const ObjId id = npc_equip(npc, slot);
             if (id == 0) continue;
             const Item* item = get(id);
             if (item && item->parent == npc) continue;
-            set_npc_word(npc, 0x1B + 2 * slot, 0);
+            set_npc_word(npc, npc::kEquip + 2 * static_cast<std::size_t>(slot), 0);
             ++forgotten;
         }
     }

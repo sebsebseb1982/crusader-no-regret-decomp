@@ -12,7 +12,7 @@ namespace crusader {
 namespace {
 
 constexpr ObjId kPlayer = 1;
-constexpr std::size_t kNpcEnergy = 0x57;
+constexpr std::size_t kNpcEnergy = npc::kEnergy;
 
 constexpr std::uint8_t kFamilyWeapon = 10;
 constexpr std::uint8_t kFamilyAmmo = 11;
@@ -23,7 +23,7 @@ constexpr std::uint16_t kDatalink = 0x4D4;
 // @orig 10F8:4056
 // TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId carried(const World& world, std::uint16_t shape) {
-    for (int slot = 0; slot < 30; ++slot) {
+    for (int slot = 0; slot < world.equip_slots(); ++slot) {
         const ObjId id = world.npc_equip(kPlayer, slot);
         const Item* item = world.get(id);
         if (item && item->shape == shape) return id;

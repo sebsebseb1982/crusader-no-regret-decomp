@@ -50,7 +50,7 @@ Pid walk_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, ObjId
             int max_steps, int stop_distance, bool final_turn) {
     auto r = world.npc_record(npc);
     if (r.empty()) return 0;
-    // NPC_10f0_22bf / 22df: one path finder per NPC (+0x59 bit 5).
+    // NPC_10f0_22bf / 22df: one path finder per NPC (+0x77 bit 5).
     if (r[npc::kCombatFlags] & 0x20) kernel.fail_processes(npc, PathfinderProcess::kType, 1);
     r[npc::kCombatFlags] |= 0x20;
     const Pid pid = kernel.add(

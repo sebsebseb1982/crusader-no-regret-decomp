@@ -79,13 +79,13 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
     bind({0x00E}, [&m, &w, &anims](ObjId id, Args a) -> std::uint32_t {
         return turn_to(m.kernel(), w, anims, id, arg16(a, 4) & 0xFF, (arg16(a, 6) & 0xFF) != 0, false);
     });
-    // Actor::I_getUnkByte(npc) (10F0:3DFC): record +0x63, the quality low of
+    // Actor::I_getUnkByte(npc) (10F0:3DFC): record +0x81, the quality low of
     // the egg that made the NPC (a camera monitor takes control of the NPC
     // whose byte is its own quality low).
     bind({0x00B}, [&w](ObjId id, Args) -> std::uint32_t { return w.npc_record(id)[npc::kEggQuality]; });
-    // Actor::I_setMana(npc, value) (10F0:346E): record +0x57, the energy.
+    // Actor::I_setMana(npc, value) (10F0:346E): record +0x75, the energy.
     bind({0x084}, [&w](ObjId id, Args a) -> std::uint32_t {
-        w.set_npc_word(id, 0x57, arg16(a, 4));
+        w.set_npc_word(id, npc::kEnergy, arg16(a, 4));
         return 0;
     });
     // Actor::I_setImmortal / I_clrImmortal (10F0:216A / 2185): record +0x13
@@ -222,8 +222,8 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
         return 0;
     });
     // Actor::I_isKneeling (10F0:21FB): record +0x13 bit 2. Actor::I_isFalling
-    // (10F0:1F01): record +0x59 bit 1 (gravity.cpp). Actor::I_getMana
-    // (10F0:3454): +0x57. Actor::I_getLastAnimSet (10F0:372E): +0x0D, the
+    // (10F0:1F01): record +0x77 bit 1 (gravity.cpp). Actor::I_getMana
+    // (10F0:3454): +0x75. Actor::I_getLastAnimSet (10F0:372E): +0x0D, the
     // last action started.
     bind({0x038}, [&w](ObjId id, Args) -> std::uint32_t { return (w.npc_record(id)[npc::kFlags13] >> 2) & 1u; });
     bind({0x0AC}, [&w](ObjId id, Args) -> std::uint32_t { return (w.npc_record(id)[npc::kAnimFlags] >> 1) & 1u; });
@@ -231,14 +231,14 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
     bind({0x01D, 0x05C, 0x0BA, 0x0D7, 0x0E4, 0x132},
          [&w](ObjId id, Args) -> std::uint32_t { return w.npc_word(id, npc::kLastAnim); });
     // Actor::I_getLastActivityNo (10F0:3E35): +4, the activity before the
-    // current one. Actor::I_getEquip(npc, slot) (10F0:27C8): +0x1B, 30 slots.
+    // current one. Actor::I_getEquip(npc, slot) (10F0:27C8): +0x1B, 45 slots (30 in No Remorse).
     bind({0x0DD}, [&w](ObjId id, Args) -> std::uint32_t { return w.npc_word(id, npc::kPreviousActivity); });
     bind({0x0DF}, [&w](ObjId id, Args a) -> std::uint32_t {
         return w.npc_equip(id, static_cast<std::int16_t>(arg16(a, 4)));
     });
-    // Actor::I_setUnkByte(npc, value) (10F0:3E18): +0x63, read back by
+    // Actor::I_setUnkByte(npc, value) (10F0:3E18): +0x81, read back by
     // I_getUnkByte (0x00B). Actor::I_setCombatTactic(npc, tactic)
-    // (10F0:3594): +0x5C, which the attack process does not read: the
+    // (10F0:3594): +0x7A, which the attack process does not read: the
     // usecode only ever sets 0 (COMBAT.DAT tactics, attack.hpp).
     bind({0x0E6}, [&w](ObjId id, Args a) -> std::uint32_t {
         w.npc_record(id)[npc::kEggQuality] = static_cast<std::uint8_t>(arg16(a, 4));

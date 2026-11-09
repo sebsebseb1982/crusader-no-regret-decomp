@@ -5,8 +5,8 @@
 // An NPC's activity (record +2, previous one at +4) says what it does:
 // Actor::I_setActivity ends its current animations and activity processes,
 // then starts the process of the new activity. Activities 5, 9, 10, 11 and
-// 12 are combat: the NPC is flagged "in combat" (record +0x59 bit 3) and an
-// AttackProcess (type 0x259) runs its combat tactic (record +0x5C; 0 = the
+// 12 are combat: the NPC is flagged "in combat" (record +0x77 bit 3) and an
+// AttackProcess (type 0x259) runs its combat tactic (record +0x7A; 0 = the
 // built-in behaviour below, others are COMBAT.DAT scripts, not reproduced).
 //
 // The other activities are in activity.hpp. COMBAT.DAT tactics (AttackProcess
@@ -29,13 +29,13 @@ namespace npc {
 constexpr std::size_t kActivity = 0x02;          // u16
 constexpr std::size_t kPreviousActivity = 0x04;  // u16
 constexpr std::size_t kDefaultActivity = 0x06;   // u16 x 3 (Actor::I_getDefaultActivity0..2)
-constexpr std::size_t kCombatFlags = 0x59;       // bit 3 in combat, bit 5 hit reaction allowed
-constexpr std::size_t kStance = 0x5A;            // bit 0 activity locked, bit 1 weapon drawn
-constexpr std::size_t kTactic = 0x5C;            // u16, COMBAT.DAT entry
-constexpr std::size_t kEggQuality = 0x63;        // byte, the creating egg's quality low (Actor::I_getUnkByte)
-constexpr std::size_t kTarget = 0x64;            // u16
-constexpr std::size_t kLongBurst = 0x68;         // byte, set during a long burst
-constexpr std::size_t kLastHit = 0x69;           // u32, time of the last hit
+constexpr std::size_t kCombatFlags = 0x77;       // bit 3 in combat, bit 5 hit reaction allowed
+constexpr std::size_t kStance = 0x78;            // bit 0 activity locked, bit 1 weapon drawn
+constexpr std::size_t kTactic = 0x7A;            // u16, COMBAT.DAT entry
+constexpr std::size_t kEggQuality = 0x81;        // byte, the creating egg's quality low (Actor::I_getUnkByte)
+constexpr std::size_t kTarget = 0x82;            // u16
+constexpr std::size_t kLongBurst = 0x86;         // byte, set during a long burst
+constexpr std::size_t kLastHit = 0x87;           // u32, time of the last hit
 }  // namespace npc
 
 bool in_combat(const World& world, ObjId npc);   // Actor::I_isInCombat
@@ -48,7 +48,7 @@ bool in_combat_stance(const World& world, ObjId npc);
 bool controlled_npc_still(const World& world, std::uint32_t now);
 
 // Actor::I_setActivity (10F0:2D02). 0x70..0x72 stand for the default
-// activities 0..2. Nothing happens for a dead or locked NPC (+0x5A bit 0),
+// activities 0..2. Nothing happens for a dead or locked NPC (+0x78 bit 0),
 // the controlled NPC, activity 0, the current activity, or an NPC in combat
 // unless the new activity is 12. At difficulty 4, 5 and 9 become 10 and 11
 // half of the time.

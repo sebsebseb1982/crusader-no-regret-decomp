@@ -233,6 +233,7 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     }
     data_version_ = info.version;
     data_language_ = info.language;
+    regret_ = info.regret;
     intrinsic_numbering_ = intrinsic_numbering(info);
     set_text_language(info.text_language());
     set_config(config_);
@@ -313,6 +314,7 @@ void Game::reset_world() {
     machine_ = std::make_unique<UCMachine>(*kernel_, usecode_);
     machine_->set_intrinsic_numbering(intrinsic_numbering_);
     world_ = std::make_unique<World>(typeflags_);
+    world_->set_remorse(!regret_);
     world_->state.frameskip = config_.frameskip;
     world_->state.target_designation = target_designation;
     world_->state.cheats = cheats;

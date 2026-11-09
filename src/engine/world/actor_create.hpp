@@ -6,13 +6,13 @@
 //   kind: NPC number = NPC type (DTABLE.FLX record: +2 hit points, +0x18
 //         weapon, +0x1A other weapon, +0x3E shape); quality high = default
 //         activity 0; map number = default activity 2.
-//   egg:  quality low -> record +0x63; quality high = default activity 1;
+//   egg:  quality low -> record +0x81; quality high = default activity 1;
 //         map number bits 0-1 = lowest difficulty - 1, bit 2 = use the other
 //         weapon; NPC number: low nibble = direction / 2, high nibble ->
 //         record +0x12.
 // Nothing is made above the game's difficulty. At difficulty 4 the weapon is
 // drawn by shape (ITEM_10a8_3b10). The NPC (frame (direction + 4) & 15,
-// record cleared, hit points of its type, combat tactic 0, flag 4 at +0x5A
+// record cleared, hit points of its type, combat tactic 0, flag 4 at +0x78
 // for shapes 0x597 and 0x3AC) is put where the egg is, with that place as
 // its home (+0x5E), status 2, and its weapon created and made active.
 // Returns the NPC, 0 when none (no free slot: with the alert on, the alarm
@@ -35,7 +35,7 @@ ObjId create_actor(Kernel& kernel, World& world, const AnimDat& anims, const dta
 // number gives the direction (low nibble) and record +0x12 (high nibble),
 // its map number bits 0-1 the lowest difficulty and bit 2 the other weapon.
 // The NPC then takes its default activity 0 (Actor::I_setActivity(0x70));
-// record +0x63 = 0. Returns the NPC (0 if none).
+// record +0x81 = 0. Returns the NPC (0 if none).
 ObjId spawn_from_egg(Kernel& kernel, World& world, const AnimDat& anims, const dtable::NpcTypes& types, ObjId egg);
 
 // Actor::I_createActor(shape, frame) (10F0:25B9): a new NPC of `shape`

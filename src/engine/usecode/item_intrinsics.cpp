@@ -74,7 +74,7 @@ bool drops_what_rests_on_it(std::uint16_t shape) {
 
 // Item::I_destroy (10A8:1365): removes the item and its contents. Its
 // looping sounds stop first; an NPC's other sounds play on, detached. An NPC
-// loses bit 0 of record +0x59 (NPC_10f0_2130). The items resting on a crate
+// loses bit 0 of record +0x77 (NPC_10f0_2130). The items resting on a crate
 // fall (Item::I_fall, ITEMFIND_10c8_0f73: a surface search above, every item)
 // before it goes; the fall only starts here and runs once the crate is gone.
 // Not reproduced: shape 0x4FE with a controlled robot (CRUSYS_1060_02da).

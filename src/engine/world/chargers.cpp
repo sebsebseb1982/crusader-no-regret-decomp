@@ -52,7 +52,7 @@ protected:
 private:
     World& world_;
     int target_, step_, busy_sfx_, tick_sfx_;
-    std::size_t offset_;  // in the NPC record: +0 hit points, +0x57 energy
+    std::size_t offset_;  // in the NPC record: +0 hit points, +0x75 energy
 };
 
 }  // namespace
@@ -74,7 +74,7 @@ Pid start_healer(Kernel& kernel, World& world) {
 }
 
 Pid start_battery_charger(Kernel& kernel, World& world) {
-    return kernel.spawn<Charger>(world, max_energy(world, kPlayer), 25, 0xA4, 0x10B, 0x57).pid();
+    return kernel.spawn<Charger>(world, max_energy(world, kPlayer), 25, 0xA4, 0x10B, npc::kEnergy).pid();
 }
 
 }  // namespace crusader
