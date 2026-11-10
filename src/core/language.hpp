@@ -21,4 +21,9 @@ inline const char* tr(const char* french, const char* english) {
 // screens of the US executable place their buttons for its English images.
 inline bool us_version() { return text_language() == Language::English; }
 
+// The data in use is No Regret's (set by Game with the language): its
+// screens place their buttons differently.
+bool regret_data();
+void set_regret_data(bool regret);
+
 }  // namespace crusader

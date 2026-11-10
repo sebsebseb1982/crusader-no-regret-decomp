@@ -241,6 +241,7 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     if (audio_) audio_->music.set_remorse(!regret_);
     intrinsic_numbering_ = intrinsic_numbering(info);
     set_text_language(info.text_language());
+    set_regret_data(regret_);
     set_config(config_);
     reset_world();
 }
@@ -1070,7 +1071,6 @@ void Game::play_end_credits() {
 // steps the marker style; the typed codes (1148:34D2) and F10 are in
 // cheats.hpp.
 // @orig 1148:09FD 1008:1565
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void Game::on_key(const GameKeyEvent& e) {
     // A movie only looks at the keys held (1468:2869).
     if (movie_) return;
@@ -1156,7 +1156,21 @@ void Game::on_key(const GameKeyEvent& e) {
         function_key(code);
         return;
     }
-    if (code == gump_key::kEscape && !world_->state.cru_stasis) {
+    if (!world_->remorse()) {
+        // No Regret (1008:1664): Escape (Ctrl, Alt too) only forgets the keys
+        // and ends the item selection; F1 (Alt, Ctrl too) does the same, then
+        // opens the menu when the player is the controlled NPC.
+        const bool f1 = code == gump_key::kF1 || code == 0x23B || code == 0x43B;
+        const bool escape = code == gump_key::kEscape || code == 0x401 || code == 0x201;
+        if ((f1 || escape) && !world_->state.cru_stasis) {
+            keyboard_.reset();  // KERNEL 11E8:33E3
+            if (world_->state.selection.active) cancel_selection(*world_);
+            if (f1) {
+                if (world_->state.controlled_npc == 1) open_menu();
+                return;
+            }
+        }
+    } else if (code == gump_key::kEscape && !world_->state.cru_stasis) {
         if (world_->state.selection.active) cancel_selection(*world_);
         else open_menu();
     }
@@ -1265,18 +1279,27 @@ void Game::close_message() {
     kernel_->drop_empty_levels();
 }
 
+// No Regret (1008:1565): the help is on F3 (F1 opens the menu, on_key; no
+// '?'), F2 and F3 need the player able to act, F4 needs the quick save to
+// exist, a dead player may still load (F4, F8), other sounds for the
+// questions (0x17C, 0x192, 0x193). Not reproduced: Alt+C, the joystick
+// calibration (13A8:0B17).
 // @orig 1008:1565
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 bool Game::function_key(std::uint16_t code) {
     const GameState& s = world_->state;
+    const bool regret = !world_->remorse();
+    const bool dead = world_->is_dead(1);
     switch (code) {
     case gump_key::kAltX:
         // Quit? Yes: DS:6810 +0x40 = 1, a blocking fade to black (not
         // reproduced), then system_shutdown.
-        ask(ShapeDialog::kQuitQuestion, 0x109, [this] { quit_ = true; });
+        ask(ShapeDialog::kQuitQuestion, regret ? 0x17C : 0x109, [this] { quit_ = true; });
         return true;
     case '?':
-    case gump_key::kF1: {
+    case gump_key::kF1:
+    case gump_key::kF3: {
+        if (regret ? code != gump_key::kF3 || !player_may_act(*world_) || s.cru_stasis : code == gump_key::kF3)
+            return false;
         auto help = std::make_unique<HelpScreen>(
             gumps_, help_pictures_,
             [this](int n) {
@@ -1303,6 +1326,7 @@ bool Game::function_key(std::uint16_t code) {
         return true;
     }
     case gump_key::kF2:
+        if (regret && (!player_may_act(*world_) || s.cru_stasis)) return false;
         // The options screen: MISC.PAL, cursor 0x25; closing it saves the
         // configuration (Options_dtor). The colour cycling is paused while
         // it is open (jumpToAllBlack, DS:6810 +0x40), else it would write
@@ -1326,8 +1350,13 @@ bool Game::function_key(std::uint16_t code) {
     case gump_key::kF4:
         // Load the quick save (slot 12, SAVEGAME.13)? Only while the player
         // is the controlled NPC.
-        if (s.cru_stasis || s.controlled_npc != 1) return false;
-        ask(ShapeDialog::kQuickLoadQuestion, 0x107, [this] {
+        if (regret) {
+            if (!dead && (s.cru_stasis || !player_may_act(*world_))) return false;
+            if (!std::filesystem::exists(save_dir_ / ("SAVEGAME." + std::to_string(kQuickSave)))) return true;
+        } else if (s.cru_stasis || s.controlled_npc != 1) {
+            return false;
+        }
+        ask(ShapeDialog::kQuickLoadQuestion, regret ? 0x192 : 0x107, [this] {
             if (audio_) audio_->stop_all();
             pending_load_ = kQuickSave;
             pending_notice_ = ShapeDialog::kQuickLoadNotice;
@@ -1348,7 +1377,7 @@ bool Game::function_key(std::uint16_t code) {
         // Quick save? Yes: slot 12 (DS:0C94 = 12) under the name it has,
         // then the notice.
         if (!player_may_act(*world_) || s.cru_stasis) return false;
-        ask(ShapeDialog::kQuickSaveQuestion, 0x108, [this] {
+        ask(ShapeDialog::kQuickSaveQuestion, regret ? 0x193 : 0x108, [this] {
             if (save_or_report(kQuickSave)) notify(ShapeDialog::kQuickSaveNotice);
             else leave_menu_mode();
         });
@@ -1357,7 +1386,7 @@ bool Game::function_key(std::uint16_t code) {
     case gump_key::kF8: {
         // The load screen (1008:0088, mode 1): MISC.PAL, cursor 0x25 pushed,
         // the colour cycling paused as for F2.
-        if (s.cru_stasis) return false;
+        if (regret ? !dead && (s.cru_stasis || !player_may_act(*world_)) : s.cru_stasis) return false;
         enter_menu_mode();
         world_->state.cycle_paused = true;
         world_->state.screen_palette = menu_palette_;
