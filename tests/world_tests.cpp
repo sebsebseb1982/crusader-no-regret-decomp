@@ -196,8 +196,8 @@ std::vector<ShapeInfo> test_typeflags() {
 }
 
 // No free NPC slot: create_npc takes the slot of an NPC outside the fast
-// area, which must have status bit 0x0002 for the French executable; the US
-// one takes any.
+// area, which must have status bit 0x0002 for the French No Remorse; the US
+// one and No Regret take any.
 void test_create_npc_reuses_a_slot() {
     const auto fill = [](World& w) {
         for (ObjId id = 2; id < kNpcSlots; ++id) {
@@ -211,6 +211,12 @@ void test_create_npc_reuses_a_slot() {
     {
         World w(test_typeflags());
         fill(w);
+        CHECK(w.create_npc(0x3A1, 0) == 3 && w.get(3)->shape == 0x3A1);  // No Regret
+    }
+    {
+        World w(test_typeflags());
+        w.set_remorse(true);
+        fill(w);
         CHECK(w.create_npc(0x3A1, 0) == 0);  // none has the bit
         w.get(9)->flags |= 0x0002;
         CHECK(w.create_npc(0x3A1, 0) == 9 && w.get(9)->shape == 0x3A1);
@@ -218,6 +224,7 @@ void test_create_npc_reuses_a_slot() {
     set_text_language(Language::English);
     {
         World w(test_typeflags());
+        w.set_remorse(true);
         fill(w);
         CHECK(w.create_npc(0x3A1, 0) == 3 && w.get(3)->shape == 0x3A1);
     }

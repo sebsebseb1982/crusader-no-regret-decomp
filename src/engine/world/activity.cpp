@@ -334,6 +334,15 @@ void wake_npcs_on_screen(Kernel& kernel, World& world, const AnimDat& anims) {
     }
 }
 
+// @orig 1148:3B96 (No Remorse 1138:2D72)
+void wake_npcs_now_and_then(Kernel& kernel, World& world, const AnimDat& anims) {
+    GameState& s = world.state;
+    if (s.npcs_woken && kernel.ticks() - s.last_wake < 240) return;
+    s.npcs_woken = true;
+    s.last_wake = kernel.ticks();
+    wake_npcs_on_screen(kernel, world, anims);
+}
+
 void fidget(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc) {
     if (actor_busy(kernel, npc)) return;
     do_anim(kernel, world, anims, npc, rnd(world, 2) == 0 ? 0x1E : 0x1F, kDirCurrent, 0, false);

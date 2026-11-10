@@ -277,13 +277,7 @@ bool CombatControl::fire(bool explicit_call) {
             const std::uint16_t action = kneeling(world_, npc) ? kActionKneelShoot : kActionShoot;
             if (do_anim(kernel(), world_, anims_, npc, action, kDirCurrent) != 0) {
                 if (npc == 1) use_round(npc);
-                // CRUSADER_1138_2d72 / 2daf: the NPCs on screen wake up, at
-                // most once every 240 ticks.
-                if (!woke_ || kernel().ticks() - last_wake_ >= 240) {
-                    woke_ = true;
-                    last_wake_ = kernel().ticks();
-                    wake_npcs_on_screen(kernel(), world_, anims_);
-                }
+                wake_npcs_now_and_then(kernel(), world_, anims_);
                 firing_ = true;
                 sleep_ticks(rec.shot_delay());
                 if (single_) {

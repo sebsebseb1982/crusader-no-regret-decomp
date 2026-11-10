@@ -141,6 +141,11 @@ struct GameState {
     // No Regret DS:2DBE: set by 1140:018B around the hit that ends the game,
     // so that the explosion takes the player apart (shape 0x656).
     bool forced_blast_death = false;
+    // DS:2871 (No Regret DS:2F98): when the NPCs on screen were last woken
+    // (wake_npcs_now_and_then). The original starts from 0 on the game clock;
+    // here the first time always wakes them.
+    bool npcs_woken = false;
+    std::uint32_t last_wake = 0;
     std::uint16_t difficulty = 1;    // World::I_gameDifficulty
     std::uint16_t battery = 0;        // DS:7E1F, MainActor::I_getMaxEnergy
     std::uint32_t keycards = 0;       // DS:7E1B, bit n: keycard n (MainActor::I_hasKeycard)
@@ -525,7 +530,8 @@ public:
     // NPC_10f0_236b: a new NPC of `shape` / `frame` on the pending stack, in
     // the free NPC slot at the head of its list (ITEMCACH_10b0_268d); with
     // none, a disposable NPC (status 2) out of the fast area and of special
-    // shapes is destroyed and its slot reused. Returns 0 when there is no slot.
+    // shapes is destroyed and its slot reused (No Regret: any NPC out of the
+    // fast area). Returns 0 when there is no slot.
     ObjId create_npc(std::uint16_t shape, std::uint16_t frame);
 
     // Item::I_create: a new item of `shape`/`frame` on the pending stack.
@@ -658,7 +664,7 @@ public:
     // the item's own x/y/z, like the original.
     bool is_partly_on_screen(const Item& item) const { return is_partly_in(item, view_rect()); }
     // ITEM_10a8_41f6: at least half the frame's width and its whole height
-    // are on screen.
+    // are on screen (No Regret 10B0:42E9: half its height).
     bool is_mostly_on_screen(const Item& item) const { return is_mostly_in(item, view_rect()); }
     // The same tests against the combat zone, for what decides a fight.
     bool is_partly_in_combat_zone(const Item& item) const { return is_partly_in(item, combat_rect()); }

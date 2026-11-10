@@ -7,8 +7,9 @@
 
 namespace crusader {
 
-// @orig 10B8:04C9
-// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:04C9, similarity 0.86)
+// @orig 10B8:04C9 (No Remorse 10B0:04C9)
+// No Regret adds a test of DS:0ADC and of the static/fixed.dat flex (DS:1462)
+// that leads nowhere (dead code).
 void World::unload_map() {
     // Cell by cell, x inner, y outer, each in chain order.
     for (int cy = 0; cy < kGridSize; ++cy) {
@@ -32,9 +33,13 @@ void World::unload_map() {
     }
 }
 
-// @orig 10B8:05E3
-// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:05D6, similarity 0.87)
+// No Regret empties the tracked items first (TRACKER_1138_0066 + 0000, which
+// No Remorse did when teleporting), and reads the maps from
+// static/fixed.dat when found (DS:1462, else the archive of DS:145E): the
+// port reads it as FIXED.DAT anyway.
+// @orig 10B8:05E3 (No Remorse 10B0:05D6)
 void World::load_map(int map) {
+    if (!remorse_ && map >= 0) clear_tracked();
     if (map <= 0 || !fixed_) {
         current_map_ = map;
         return;

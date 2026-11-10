@@ -102,8 +102,7 @@ std::size_t World::expand_glob_eggs(const FlexArchive& globs) {
     return created;
 }
 
-// @orig 10C0:03EF 10B8:05E3
-// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:05D6, similarity 0.87)
+// @orig 10C0:03EF 10B8:05E3 (the record loop: the same as No Remorse)
 std::vector<FixedRecord> read_fixed_map(const FlexArchive& fixed, std::size_t map) {
     const auto d = fixed.entry(map);
     std::vector<FixedRecord> records;
@@ -635,8 +634,7 @@ World::Point World::location(const Item& item) const {
     return {top->x, top->y, top->z};
 }
 
-// @orig 10F8:2609 10B8:2763
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:236B, similarity 0.83)
+// @orig 10F8:2609 10B8:2763 (No Remorse 10F0:236B)
 ObjId World::create_npc(std::uint16_t shape, std::uint16_t frame) {
     ObjId slot = free_npcs_.ids.empty() ? 0 : free_npcs_.ids.front();
     for (ObjId id = 2; id < kNpcSlots && slot == 0; ++id) {
@@ -644,10 +642,12 @@ ObjId World::create_npc(std::uint16_t shape, std::uint16_t frame) {
         if (!i) continue;
 
         // Status bit 0x0002 is required by the French executable only: the US
-        // one (10F0:2378) takes any NPC outside the fast area.
+        // one (10F0:2378) takes any NPC outside the fast area. No Regret
+        // takes any NPC outside the fast area too, whatever its shape.
         const std::uint16_t s = i->shape;
-        if ((i->z & 0xFF) != 0xFE && s != 0x3AC && s != 0x4DC && s != 0x524 && s != 0x4D9 && s != 0x4E0 &&
-            ((i->flags & 0x0002) || us_version()) && !(i->flags & kItemFastArea)) {
+        const bool kept = remorse_ && (s == 0x3AC || s == 0x4DC || s == 0x524 || s == 0x4D9 || s == 0x4E0 ||
+                                       !((i->flags & 0x0002) || us_version()));
+        if ((i->z & 0xFF) != 0xFE && !kept && !(i->flags & kItemFastArea)) {
             destroy(id);
             slot = id;
         }
@@ -757,8 +757,7 @@ bool World::has_fast_area_events(const Item& item) const {
     return is_npc_id(item.id) || (info && info->is(ShapeInfo::kNoisy));
 }
 
-// @orig 10B0:2B34
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:2B30, similarity 0.93)
+// @orig 10B0:2B34 (No Remorse 10A8:2B30)
 std::uint16_t World::enter_fast_area(Item& item) {
     // Families 4/7/8 and the NPC reset are handled below through hooks. Not
     // reproduced: the shape 0x4FE hook (CRUSYS_1060_021b) and the EggHatcher
@@ -780,7 +779,10 @@ std::uint16_t World::enter_fast_area(Item& item) {
         return 0;
     }
     if ((fam == 4 || (fam == 8 && item.frame == 0)) && hooks_.egg_hatcher) hooks_.egg_hatcher(item.id);
-    if (is_npc_id(item.id) && hooks_.npc_entered_fast_area) hooks_.npc_entered_fast_area(item.id);
+    // The NPC's activity starts again; No Regret leaves the four dead shapes
+    // above as they are.
+    if (is_npc_id(item.id) && !(!remorse_ && is_dead(item.id)) && hooks_.npc_entered_fast_area)
+        hooks_.npc_entered_fast_area(item.id);
     if (has_fast_area_events(item) && hooks_.start_event) return hooks_.start_event(item.id, 0x0F);
     return 0;
 }
@@ -1117,8 +1119,7 @@ bool World::is_partly_in(const Item& item, const ScreenRect& r) const {
     return left <= r.x1 && right >= r.x0 && top <= r.y1 && bottom >= r.y0 && right >= left && bottom >= top;
 }
 
-// @orig 10B0:42E9
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:41F6, similarity 0.95)
+// @orig 10B0:42E9 (No Remorse 10A8:41F6)
 bool World::is_mostly_in(const Item& item, const ScreenRect& r) const {
     if (!frame_lookup_) return false;
     const auto box = frame_lookup_(item.shape, item.frame);
@@ -1132,7 +1133,9 @@ bool World::is_mostly_in(const Item& item, const ScreenRect& r) const {
     // rect_clip_to the screen.
     const int cl = std::max(left, r.x0), ct = std::max(top, r.y0);
     const int cr = std::min(right, r.x1), cb = std::min(bottom, r.y1);
-    return (box->width >> 1) <= cr - cl + 1 && cb - ct + 1 == box->height;
+    // Half its width on screen, and all its height (No Regret: half of it).
+    if ((box->width >> 1) > cr - cl + 1) return false;
+    return remorse_ ? cb - ct + 1 == box->height : (box->height >> 1) <= cb - ct + 1;
 }
 
 // @orig ?: fast area emptied on arrival, not located
@@ -1290,7 +1293,7 @@ int World::forget_lost_equipment() {
 }
 
 // @orig 10B0:13D7 10B8:1B89
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:1365, similarity 0.82)
+// (No Regret 10B0:13D7: the items resting on it fall by a typeflag bit, in destroy_item)
 void World::destroy(ObjId id) {
     Item* item = get(id);
     if (!item) return;
@@ -1331,8 +1334,9 @@ void World::destroy(ObjId id) {
     if (id != 1 && listed && hooks_.fail_processes) hooks_.fail_processes(id);
 }
 
-// @orig 10B8:1644
-// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:161B, similarity 0.80)
+// No Regret also opens static/fixed.dat here when it exists (DS:1462, see
+// load_map).
+// @orig 10B8:1644 (No Remorse 10B0:161B)
 void World::init_free_slots() {
     // Every slot free: NPCs 2..0xFF, items 0x100..0x27FF, each in id order.
     free_items_ = {};
@@ -1367,8 +1371,7 @@ void World::remove_free(ObjId id) {
     free_mask_.reset(id);
 }
 
-// @orig 10B8:05E3
-// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:05D6, similarity 0.87)
+// @orig 10B8:05E3 (the record loop: the same as No Remorse)
 std::vector<ObjId> World::load_fixed_map(const FlexArchive& fixed, std::size_t map) {
     std::vector<ObjId> top_level;
     std::vector<ObjId> containers;  // open containers, innermost last

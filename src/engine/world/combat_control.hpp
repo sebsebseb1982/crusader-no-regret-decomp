@@ -114,10 +114,6 @@ private:
     bool cocked_ = false;         // DS:2879, weapon 0x332
     bool timer_on_ = false;       // timed messages enabled (01A5 / end of burst)
     std::uint32_t wake_at_ = 0;
-    // DS:2871, when the NPCs on screen were last woken (the original starts
-    // from 0 on the game clock; here the first shot always wakes them).
-    bool woke_ = false;
-    std::uint32_t last_wake_ = 0;
     bool asleep_ = false;
 };
 

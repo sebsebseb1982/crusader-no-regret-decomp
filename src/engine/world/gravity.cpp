@@ -75,8 +75,7 @@ std::uint8_t support_mask(const World& world, std::uint16_t shape, std::int32_t 
     return result;
 }
 
-// @orig 1048:0395
-// TODO(regret): modified in REGRET.EXE (No Remorse 1040:0395, similarity 0.92)
+// @orig 1048:0395 (No Remorse 1040:0395)
 GravityProcess::GravityProcess(World& world, ObjId item, int vx_, int vy_, int vz_, int gravity_)
     : vx(vx_), vy(vy_), vz(vz_), gravity(gravity_), world_(world) {
     set_owner(item);
@@ -90,14 +89,24 @@ GravityProcess::GravityProcess(World& world, ObjId item, int vx_, int vy_, int v
     }
 }
 
-// @orig 1048:06D7
-// TODO(regret): modified in REGRET.EXE (No Remorse 1040:06D2, similarity 0.79)
+// @orig 1048:06D7 (No Remorse 1040:06D2)
 void GravityProcess::run() {
     const ObjId id = owner();
     Item* item = world_.get(id);
     if (!item) {
         terminate();
         return;
+    }
+    // No Regret, at the first run (the new byte +0x42): a fixed item, or one
+    // of no weight without the typeflag bit 0x40 of byte 6 (ITEM_10b0_06a5),
+    // does not fall.
+    if (!world_.remorse() && !started_) {
+        started_ = true;
+        if (const ShapeInfo* info = world_.shape_info(item->shape);
+            info && (info->is(ShapeInfo::kFixed) || (info->weight == 0 && !info->is(ShapeInfo::kUnknown66)))) {
+            terminate();
+            return;
+        }
     }
     if ((item->z & 0xFF) > 250) {
         // 11D8:0D0E: every process of the item fails, this one included.
@@ -316,8 +325,7 @@ void leave_surface(Kernel& kernel, World& world, ObjId mover) {
     }
 }
 
-// @orig 1048:06D7; branche 08D8
-// TODO(regret): modified in REGRET.EXE (No Remorse 1040:06D2, similarity 0.79)
+// @orig 1048:06D7 (No Remorse 1040:06D2; the branch at 08D8, the same)
 void drop_items_on_top(Kernel& kernel, World& world, ObjId item) {
     static constexpr std::uint8_t kAll[] = {'$'};
     for (ObjId id : world.surface_search(item, 1, kAll)) fall(kernel, world, id);

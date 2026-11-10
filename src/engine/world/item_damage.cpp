@@ -3,6 +3,7 @@
 #include "core/dtable.hpp"
 #include "engine/audio/audio.hpp"
 #include "engine/usecode/world_intrinsics.hpp"
+#include "engine/world/activity.hpp"
 #include "engine/world/collision.hpp"
 #include "engine/world/projectile.hpp"
 #include "engine/world/sprite_process.hpp"
@@ -107,8 +108,7 @@ void hit_item(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int 
     got_hit(kernel, world, anims, id, kHitByDamage, static_cast<std::uint16_t>((fire_type & 0xFF) << 8 | (damage & 0xFF)));
 }
 
-// @orig 1160:0AAF
-// TODO(regret): modified in REGRET.EXE (No Remorse 1150:0891, similarity 0.92)
+// @orig 1160:0AAF (No Remorse 1150:0891)
 void explode(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int size, bool destroy, bool splash) {
     Item* item = world.get(id);
     if (!item || (item->z & 0xFF) == 0xFE) return;
@@ -124,9 +124,11 @@ void explode(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int s
     const dtable::FireType* ft = dtable::fire_type(4);
     const int radius = (ft ? ft->splash() : 0) / divisor;
     const int damage = (ft ? ft->min_damage() + rnd(world, ft->max_damage() - ft->min_damage() + 1) : 0) / divisor;
-    // The explosion sprite (tables DS:2A8A, 2A8E, 2A94) at the item's
-    // centre, frames 0..0x27, one tick each. Then sound 0x1C or 0x6C, played
-    // at the controlled NPC (DS:2852), so always at full volume on screen.
+    // The explosion sprite (tables DS:2A8A, 2A8E, 2A94; No Regret DS:3304,
+    // 3308, 330E, the same) at the item's centre, frames 0..0x27, one tick
+    // each. Then sound 0x1C or 0x6C, played at the controlled NPC (DS:2852),
+    // so always at full volume on screen; No Regret plays it at the item
+    // when there is splash damage.
     static constexpr std::uint16_t kSmall[] = {0x31C, 0x31F};
     static constexpr std::uint16_t kMedium[] = {0x326, 0x320, 0x321};
     static constexpr std::uint16_t kLarge[] = {0x324, 0x323, 0x325};
@@ -134,17 +136,20 @@ void explode(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int s
     const ShapeInfo* info = world.shape_info(item->shape);
     const World::Point centre{item->x - (info ? info->footpad_x * 8 : 0), item->y - (info ? info->footpad_y * 8 : 0),
                               (item->z & 0xFF) + (info ? info->footpad_z * 4 : 0)};
+    const World::Point at{item->x, item->y, item->z & 0xFF};
     create_sprite(kernel, world, sprite, 0, 0x27, 1, centre);
+    // No Regret: the explosion wakes the NPCs on screen (1148:3B96 / 3BD3).
+    if (!world.remorse()) wake_npcs_now_and_then(kernel, world, anims);
     auto boom = [&] {
         const int sfx = rnd(world, 2) == 0 ? 0x1C : 0x6C;
-        if (audio) audio->sources.play(world, sfx, world.state.controlled_npc);
+        const ObjId from = splash && !world.remorse() ? id : world.state.controlled_npc;
+        if (audio) audio->sources.play(world, sfx, from);
     };
     if (!splash) {
         if (destroy) world.destroy(id);
         boom();
         return;
     }
-    const World::Point at{item->x, item->y, item->z & 0xFF};
     boom();
     splash_damage(kernel, world, anims, at, radius, damage, 4, id, 0);
     if (destroy && world.get(id)) world.destroy(id);

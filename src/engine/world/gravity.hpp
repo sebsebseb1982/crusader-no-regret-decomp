@@ -55,6 +55,7 @@ private:
     World& world_;
     int steps_left_ = 200;
     bool rolling_ = false;  // +0x3A
+    bool started_ = false;  // +0x42, No Regret only
 };
 
 // The process of type 0xF1 (ITEM.C 0020 / 0078): at its first run, it

@@ -46,9 +46,13 @@ int range_if_visible(const World& world, ObjId item, ObjId other);
 // targets the controlled NPC (in combat: always). Any other takes its default
 // activity 2 if it can see the controlled NPC (only checked for shapes 0x2F5,
 // 0x2F6, 0x2F7, 0x595, 0x597: the others hear it), and targets it if that put
-// it in combat. The controller does it at most once every 240 ticks
-// (CRUSADER_1138_2d72).
+// it in combat. No Regret looks for 0x384 and 0x344 instead of 0x595 and
+// 0x597.
 void wake_npcs_on_screen(Kernel& kernel, World& world, const AnimDat& anims);
+// The same, unless done less than 240 ticks ago (CRUSADER_1138_2d72, the time
+// in DS:2871, No Regret DS:2F98): after a shot of the controller and, in No
+// Regret, an explosion (explode).
+void wake_npcs_now_and_then(Kernel& kernel, World& world, const AnimDat& anims);
 
 // TYPE_1108_0913: a fidget (action 0x1E or 0x1F, then 0) when not busy.
 void fidget(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc);
