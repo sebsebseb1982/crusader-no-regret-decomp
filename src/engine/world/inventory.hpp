@@ -45,6 +45,10 @@ bool add_item_cru(World& world, ObjId item, bool show);
 // `shape`, 0 if none.
 ObjId carried(const World& world, std::uint16_t shape);
 
+// The credits: shape 0x112 in No Regret, 0x4ED in No Remorse (No Regret's
+// 0x4ED is the VIR imager).
+inline std::uint16_t credits_shape(const World& world) { return world.remorse() ? 0x4ED : 0x112; }
+
 // The player's equipment slots by kind (first and last slot). No Regret
 // (NPC 10F8:31C1, 31EA, 321A): weapons 1..12, ammunition 13..20, items
 // 21..44. No Remorse: weapons 1..5, ammunition 6..10, items 11..25.

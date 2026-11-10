@@ -28,6 +28,10 @@ public:
 
     explicit SoundSources(SoundManager& voices);
 
+    // The highest sound number the sources take: 0x400 in No Regret
+    // (1428:021E and the others), 0x200 in No Remorse.
+    void set_max_sfx(int max_sfx) { max_sfx_ = max_sfx; }
+
     // 1450:021E (I_playSFXCru, 0x015): a one-shot sound at the item, when a
     // source is free.
     void play(const World& world, int sfx, ObjId item);
@@ -76,7 +80,8 @@ public:
 private:
     void release(SoundManager::Handle handle);  // 1450:07B9
     void start(Source& s, const World& world, int sfx, ObjId item, bool loop);
-    static bool valid_sfx(int sfx) { return sfx > 0 && sfx <= 0x200; }
+    bool valid_sfx(int sfx) const { return sfx > 0 && sfx <= max_sfx_; }
+    int max_sfx_ = 0x400;
 
     SoundManager& voices_;
     std::array<Source, kSources> sources_{};

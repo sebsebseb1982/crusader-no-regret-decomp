@@ -68,7 +68,6 @@ void take(World& world, ObjId item, int slot) {
 // One more on the item carried, up to `limit`; the picked-up one is shown
 // (when `show`), then destroyed.
 // @orig 1008:03AB
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0330, similarity 0.88)
 bool add_one(World& world, ObjId item, ObjId carried_id, int limit, bool show) {
     const std::uint16_t q = world.get(carried_id)->quality;
     if (q >= limit) return false;
@@ -86,7 +85,6 @@ int free_equip_slot(const World& world, SlotRange range) {
 }
 
 // @orig 1008:03AB 10B0:2ABB
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0330, similarity 0.88)
 void set_quality_and_combine(World& world, ObjId item, std::uint16_t quality) {
     Item* it = world.get(item);
     if (!it) return;
@@ -94,8 +92,10 @@ void set_quality_and_combine(World& world, ObjId item, std::uint16_t quality) {
     if (world.hooks().start_event) world.hooks().start_event(item, 0x0C);
 }
 
+// No Regret (1008:03AB) differs from No Remorse (13E8:0330) by the shape of
+// the credits and by two more items of which only one is carried: the VIR
+// imager 0x4ED and the radiation shield 0x191.
 // @orig 1008:03AB
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0330, similarity 0.88)
 bool add_item_cru(World& world, ObjId item_id, bool show) {
     const Item* item = world.get(item_id);
     if (!item) return false;
@@ -106,7 +106,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
         if (show) world.state.pickups.add(world, item_id);
     };
 
-    if (shape == 0x4ED) {
+    if (shape == credits_shape(world)) {
         if (const ObjId c = carried(world, shape)) {
             set_quality_and_combine(world, c, static_cast<std::uint16_t>(world.get(c)->quality + item->quality));
             shown();
@@ -167,7 +167,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
     }
     if (const ObjId c = carried(world, shape)) {
         const std::uint16_t s = world.get(c)->shape;
-        if (s == 0x52E || s == 0x52F || s == 0x530) {
+        if (s == 0x52E || s == 0x52F || s == 0x530 || (!world.remorse() && (s == 0x4ED || s == 0x191))) {
             world.destroy(item_id);
             return true;
         }
@@ -200,7 +200,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
 bool may_add_item(const World& world, std::uint16_t shape) {
     const ObjId c = carried(world, shape);
     const int quality = c ? world.get(c)->quality : 0;
-    if (shape == 0x4ED) return c ? quality < 60000 : free_slot(world, item_slots(world)) != 0;
+    if (shape == credits_shape(world)) return c ? quality < 60000 : free_slot(world, item_slots(world)) != 0;
     const std::uint8_t fam = world.family_of(shape);
     if (fam == kFamilyWeapon) return free_slot(world, weapon_slots(world)) != 0;
     if (fam == kFamilyAmmo) return c ? quality < 20 : free_slot(world, ammo_slots(world)) != 0;

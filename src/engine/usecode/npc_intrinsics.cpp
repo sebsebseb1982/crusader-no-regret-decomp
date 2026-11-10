@@ -249,9 +249,9 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
         return 0;
     });
     // MainActor::I_getNumberOfCredits (10F0:3833): the quality of the credits
-    // (0x4ED) the player carries, 0 without.
+    // (0x112; 0x4ED in No Remorse) the player carries, 0 without.
     m.set_intrinsic(0x0EB, [&w](UCMachine&, UCProcess&, Args) -> std::uint32_t {
-        const Item* credits = w.get(carried(w, 0x4ED));
+        const Item* credits = w.get(carried(w, credits_shape(w)));
         return credits ? credits->quality : 0;
     });
     bound.push_back(0x0EB);

@@ -25,7 +25,6 @@ constexpr std::uint16_t kDeathSilence = 0x261;
 constexpr std::uint8_t kImmortal = 0x02;
 constexpr std::uint8_t kDead = 0x01;
 
-constexpr std::uint16_t kCredits = 0x4ED;
 constexpr std::uint16_t kCheatCredits = 30000;
 constexpr std::uint16_t kEndOfTable = 0xFFFF;
 // DS:289D, DS:28A9 (Ctrl), DS:28B5 (Alt).
@@ -92,7 +91,7 @@ void give_ammo(World& world, std::uint16_t shape) {
 // TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 void give_everything(World& world, std::uint16_t flags) {
     // NPC_10f0_3dbf: the credits carried.
-    if (const ObjId c = carried(world, kCredits)) set_quality(world, c, kCheatCredits);
+    if (const ObjId c = carried(world, credits_shape(world))) set_quality(world, c, kCheatCredits);
     give(world, 0x3A3);
     give(world, 0x530);
     // NPC_10f0_34ca(npc, 0): the energy full.

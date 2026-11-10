@@ -1,5 +1,6 @@
 #include "engine/ui/status_bar.hpp"
 
+#include "engine/world/inventory.hpp"
 #include "engine/world/actor_anim.hpp"
 
 #include <string>
@@ -9,7 +10,6 @@ namespace crusader {
 namespace {
 
 constexpr ObjId kPlayer = 1;               // DS:7E0E
-constexpr std::uint16_t kCredits = 0x4ED;  // shown with shape 3 frame 13
 constexpr int kBarLength = 66;
 constexpr std::uint8_t kHealthColour = 0x41;
 constexpr std::uint8_t kEnergyColour = 0xF5;
@@ -128,7 +128,7 @@ void StatusBar::draw(Surface8& screen, const World& world) const {
         case 2:
             if (const Item* it = c.item ? world.get(c.item) : nullptr) {
                 std::uint16_t shape = 5, frame = 0;
-                if (it->shape == kCredits) {
+                if (it->shape == credits_shape(world)) {  // shown with shape 3 frame 13
                     shape = 3;
                     frame = 13;
                 } else if (world.family_of(it->shape) == 12) {

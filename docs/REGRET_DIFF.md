@@ -6,64 +6,59 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 | Status | Routines | Meaning |
 |---|---:|---|
-| identical | 2260 | same code: the No Remorse port applies as is |
-| constants | 217 | same instructions, other constants (often an assert line number; sometimes a real value) |
+| identical | 2276 | same code: the No Remorse port applies as is |
+| constants | 201 | same instructions, other constants (often an assert line number; sometimes a real value) |
 | modified | 290 | the instructions changed |
 | new | 215 | no counterpart in No Remorse |
 | removed | 210 | No Remorse routines without counterpart in No Regret |
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 349 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 277 lines are left:
 
 | File | Lines |
 |---|---:|
-| `src/game/game.cpp` | 38 |
-| `src/engine/world/actor_anim.cpp` | 22 |
-| `src/engine/ui/weasel_gump.cpp` | 20 |
-| `src/engine/world/world.cpp` | 17 |
-| `src/engine/world/player_commands.cpp` | 15 |
-| `src/engine/world/attack.cpp` | 14 |
+| `src/game/game.cpp` | 34 |
+| `src/engine/ui/weasel_gump.cpp` | 19 |
+| `src/engine/world/actor_anim.cpp` | 14 |
 | `src/engine/world/projectile.cpp` | 14 |
-| `src/engine/world/activity.cpp` | 12 |
+| `src/engine/world/world.cpp` | 12 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
-| `src/engine/world/inventory.cpp` | 11 |
+| `src/engine/world/attack.cpp` | 11 |
 | `src/engine/world/world_mouse.cpp` | 10 |
 | `src/engine/ui/load_screen.cpp` | 9 |
 | `src/engine/ui/movie_player.cpp` | 8 |
 | `src/engine/ui/options_screen.cpp` | 8 |
 | `src/engine/world/aim_mode.cpp` | 7 |
 | `src/engine/world/item_selection.cpp` | 7 |
+| `src/engine/world/player_commands.cpp` | 7 |
 | `src/engine/ui/help_screen.cpp` | 6 |
-| `src/engine/world/cheats.cpp` | 6 |
-| `src/engine/world/combat_control.cpp` | 6 |
-| `src/engine/world/gravity.cpp` | 6 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
-| `src/engine/kernel.cpp` | 5 |
 | `src/engine/ui/main_menu.cpp` | 5 |
-| `src/engine/world/actor_create.cpp` | 5 |
+| `src/engine/world/activity.cpp` | 5 |
+| `src/engine/world/cheats.cpp` | 5 |
+| `src/engine/world/combat_control.cpp` | 5 |
+| `src/engine/world/gravity.cpp` | 5 |
 | `src/engine/world/sprite_process.cpp` | 5 |
 | `src/core/game_config.cpp` | 4 |
 | `src/engine/ui/difficulty_screen.cpp` | 4 |
-| `src/engine/ui/status_bar.cpp` | 4 |
 | `src/core/avi_movie.cpp` | 3 |
-| `src/core/dtable.cpp` | 3 |
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
-| `src/engine/ui/computer_gump.cpp` | 3 |
+| `src/engine/ui/status_bar.cpp` | 3 |
+| `src/engine/world/actor_create.cpp` | 3 |
 | `src/engine/world/avatar_mover.cpp` | 3 |
 | `src/engine/world/map_change.cpp` | 3 |
-| `src/engine/world/pathfind.cpp` | 3 |
-| `src/engine/world/pickup_list.cpp` | 3 |
 | `src/engine/world/teleport.cpp` | 3 |
+| `src/core/dtable.cpp` | 2 |
 | `src/engine/audio/music.cpp` | 2 |
 | `src/engine/palette_fader.cpp` | 2 |
+| `src/engine/ui/computer_gump.cpp` | 2 |
 | `src/engine/ui/shape_dialog.cpp` | 2 |
 | `src/engine/usecode/world_intrinsics.cpp` | 2 |
-| `src/engine/world/auto_firer.cpp` | 2 |
-| `src/engine/world/render.cpp` | 2 |
+| `src/engine/world/pathfind.cpp` | 2 |
+| `src/engine/world/pickup_list.cpp` | 2 |
 | `src/engine/world/screen_sprites.hpp` | 2 |
-| `src/engine/world/world.hpp` | 2 |
 | `src/core/anim_dat.cpp` | 1 |
 | `src/core/shape.cpp` | 1 |
 | `src/core/sound_flex.cpp` | 1 |
@@ -71,17 +66,13 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/core/xform.cpp` | 1 |
 | `src/engine/audio/asylum_voice.hpp` | 1 |
 | `src/engine/input/keyboard.cpp` | 1 |
-| `src/engine/process.cpp` | 1 |
-| `src/engine/ui/gump_keys.hpp` | 1 |
 | `src/engine/ui/keypad_gump.cpp` | 1 |
-| `src/engine/ui/mouse_cursor.cpp` | 1 |
 | `src/engine/ui/pickup_area.cpp` | 1 |
 | `src/engine/usecode/item_intrinsics.cpp` | 1 |
 | `src/engine/world/chargers.cpp` | 1 |
 | `src/engine/world/collision.cpp` | 1 |
-| `src/engine/world/item_anim.cpp` | 1 |
+| `src/engine/world/inventory.cpp` | 1 |
 | `src/engine/world/item_damage.cpp` | 1 |
-| `src/engine/world/palette_cycle.cpp` | 1 |
 | `src/platform/sdl_presenter.cpp` | 1 |
 
 ## Intrinsics
@@ -225,8 +216,8 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 
 | Module | identical | constants | modified | new |
 |---|---:|---:|---:|---:|
-| WORLD | 29 | 3 | 32 | 13 |
-| NPC | 114 | 66 | 14 | 4 |
+| WORLD | 30 | 2 | 32 | 13 |
+| NPC | 112 | 68 | 14 | 4 |
 | SEG1470 | 0 | 0 | 0 | 15 |
 | SEG1468 | 0 | 0 | 0 | 14 |
 | SEG13A8 | 6 | 0 | 6 | 7 |
@@ -247,17 +238,17 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | ANIMPRIM | 3 | 6 | 9 | 0 |
 | SPMGR | 18 | 0 | 8 | 1 |
 | SPANKER | 4 | 4 | 8 | 1 |
-| SEG1000 | 203 | 13 | 3 | 5 |
+| SEG1000 | 206 | 10 | 3 | 5 |
 | GAMEPAL | 21 | 0 | 4 | 4 |
 | CACHE | 19 | 5 | 5 | 3 |
 | ASTREAM | 12 | 0 | 0 | 8 |
-| KERNEL | 58 | 30 | 7 | 1 |
+| KERNEL | 59 | 29 | 7 | 1 |
 | DSFXMAN | 25 | 0 | 1 | 7 |
 | SHAPHAND | 15 | 3 | 7 | 0 |
-| SEG1210 | 11 | 1 | 4 | 3 |
+| SEG1210 | 12 | 0 | 4 | 3 |
 | SEG1460 | 0 | 0 | 0 | 7 |
 | ITEMCACH | 32 | 4 | 5 | 1 |
-| REFSTORE | 16 | 1 | 1 | 5 |
+| REFSTORE | 17 | 0 | 1 | 5 |
 | WPNCACHE | 2 | 0 | 2 | 4 |
 | DESC | 19 | 0 | 0 | 5 |
 | TARGA | 0 | 0 | 0 | 5 |
@@ -265,44 +256,44 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | CDLOAD | 14 | 0 | 2 | 2 |
 | SEG1048 | 4 | 1 | 4 | 0 |
 | SEG1160 | 6 | 0 | 3 | 1 |
-| DLITEM | 8 | 3 | 3 | 1 |
+| DLITEM | 9 | 2 | 3 | 1 |
 | PROCESS | 62 | 0 | 4 | 0 |
 | CPROTMEM | 17 | 6 | 4 | 0 |
 | SEG12A8 | 11 | 0 | 4 | 0 |
 | UNITFILE | 10 | 0 | 0 | 4 |
 | ITEMDATA | 3 | 0 | 0 | 3 |
 | ANIMFILE | 6 | 0 | 3 | 0 |
-| SEG11C8 | 7 | 2 | 2 | 1 |
+| SEG11C8 | 8 | 1 | 2 | 1 |
 | MLIST | 11 | 0 | 3 | 0 |
 | FILE | 24 | 0 | 3 | 0 |
 | SEG1390 | 6 | 0 | 3 | 0 |
 | SEG13A0 | 7 | 0 | 3 | 0 |
-| U9SYS | 15 | 1 | 2 | 0 |
+| U9SYS | 16 | 0 | 2 | 0 |
 | SEG10A0 | 21 | 0 | 2 | 0 |
 | GLOB | 12 | 0 | 2 | 0 |
 | SEG10E8 | 18 | 0 | 2 | 0 |
 | SEG1128 | 5 | 2 | 2 | 0 |
 | SEG1190 | 2 | 0 | 0 | 2 |
 | SEG1198 | 35 | 0 | 2 | 0 |
-| DLIST | 31 | 3 | 2 | 0 |
-| DESCRIPT | 17 | 1 | 0 | 2 |
+| DLIST | 32 | 2 | 2 | 0 |
+| DESCRIPT | 18 | 0 | 0 | 2 |
 | SUPERVGA | 19 | 0 | 2 | 0 |
 | VPORT | 31 | 0 | 1 | 1 |
-| SYSTEM | 20 | 1 | 2 | 0 |
+| SYSTEM | 21 | 0 | 2 | 0 |
 | SNDMGR | 15 | 0 | 2 | 0 |
 | SNDCACHE | 12 | 0 | 2 | 0 |
-| DISPATCH | 33 | 9 | 2 | 0 |
+| DISPATCH | 34 | 8 | 2 | 0 |
 | MOUSECTL | 20 | 0 | 2 | 0 |
 | DEBUGUMP | 35 | 0 | 2 | 0 |
 | SEG13D0 | 9 | 0 | 2 | 0 |
 | SEG13D8 | 10 | 0 | 2 | 0 |
-| UPROCESS | 31 | 1 | 2 | 0 |
+| UPROCESS | 32 | 0 | 2 | 0 |
 | SEG10F0 | 13 | 0 | 1 | 0 |
 | TYPE | 7 | 0 | 1 | 0 |
-| DTABLE | 25 | 7 | 1 | 0 |
-| ANIMCACH | 10 | 1 | 1 | 0 |
-| DISPLAY | 9 | 2 | 1 | 0 |
-| KDAEMON | 17 | 1 | 1 | 0 |
+| DTABLE | 29 | 3 | 1 | 0 |
+| ANIMCACH | 11 | 0 | 1 | 0 |
+| DISPLAY | 10 | 1 | 1 | 0 |
+| KDAEMON | 18 | 0 | 1 | 0 |
 | SYSTIMER | 23 | 0 | 1 | 0 |
 | FASTFLEX | 5 | 0 | 1 | 0 |
 | PALETTE | 5 | 0 | 1 | 0 |
@@ -313,13 +304,13 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | SEG1370 | 15 | 0 | 1 | 0 |
 | SEG1378 | 25 | 0 | 1 | 0 |
 | SEG13B0 | 11 | 0 | 1 | 0 |
-| INTER | 11 | 0 | 1 | 0 |
-| SEG1410 | 10 | 1 | 1 | 0 |
+| INTER | 10 | 1 | 1 | 0 |
+| SEG1410 | 11 | 0 | 1 | 0 |
 | SEG1490 | 44 | 0 | 0 | 1 |
 | SEG1040 | 14 | 0 | 0 | 0 |
 | SEG1050 | 9 | 0 | 0 | 0 |
 | HANDLER | 19 | 0 | 0 | 0 |
-| SEG1088 | 28 | 1 | 0 | 0 |
+| SEG1088 | 29 | 0 | 0 | 0 |
 | SEG1090 | 1 | 1 | 0 | 0 |
 | SEG1098 | 13 | 0 | 0 | 0 |
 | ITEMDAM | 9 | 0 | 0 | 0 |
@@ -334,7 +325,7 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | SEG1220 | 1 | 2 | 0 | 0 |
 | SEG1228 | 1 | 0 | 0 | 0 |
 | FILEPARS | 12 | 0 | 0 | 0 |
-| FILESPEC | 12 | 1 | 0 | 0 |
+| FILESPEC | 13 | 0 | 0 | 0 |
 | FLEX | 19 | 0 | 0 | 0 |
 | SEG1260 | 5 | 0 | 0 | 0 |
 | BASEPAL | 7 | 0 | 0 | 0 |
@@ -352,12 +343,12 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | SEG1368 | 4 | 0 | 0 | 0 |
 | SEG1380 | 10 | 0 | 0 | 0 |
 | SEG1388 | 13 | 0 | 0 | 0 |
-| U9MOUSE | 5 | 1 | 0 | 0 |
+| U9MOUSE | 6 | 0 | 0 | 0 |
 | DEBUGGER | 13 | 0 | 0 | 0 |
 | FLAG | 4 | 0 | 0 | 0 |
 | YAMM | 25 | 0 | 0 | 0 |
 | FLICPLAY | 10 | 0 | 0 | 0 |
-| SNDSRC | 21 | 0 | 0 | 0 |
+| SNDSRC | 14 | 7 | 0 | 0 |
 | SEG1430 | 3 | 0 | 0 | 0 |
 
 ## No Remorse routines without counterpart

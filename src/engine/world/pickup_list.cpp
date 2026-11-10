@@ -1,3 +1,4 @@
+#include "engine/world/inventory.hpp"
 #include "engine/world/pickup_list.hpp"
 
 #include "core/dtable.hpp"
@@ -10,7 +11,6 @@ namespace crusader {
 namespace {
 
 constexpr std::uint16_t kKeycard = 0x111;
-constexpr std::uint16_t kCredits = 0x4ED;
 constexpr std::uint32_t kTicksPerSecond = 60;
 
 struct Description {
@@ -23,7 +23,7 @@ struct Description {
 // TODO(regret): modified in REGRET.EXE (No Remorse 1190:070F, similarity 0.99)
 Description describe(const World& world, const Item& item) {
     if (item.shape == kKeycard) return {tr("PASSE", "KEYCARD"), 5, static_cast<std::uint16_t>(item.frame + 13)};
-    if (item.shape == kCredits) return {"CREDITS", 3, 13};
+    if (item.shape == credits_shape(world)) return {"CREDITS", 3, 13};
     switch (world.family_of(item.shape)) {
     case 10: return {dtable::weapon_name(item.shape), 3, dtable::weapon_icon(item.shape)};
     case 11: return {dtable::ammo_name(item.shape), 5, dtable::ammo_icon(item.shape)};
@@ -44,7 +44,7 @@ void PickupList::add(const World& world, ObjId item_id) {
     if (!d.name) return;
     for (PickupEntry& e : entries_) {
         if (!e.name || e.icon_shape != d.shape || e.icon_frame != d.frame) continue;
-        // The original compares the icon shape, not the item's, with 0x4ED.
+        // The original compares the icon shape, not the item's, with the credits' shape.
         e.count += 1;
         e.seconds = kSeconds;
         return;
@@ -52,7 +52,7 @@ void PickupList::add(const World& world, ObjId item_id) {
     for (PickupEntry& e : entries_) {
         if (e.name) continue;
         e = {d.name, d.shape, d.frame, 1, kSeconds};
-        if (item->shape == kCredits) e.count = item->quality ? static_cast<std::int16_t>(item->quality) : 1;
+        if (item->shape == credits_shape(world)) e.count = item->quality ? static_cast<std::int16_t>(item->quality) : 1;
         return;
     }
 }
