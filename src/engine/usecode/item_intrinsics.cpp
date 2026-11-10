@@ -71,7 +71,7 @@ int total_weight(const World& w, const Item& item) {
 bool drops_what_rests_on_it(const World& w, std::uint16_t shape) {
     if (!w.remorse()) {
         const ShapeInfo* info = w.shape_info(shape);
-        return info && (info->bytes[6] & 0x40);
+        return info && info->is(ShapeInfo::kUnknown66);
     }
     return shape == 0x432 || shape == 0x5A0 || shape == 0x1FD || shape == 0x1FE || shape == 0x08F ||
            shape == 0x59F || shape == 0x2B3 || shape == 0x2CA;

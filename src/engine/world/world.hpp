@@ -360,6 +360,9 @@ struct WorldHooks {
     // `autosave_soon` once the player may act again (a mission start).
     std::function<void()> autosave;
     std::function<void()> autosave_soon;
+    // KERNEL 11E8:33E3: the keys held and the key queue are forgotten
+    // (Ultima8Engine::I_clrCruStasis in No Regret).
+    std::function<void()> flush_keys;
 };
 
 class World {

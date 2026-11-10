@@ -173,10 +173,8 @@ void test_new_game(const std::filesystem::path& data) {
     shot(game, "new_game.png");
     player = w.get(1);
     std::printf("after 30 s: map %d, player at (%d, %d, %d)\n", w.current_map(), player->x, player->y, player->z);
-    // The No Regret only intrinsics not written yet: the Xan movie (0x06D),
-    // the jump to a given colour (0x072), the removal of an inventory item
-    // (0x0B5) and the routine at 1008:005D (0x0B6).
-    const std::set<std::uint16_t> todo = {0x46D, 0x472, 0x4B5, 0x4B6};
+    // The No Regret only intrinsic not written yet: the Xan movie (0x06D).
+    const std::set<std::uint16_t> todo = {0x46D};
     bool unknown_unbound = false;
     for (const auto& [number, calls] : game.machine().unbound_intrinsic_calls()) {
         if (todo.count(number)) continue;

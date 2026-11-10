@@ -424,6 +424,7 @@ void Game::reset_world() {
     hooks.drop_falling = [this](ObjId item) { drop_out_of_fast_area(*kernel_, *world_, item); };
     hooks.show_message = [this](const std::string& text) { show_message(text); };
     hooks.autosave = [this] { autosave(); };
+    hooks.flush_keys = [this] { keyboard_.reset(); };
     hooks.autosave_soon = [this] { request_autosave(); };
     hooks.designated_target_moved = [this](ObjId item, std::int32_t x, std::int32_t y, std::int32_t z) {
         designated_target_moved(*kernel_, *world_, anims_, item, x, y, z);

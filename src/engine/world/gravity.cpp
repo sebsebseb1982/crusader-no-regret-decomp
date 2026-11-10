@@ -353,12 +353,15 @@ Pid hurl(Kernel& kernel, World& world, ObjId item, int vx, int vy, int vz, int g
     return g.pid();
 }
 
+// A fixed item does not fall, nor one without weight; in No Regret a
+// weightless item still falls when its shape has type flag 0x66 (ITEM
+// 10B0:06A5, the flag Item::I_destroy reads too).
 // @orig 1048:13EB
-// TODO(regret): modified in REGRET.EXE (No Remorse 1040:1334, similarity 0.85)
 Pid fall(Kernel& kernel, World& world, ObjId item) {
     const Item* i = world.get(item);
     const ShapeInfo* info = i ? world.shape_info(i->shape) : nullptr;
-    if (!info || info->is(ShapeInfo::kFixed) || info->weight == 0) return 0;
+    if (!info || info->is(ShapeInfo::kFixed)) return 0;
+    if (info->weight == 0 && (world.remorse() || !info->is(ShapeInfo::kUnknown66))) return 0;
     return hurl(kernel, world, item, 0, 0, 0, 2);
 }
 

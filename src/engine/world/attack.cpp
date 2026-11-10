@@ -126,8 +126,11 @@ void clear_in_combat(Kernel& kernel, World& world, const AnimDat& anims, ObjId i
     kernel.fail_processes(id, AttackProcess::kType, 1);
 }
 
+// No Regret (10F8:33B5) differs from No Remorse (10F0:2D02) in three ways: an
+// NPC in combat whose activity is 0xC may change it; the "weapon drawn" bit
+// is cleared for every new activity before it starts; and activity 0xD is new.
 // @orig 10F8:33B5
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2D02, similarity 0.84)
+// TODO(regret): activity 0xD starts a process of its own (1118:0EF5, run at 1118:0FD9), not written yet
 void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, std::uint16_t activity) {
     auto r = world.npc_record(id);
     if (r.empty() || world.is_dead(id) || (r[npc::kStance] & 0x01)) return;
@@ -139,13 +142,14 @@ void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, 
     }
     const std::uint16_t current = word_at(r, npc::kActivity);
     if (activity == 0 || current == activity) return;
-    if (in_combat(world, id) && activity != 0xC) return;
+    if (in_combat(world, id) && activity != 0xC && (world.remorse() || current != 0xC)) return;
     set_word(r, npc::kPreviousActivity, current);
     set_word(r, npc::kActivity, activity);
     if (in_combat(world, id)) clear_in_combat(kernel, world, anims, id);
     const Item* item = world.get(id);
     if (!item || !(item->flags & kItemFastArea)) return;
     for (std::uint16_t type : kTypesEndedBySetActivity) kernel.fail_processes(id, type, 1);
+    if (!world.remorse()) r[npc::kStance] &= static_cast<std::uint8_t>(~0x02);
 
     switch (activity) {
     case 5: case 9: case 10: case 0xB: case 0xC: {
@@ -176,8 +180,17 @@ void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, 
         if (activity == 10 || activity == 0xB) attack.set_cautious();
         break;
     }
+    case 0xD:
+        if (world.remorse()) {
+            start_activity_process(kernel, world, anims, id, activity);
+            break;
+        }
+        r[npc::kCombatFlags] |= 0x08;  // 10F8:3879
+        r[npc::kStance] |= 0x02;
+        // The process of activity 0xD (1118:0EF5) is not written yet: the NPC stands.
+        break;
     default:
-        start_activity_process(kernel, world, anims, id, activity);  // TYPE_1108_*
+        start_activity_process(kernel, world, anims, id, activity);  // TYPE_1118_*
         break;
     }
 }

@@ -74,6 +74,11 @@ bool player_may_act(const World& world);
 
 void previous_weapon(Kernel& kernel, World& world, const AnimDat& anims);
 void next_weapon(Kernel& kernel, World& world, const AnimDat& anims);
+// MainActor::I_removeItemCru(item) (No Regret, 1008:0B7F): takes one of an
+// item the player carries. A weapon is destroyed, the next weapon chosen
+// first; any other item loses one of its quality and is destroyed at 0. False
+// when the player carries no item of that shape or the item is in no slot.
+bool remove_item_cru(Kernel& kernel, World& world, const AnimDat& anims, ObjId item);
 void previous_item(World& world);
 void next_item(World& world);
 void use_active_item(World& world);

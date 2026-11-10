@@ -127,6 +127,32 @@ void next_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
     pose_for_weapon(kernel, world, anims);
 }
 
+// @orig 1008:0B7F
+bool remove_item_cru(Kernel& kernel, World& world, const AnimDat& anims, ObjId item_id) {
+    const Item* item = world.get(item_id);
+    if (item_id == 0 || !item || carried(world, item->shape) == 0) return false;
+    // NPC 10F8:3039: the slot holding the item, 45 (one past the slots) when
+    // none does. The original then goes on with "slot 45", which is the
+    // energy word that follows the slots in the record: it is cleared below
+    // as there.
+    std::size_t slot = 0;
+    while (slot < static_cast<std::size_t>(npc::kEquipSlots) && world.npc_word(kPlayer, npc::kEquip + 2 * slot) != item_id) ++slot;
+    if (slot == 0) return false;
+    const auto destroy = [&] {
+        if (Audio* audio = world.audio()) audio->sources.stop_item_loops(item_id);
+        world.destroy(item_id);
+        world.set_npc_word(kPlayer, npc::kEquip + 2 * slot, 0);  // NPC 10F8:2FCE
+    };
+    if (world.family_of(item->shape) == 10) {
+        next_weapon(kernel, world, anims);
+        destroy();
+        return true;
+    }
+    set_quality_and_combine(world, item_id, static_cast<std::uint16_t>(item->quality - 1));
+    if (world.get(item_id)->quality == 0) destroy();
+    return true;
+}
+
 // @orig 1008:0E54
 void previous_item(World& world) {
     const int current = world.npc_word(kPlayer, npc::kActiveItem);

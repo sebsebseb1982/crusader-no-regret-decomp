@@ -14,14 +14,14 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 277 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 272 lines are left:
 
 | File | Lines |
 |---|---:|
 | `src/game/game.cpp` | 34 |
 | `src/engine/ui/weasel_gump.cpp` | 19 |
-| `src/engine/world/actor_anim.cpp` | 14 |
 | `src/engine/world/projectile.cpp` | 14 |
+| `src/engine/world/actor_anim.cpp` | 12 |
 | `src/engine/world/world.cpp` | 12 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
 | `src/engine/world/attack.cpp` | 11 |
@@ -29,19 +29,19 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/ui/load_screen.cpp` | 9 |
 | `src/engine/ui/movie_player.cpp` | 8 |
 | `src/engine/ui/options_screen.cpp` | 8 |
-| `src/engine/world/aim_mode.cpp` | 7 |
 | `src/engine/world/item_selection.cpp` | 7 |
 | `src/engine/world/player_commands.cpp` | 7 |
 | `src/engine/ui/help_screen.cpp` | 6 |
+| `src/engine/world/aim_mode.cpp` | 6 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
 | `src/engine/ui/main_menu.cpp` | 5 |
 | `src/engine/world/activity.cpp` | 5 |
 | `src/engine/world/cheats.cpp` | 5 |
 | `src/engine/world/combat_control.cpp` | 5 |
-| `src/engine/world/gravity.cpp` | 5 |
 | `src/engine/world/sprite_process.cpp` | 5 |
 | `src/core/game_config.cpp` | 4 |
 | `src/engine/ui/difficulty_screen.cpp` | 4 |
+| `src/engine/world/gravity.cpp` | 4 |
 | `src/core/avi_movie.cpp` | 3 |
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
@@ -68,7 +68,6 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/input/keyboard.cpp` | 1 |
 | `src/engine/ui/keypad_gump.cpp` | 1 |
 | `src/engine/ui/pickup_area.cpp` | 1 |
-| `src/engine/usecode/item_intrinsics.cpp` | 1 |
 | `src/engine/world/chargers.cpp` | 1 |
 | `src/engine/world/collision.cpp` | 1 |
 | `src/engine/world/inventory.cpp` | 1 |

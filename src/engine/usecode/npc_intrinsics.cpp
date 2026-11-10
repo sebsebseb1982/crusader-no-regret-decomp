@@ -5,6 +5,7 @@
 #include "engine/world/attack.hpp"
 #include "engine/world/chargers.hpp"
 #include "engine/world/inventory.hpp"
+#include "engine/world/player_commands.hpp"
 #include "engine/world/item_damage.hpp"
 #include "engine/world/projectile.hpp"
 #include "engine/world/sprite_process.hpp"
@@ -143,6 +144,11 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
     m.set_intrinsic(0x0B9, [&w](UCMachine&, UCProcess&, Args a) -> std::uint32_t {
         return add_item_cru(w, arg16(a, 0), (arg16(a, 2) & 0xFF) != 0);
     });
+    // MainActor::I_removeItemCru(item) (No Regret, 1008:0B7F): the item id.
+    m.set_intrinsic(0x4B5, [&w, &anims](UCMachine& machine, UCProcess&, Args a) -> std::uint32_t {
+        return remove_item_cru(machine.kernel(), w, anims, arg16(a, 0));
+    });
+    bound.push_back(0x4B5);
     // Item::I_setQAndCombine(item, quality) (10A8:0DD1).
     m.set_intrinsic(0x0CF, [&w](UCMachine& machine, UCProcess&, Args a) -> std::uint32_t {
         std::array<std::uint8_t, 2> id{};

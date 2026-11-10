@@ -118,8 +118,11 @@ std::vector<std::uint16_t> register_world_intrinsics(UCMachine& m, World& w, con
         s.cru_stasis = true;
         return 0;
     });
-    bind({0x076}, [&s](UCMachine&, UCProcess&, Args) -> std::uint32_t {
+    // Ultima8Engine::I_clrCruStasis (1008:00ED); No Regret also forgets the
+    // keys held (11E8:33E3).
+    bind({0x076}, [&s, &w](UCMachine&, UCProcess&, Args) -> std::uint32_t {
         s.cru_stasis = false;
+        if (!w.remorse() && w.hooks().flush_keys) w.hooks().flush_keys();
         return 0;
     });
     // 13E8:0033 / 0039 (unnamed in ScummVM): DS:5FFE, whether the next
@@ -213,15 +216,21 @@ std::vector<std::uint16_t> register_world_intrinsics(UCMachine& m, World& w, con
                                                static_cast<std::uint8_t>(arg16(a, 4)));
         return fade(machine, colour, arg16(a, 6), static_cast<std::int16_t>(arg16(a, 8)), true);
     });
-    bind({0x090}, [&s](UCMachine&, UCProcess&, Args) -> std::uint32_t {
+    // PaletteFaderProcess::I_jumpToAllBlack (1418:080F), I_jumpToAllWhite
+    // (1418:0899) and, in No Regret only, I_jumpToAllGivenColor(r, g, b)
+    // (1418:0923). No Regret does nothing while a fade runs (a process of
+    // type 0x206, 11E8:13A4).
+    auto jump = [&s, &w](UCMachine& machine, int r, int g, int b) -> std::uint32_t {
+        if (!w.remorse() && machine.kernel().find_process(0, PaletteFaderProcess::kType)) return 0;
         s.cycle_paused = true;
-        s.screen_palette = Palette::filled(0, 0, 0);
+        s.screen_palette = Palette::filled(static_cast<std::uint8_t>(r), static_cast<std::uint8_t>(g),
+                                           static_cast<std::uint8_t>(b));
         return 0;
-    });
-    bind({0x0DA}, [&s](UCMachine&, UCProcess&, Args) -> std::uint32_t {
-        s.cycle_paused = true;
-        s.screen_palette = Palette::filled(63, 63, 63);
-        return 0;
+    };
+    bind({0x090}, [jump](UCMachine& machine, UCProcess&, Args) { return jump(machine, 0, 0, 0); });
+    bind({0x0DA}, [jump](UCMachine& machine, UCProcess&, Args) { return jump(machine, 63, 63, 63); });
+    bind({0x472}, [jump](UCMachine& machine, UCProcess&, Args a) {
+        return jump(machine, arg16(a, 0) & 0xFF, arg16(a, 2) & 0xFF, arg16(a, 4) & 0xFF);
     });
     bind({0x09B}, [&s](UCMachine&, UCProcess&, Args) -> std::uint32_t {
         s.screen_palette = s.game_palette;
