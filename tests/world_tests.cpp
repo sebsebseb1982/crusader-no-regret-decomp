@@ -1193,6 +1193,9 @@ void test_regret_npc_damage() {
     CHECK(w.state.boss_shield == 1250);
     CHECK(w.npc_hp(2) == 100);
     CHECK(!w.is_dead(2));
+    // Its special frame starts the BoboBoomer (type 0x264).
+    special_frame(k, w, anims, 2);
+    CHECK(k.find_process(0, 0x264) != nullptr);
 
     // Frozen (0x5D6), then broken (0x5EF) by a second hit on the body. The
     // contents go only when the dead NPC's shape is a container.

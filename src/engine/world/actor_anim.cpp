@@ -10,6 +10,7 @@
 #include "engine/world/gravity.hpp"
 #include "engine/world/item_damage.hpp"
 #include "engine/world/item_selection.hpp"
+#include "engine/world/sprite_process.hpp"
 #include "engine/usecode/item_intrinsics.hpp"
 
 #include <algorithm>
@@ -118,8 +119,114 @@ std::uint16_t fit_start(Kernel& kernel, World& world, const AnimDat& anims, ObjI
     return remap_action(world, actor, fallback);
 }
 
-// @orig 1170:03C7
-// TODO(regret): modified in REGRET.EXE (No Remorse 1160:01F0, similarity 0.41)
+namespace {
+
+// No Regret's "BoboBoomer" (1170:0000, run 1170:008E, type 0x264): ten
+// explosions of fire type 4 around the point where shape 0x5B1 died, each
+// within 7 x 16 of it on x and y (UCMachine::I_rndRange, x first), with the
+// splash damage of fire type 4 when it has some, 5 to 19 ticks apart.
+class BoboBoomerProcess : public Process {
+public:
+    static constexpr std::uint16_t kType = 0x264;
+    BoboBoomerProcess(World& world, const AnimDat& anims, World::Point at) : world_(world), anims_(anims), at_(at) {
+        set_type(kType);
+    }
+
+protected:
+    void run() override {
+        const int dx = random_between(world_.state.random_state, -7, 7) * 16;
+        const int dy = random_between(world_.state.random_state, -7, 7) * 16;
+        const World::Point at{at_.x + dx, at_.y + dy, at_.z};
+        impact_sprite(kernel(), world_, 4, at);
+        const dtable::FireType* ft = dtable::fire_type(4);
+        const int radius = ft ? ft->splash() : 0;
+        const int damage = ft ? random_between(world_.state.random_state, static_cast<std::int16_t>(ft->min_damage()),
+                                               static_cast<std::int16_t>(ft->max_damage()))
+                              : 0;
+        if (radius != 0) splash_damage(kernel(), world_, anims_, at, radius, damage, 4, 0, 0);
+        if (++count_ > 9) {
+            terminate();
+            return;
+        }
+        sleep(static_cast<std::uint32_t>(crt_rand_below(world_.state.crt_rand_state, 15) + 5));
+    }
+
+private:
+    World& world_;
+    const AnimDat& anims_;
+    World::Point at_;
+    int count_ = 0;
+};
+
+// A cry of the NPC from one of two tables (record +0x78 bit 2: the second).
+int cry_from(World& world, std::span<const std::uint8_t> record, std::span<const int> man, std::span<const int> woman) {
+    const std::span<const int> table = (record[npc::kStance] & 0x04) ? woman : man;
+    return table[static_cast<std::size_t>(crt_rand_below(world.state.crt_rand_state, static_cast<int>(table.size())))];
+}
+
+// No Regret's sounds and events of the special frames (1170:03C7): tables
+// DS:3368..33A0. Only the burning (0x576) waits for its cries to end.
+void special_frame_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, const Item& item,
+                          std::span<const std::uint8_t> r) {
+    Audio* audio = world.audio();
+    auto play = [&](int sfx) {
+        if (audio) audio->sources.play(world, sfx, actor);
+    };
+    switch (item.shape) {
+    case 0x596: {
+        static constexpr int kMan[] = {0x213, 0x214}, kWoman[] = {0x212, 0x211};
+        play(cry_from(world, r, kMan, kWoman));
+        return;
+    }
+    case 0x576: {  // with violence on (always in this build)
+        static constexpr int kMan[] = {0x24F, 0x250, 0x201, 0x200}, kWoman[] = {0x3D, 0x77, 0x210};
+        const bool woman = r[npc::kStance] & 0x04;
+        const std::span<const int> table = woman ? std::span<const int>(kWoman) : std::span<const int>(kMan);
+        const int sfx = cry_from(world, r, kMan, kWoman);
+        for (const int s : table) {
+            if (audio && audio->sources.is_playing(s, actor)) return;
+        }
+        play(sfx);
+        return;
+    }
+    case 0x385:  // robots dying: a large explosion with splash damage, which they survive
+    case 0x4E6:
+        explode(kernel, world, anims, actor, 2, false, true);
+        if (Item* i = world.get(actor)) i->flags &= static_cast<std::uint16_t>(~0x0140);
+        return;
+    case 0x278:
+    case 0x656: {
+        static constexpr int kMan[] = {0x20B, 0x20C, 0x20D}, kWoman[] = {0x20E, 0x20F};
+        play(cry_from(world, r, kMan, kWoman));
+        return;
+    }
+    case 0x5D6: {
+        static constexpr int kMan[] = {0x21B, 0x21A, 0x21C}, kWoman[] = {0x21D, 0x215};
+        play(cry_from(world, r, kMan, kWoman));
+        return;
+    }
+    case 0x62D: {
+        static constexpr int kMan[] = {0x217, 0x218}, kWoman[] = {0x219, 0x216};
+        play(cry_from(world, r, kMan, kWoman));
+        return;
+    }
+    case 0x58F:
+    case 0x59C: {
+        static constexpr int kScreams[] = {0xD9, 0xDA};
+        play(kScreams[crt_rand_below(world.state.crt_rand_state, 2)]);
+        return;
+    }
+    case 0x5B1:
+        kernel.add(std::make_unique<BoboBoomerProcess>(world, anims, World::Point{item.x, item.y, item.z & 0xFF}));
+        return;
+    default:
+        return;
+    }
+}
+
+}  // namespace
+
+// @orig 1170:03C7 1170:0000 1170:008E
 void special_frame(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor) {
     const Item* item = world.get(actor);
     const auto r = world.npc_record(actor);
@@ -131,6 +238,10 @@ void special_frame(Kernel& kernel, World& world, const AnimDat& anims, ObjId act
         if (sees_controlled(world, anims, actor, true)) {
             set_activity(kernel, world, anims, actor, random_range(world.state.random_state, 4) == 0 ? 10 : 5);
         }
+        return;
+    }
+    if (!world.remorse()) {
+        special_frame_regret(kernel, world, anims, actor, *item, r);
         return;
     }
     switch (item->shape) {
