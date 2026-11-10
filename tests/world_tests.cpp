@@ -10,6 +10,7 @@
 #include "engine/usecode/world_intrinsics.hpp"
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/attack.hpp"
+#include "engine/world/cheats.hpp"
 #include "engine/world/collision.hpp"
 #include "engine/world/gravity.hpp"
 #include "engine/world/pathfind.hpp"
@@ -1222,8 +1223,34 @@ void test_regret_npc_damage() {
     CHECK(w.get(part) == nullptr);
 }
 
+// No Regret's typed codes (1148:34D2): LOOSECANNON16 turns the cheats on,
+// a broken sequence starts again, PIX allows pictures.
+void test_regret_typed_codes() {
+    World w;
+    Kernel k;
+    const dtable::NpcTypes types;
+    auto type = [&](std::initializer_list<std::uint8_t> scancodes) {
+        for (const std::uint8_t sc : scancodes) {
+            GameKeyEvent e;
+            e.scancode = sc;
+            e.pressed = true;
+            e.count = 1;
+            cheat_code_key(k, w, types, e);
+        }
+    };
+    // L O O S E, then a wrong key, then the whole code.
+    type({0x26, 0x18, 0x18, 0x1F, 0x12, 0x10});
+    CHECK(!w.state.cheats.enabled);
+    type({0x26, 0x18, 0x18, 0x1F, 0x12, 0x2E, 0x1E, 0x31, 0x31, 0x18, 0x31, 0x02, 0x07});
+    CHECK(w.state.cheats.enabled);
+    CHECK(w.state.cheats.on);
+    type({0x19, 0x17, 0x2D});
+    CHECK(w.state.cheats.pictures);
+}
+
 int main() {
     test_regret_npc_damage();
+    test_regret_typed_codes();
     test_typeflag_decode();
     test_world_ids();
     test_create_npc_reuses_a_slot();

@@ -190,6 +190,24 @@ bool remove_item_cru(Kernel& kernel, World& world, const AnimDat& anims, ObjId i
     return true;
 }
 
+// No Regret (1148:0B6D): a digit key (or - =, scancodes 2..0xD) makes the
+// weapon of that rank in DS:2F5F active when the living player is the
+// controlled NPC and carries it in a weapon slot.
+// @orig 1148:0B6D
+void choose_weapon(World& world, int index) {
+    if (world.state.controlled_npc != kPlayer || world.is_dead(kPlayer)) return;
+    if (index < 0 || index >= static_cast<int>(kRegretWeapons.size())) return;
+    const std::uint16_t shape = kRegretWeapons[static_cast<std::size_t>(index)];
+    if (carried(world, shape) == 0) return;
+    for (int slot = weapon_slots(world).first; slot <= weapon_slots(world).last; ++slot) {
+        const Item* item = world.get(world.npc_equip(kPlayer, slot));
+        if (item && item->shape == shape) {
+            world.set_npc_word(kPlayer, npc::kWeapon, static_cast<std::uint16_t>(slot));  // NPC_10f8_3d2d
+            return;
+        }
+    }
+}
+
 // @orig 1008:0E54
 void previous_item(World& world) {
     const int current = world.npc_word(kPlayer, npc::kActiveItem);
@@ -271,15 +289,19 @@ void drop_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
     world.pop_to_coords(player->x, player->y, player->z);
 }
 
-// @orig 1148:2AB9 (Tab and J case near 1148:2C99)
-// TODO(regret): 1148:2AB9 (No Remorse 1138:220A) is not in the Ghidra function list: create it, then read
-//   the jump (it changed: 0x38 when running, an action 7 appears, 0xB then 0x3A is gone).
+// No Regret (1148:2E0D): a running jump when the last action is one, or a
+// run (10F8:2439 also counts action 5), else the standing jump, whatever
+// the stance (no weapon put away first).
+// @orig 1138:220A (No Remorse) 1148:2AB9
 void jump(Kernel& kernel, World& world, const AnimDat& anims) {
     if (world.state.controlled_npc != kPlayer) return;
     const std::uint16_t last = world.npc_word(kPlayer, npc::kLastAnim);  // Actor_I_getLastAnimSet
-    const bool running = last == 3 || last == 0x30 || last == 0x31 || last == kActionRunningJump;  // 10F0:21A0
+    const bool running = last == 3 || last == 0x30 || last == 0x31 || last == kActionRunningJump ||
+                         (!world.remorse() && last == 5);  // 10F8:2439
     if (!actor_busy(kernel, kPlayer)) {
-        if (idle(world)) {
+        if (!world.remorse()) {
+            do_anim(kernel, world, anims, kPlayer, running ? kActionRunningJump : kActionJump, kDirCurrent, 0);
+        } else if (idle(world)) {
             do_anim(kernel, world, anims, kPlayer, kActionJump, kDirCurrent, 0);
         } else if (running) {
             do_anim(kernel, world, anims, kPlayer, kActionRunningJump, kDirCurrent, 0);

@@ -186,6 +186,12 @@ struct GameState {
         int typed = 0;                 // DS:28C7: letters of the code typed so far
         bool cd_transfer_display = false;  // DS:5FFF (Ctrl+Q)
         bool bounding_boxes = false;   // DS:2D7C (f): not drawn by the port
+        // No Regret's other typed codes (1148:34D2): letters typed so far of
+        // JASSICA16 (DS:2FFA), PIX (DS:3010), MEMORY (DS:3029) and VIDTEST
+        // (DS:301A); `typed` counts LOOSECANNON16 (DS:300A).
+        int typed_joke = 0, typed_pix = 0, typed_memory = 0, typed_video = 0;
+        bool pictures = false;         // DS:2F5E: Backspace takes a picture
+        bool memory_profiler = false;  // DS:2FEF: not shown by the port
     } cheats;
     // The aiming mode of the controlled NPC and the designated target
     // (aim_mode.hpp). The original resets it when the Controller starts
@@ -378,6 +384,8 @@ struct WorldHooks {
     // No Regret 1140:0000: DS:6810 +0x40 = 1, then system_shutdown (the end
     // of the last boss, apply_damage).
     std::function<void()> quit_game;
+    // No Regret 1148:08F0: the screen saved as the first free CRU%04d.TGA.
+    std::function<void()> take_picture;
 };
 
 class World {

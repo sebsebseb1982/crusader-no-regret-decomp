@@ -59,6 +59,11 @@ inline SlotRange weapon_slots(const World& world) { return world.remorse() ? Slo
 inline SlotRange ammo_slots(const World& world) { return world.remorse() ? SlotRange{6, 10} : SlotRange{13, 20}; }
 inline SlotRange item_slots(const World& world) { return world.remorse() ? SlotRange{11, 25} : SlotRange{21, 44}; }
 
+// No Regret's weapons (DS:2F5F), in the order of the digit keys 1..0, - and =
+// (CONTROL_1148_09fd) and of the F10 cheat.
+inline constexpr std::array<std::uint16_t, 12> kRegretWeapons = {0x334, 0x332, 0x38B, 0x38A, 0x38D, 0x38C,
+                                                                  0x5F6, 0x198, 0x5F5, 0x38E, 0x388, 0x386};
+
 // NPC 10F8:31C1 / 31EA / 321A: the first empty slot of the player's slots
 // of a range, 0 if none.
 int free_equip_slot(const World& world, SlotRange range);

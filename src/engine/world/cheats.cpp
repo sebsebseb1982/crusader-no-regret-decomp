@@ -5,6 +5,7 @@
 #include "engine/world/actor_create.hpp"
 #include "engine/world/chargers.hpp"
 #include "engine/world/inventory.hpp"
+#include "engine/world/teleport.hpp"
 
 #include <array>
 #include <cstdio>
@@ -58,7 +59,6 @@ enum class Given { kNotMade, kRefused, kTaken };
 // Item_I_create (frame 0), popToCoords at 0, 0, 0, MainActor::I_addItemCru
 // (shown); destroyed when refused.
 // @orig 1148:09FD
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 Given give(World& world, std::uint16_t shape) {
     const ObjId id = world.create(shape, 0);
     if (id == 0) return Given::kNotMade;
@@ -67,6 +67,8 @@ Given give(World& world, std::uint16_t shape) {
     world.destroy(id);
     return Given::kRefused;
 }
+
+}  // namespace
 
 // @orig 1148:01FB
 void give_ammo(World& world, std::uint16_t shape) {
@@ -87,8 +89,43 @@ void give_ammo(World& world, std::uint16_t shape) {
     }
 }
 
+namespace {
+
+// No Regret's F10 gifts (1148:0EB5): the battery 0x3A3 and the shield 0x530,
+// the energy full, the weapons of DS:2F5F not carried (in the free weapon
+// slots, the first active when none was), stacks of the items below when
+// none is carried (20 at most, one of 0x4ED and 0x52D) and the ammunition
+// (CONTROL_1148_01FB, 99 rounds). No credits, no Ctrl / Alt tables.
+// @orig 1148:0EB5
+void give_everything_regret(World& world) {
+    give(world, 0x3A3);
+    give(world, 0x530);
+    world.set_npc_word(kPlayer, npc::kEnergy, static_cast<std::uint16_t>(max_energy(world, kPlayer)));
+    for (const std::uint16_t shape : kRegretWeapons) {
+        const int slot = free_equip_slot(world, weapon_slots(world));  // 10F8:31C1
+        if (slot == 0) break;
+        if (carried(world, shape) != 0) continue;
+        const ObjId id = world.create(shape, 0);
+        if (id == 0) continue;
+        const World::Point at = player_feet(world);
+        world.pop_to_coords(at.x, at.y, at.z);
+        set_equip(world, kPlayer, slot, id);
+        if (world.active_weapon(kPlayer) == 0) world.set_npc_word(kPlayer, npc::kWeapon, static_cast<std::uint16_t>(slot));
+    }
+    static constexpr std::pair<std::uint16_t, int> kRegretStacks[] = {
+        {0x560, 20}, {0x39A, 20}, {0x55F, 20}, {0x351, 20}, {0x4ED, 1}, {0x52D, 1}, {0x582, 20},
+        {0x11E, 20}, {0x61C, 20}, {0x63E, 20}, {0x616, 20}, {0x191, 20}, {0x613, 20}};
+    for (const auto& [shape, count] : kRegretStacks) {
+        if (carried(world, shape) != 0) continue;
+        for (int i = 0; i < count; ++i) {
+            if (give(world, shape) == Given::kRefused) break;
+        }
+    }
+    for (const std::uint16_t shape : {0x33F, 0x340, 0x341, 0x33E, 0x615, 0x614})
+        give_ammo(world, static_cast<std::uint16_t>(shape));
+}
+
 // @orig 1148:09FD
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 void give_everything(World& world, std::uint16_t flags) {
     // NPC_10f0_3dbf: the credits carried.
     if (const ObjId c = carried(world, credits_shape(world))) set_quality(world, c, kCheatCredits);
@@ -117,12 +154,103 @@ void give_everything(World& world, std::uint16_t flags) {
     for (const std::uint16_t shape : kAmmo) give_ammo(world, shape);
 }
 
+// One key towards a typed code: a match moves on, a miss starts again (at 1
+// when it is the first letter). True when the whole code is typed (the count
+// goes back to 0).
+template <std::size_t N>
+bool typed_code(const std::array<std::uint8_t, N>& code, int& typed, std::uint8_t scancode) {
+    if (code[static_cast<std::size_t>(typed)] == scancode) ++typed;
+    else typed = code[0] == scancode ? 1 : 0;
+    if (code[static_cast<std::size_t>(typed)] != 0) return false;
+    typed = 0;
+    return true;
+}
+
+// No Regret's codes (DS:2FF0, 2FFC, 300C, 3022, 3012), scancodes.
+constexpr std::array<std::uint8_t, 10> kJoke = {0x24, 0x1E, 0x1F, 0x1F, 0x17, 0x2E, 0x1E, 0x02, 0x07, 0};  // JASSICA16
+constexpr std::array<std::uint8_t, 14> kLooseCannon = {0x26, 0x18, 0x18, 0x1F, 0x12, 0x2E, 0x1E,
+                                                       0x31, 0x31, 0x18, 0x31, 0x02, 0x07, 0};  // LOOSECANNON16
+constexpr std::array<std::uint8_t, 4> kPix = {0x19, 0x17, 0x2D, 0};                    // PIX
+constexpr std::array<std::uint8_t, 7> kMemory = {0x32, 0x12, 0x32, 0x18, 0x13, 0x15, 0};  // MEMORY
+constexpr std::array<std::uint8_t, 8> kVideo = {0x2F, 0x17, 0x20, 0x14, 0x12, 0x1F, 0x14, 0};  // VIDTEST
+constexpr int kRegretCodeSound = 0x190;
+constexpr int kJokeSound = 0x1E5;
+constexpr int kJokeMap = 0xE6;
+
+// @orig 1148:34D2
+void regret_code_key(Kernel& kernel, World& world, const dtable::NpcTypes& types, std::uint8_t scancode) {
+    GameState::Cheats& c = world.state.cheats;
+    Audio* audio = world.audio();
+    auto sound = [&](int sfx) {
+        if (audio) audio->play_sfx(sfx);
+    };
+    if (typed_code(kJoke, c.typed_joke, scancode)) {
+        // No Remorse's code: the player, whole again, is sent to map 0xE6
+        // (the last boss's), to the Christmas music.
+        if (audio) audio->music.stop();
+        sound(kJokeSound);
+        if (audio) {
+            audio->music.allow_christmas(true);
+            audio->music.force_christmas(true);
+        }
+        say(world, "Of course we changed the cheats...duh.");
+        world.state.avatar_in_stasis = false;
+        world.state.controlled_npc = kPlayer;  // DS:2F79 written as is
+        if (Item* player = world.get(kPlayer)) {
+            // NPC_10f8_250b: standing (footpad 10, not kneeling).
+            world.set_footpad_z(player->shape, 10);
+            auto record = world.npc_record(kPlayer);
+            if (!record.empty()) record[npc::kFlags13] &= static_cast<std::uint8_t>(~0x04);
+            world.set_shape(*player, 1);
+            world.clear_broken(*player);  // NPC_10f8_22cf
+            if (!record.empty()) record[npc::kFlags13] &= static_cast<std::uint8_t>(~kDead);
+            world.set_npc_word(kPlayer, 0x00, types.max_hp(types.index(1)));
+        }
+        start_switch_map(kernel, world, kJokeMap);
+        if (audio) {
+            const Item* player = world.get(kPlayer);
+            audio->music.play_regret(Music::kMapMusic, player ? player->map_number : 0);
+            audio->music.force_christmas(false);
+        }
+    }
+    if (typed_code(kLooseCannon, c.typed, scancode)) {
+        c.hack_mover_allowed = true;
+        c.enabled = !c.enabled;
+        c.on = c.enabled;
+        world.state.avatar_in_stasis = false;
+        sound(kRegretCodeSound);
+        if (!c.enabled) say(world, "Cheats are now inactive.");
+        else if (audio && audio->music.christmas()) say(world, "Merry Christmas, CHEATER!");
+        else say(world, "Cheats are now active.");
+    }
+    if (typed_code(kPix, c.typed_pix, scancode)) {
+        c.pictures = !c.pictures;
+        sound(kRegretCodeSound);
+        say(world, c.pictures ? "Pix active - backspace will take pictures." : "Picture taking capability disabled.");
+    }
+    if (typed_code(kMemory, c.typed_memory, scancode)) {
+        c.memory_profiler = !c.memory_profiler;
+        sound(kRegretCodeSound);
+        say(world, c.memory_profiler ? "Memory profiler activated." : "Memory profiler deactivated.");
+    }
+    if (typed_code(kVideo, c.typed_video, scancode)) {
+        // Then the ORIGIN and ANIM01 movies in turn, until one is cut short:
+        // not reproduced (the port has no No Regret movies yet).
+        sound(kRegretCodeSound);
+        say(world, "Video test activated.");
+        if (audio) audio->music.stop();
+    }
+}
+
 }  // namespace
 
-// @orig ?: No Remorse 1138:2B03, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
-void cheat_code_key(World& world, const GameKeyEvent& e) {
+// @orig 1138:2B03 (No Remorse) 1148:34D2
+void cheat_code_key(Kernel& kernel, World& world, const dtable::NpcTypes& types, const GameKeyEvent& e) {
     if (!e.pressed) return;
+    if (!world.remorse()) {
+        regret_code_key(kernel, world, types, e.scancode);
+        return;
+    }
     GameState::Cheats& c = world.state.cheats;
     if (kCode[static_cast<std::size_t>(c.typed)] == e.scancode) ++c.typed;
     else c.typed = kCode[0] == e.scancode ? 1 : 0;
@@ -135,11 +263,41 @@ void cheat_code_key(World& world, const GameKeyEvent& e) {
     say(world, c.enabled ? "Cheats are now active." : "Cheats are now inactive.");
 }
 
+// No Regret (1148:0D73): Ctrl+F10 only flips the immortality; F10 ends the
+// processes of the controlled NPC unless the player is in stasis, then
+// brings back a dead or frozen (0x5D6) NPC, or gives the player the gifts
+// of give_everything_regret.
 // @orig 1148:09FD
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 bool cheat_f10(Kernel& kernel, World& world, const dtable::NpcTypes& types, const GameKeyEvent& e, bool us_123) {
     if (!e.pressed || e.scancode != kScancodeF10 || !world.state.cheats.on) return false;
     const ObjId npc = world.state.controlled_npc;  // DS:285A, DS:2852
+    if (!world.remorse()) {
+        auto record = world.npc_record(npc);
+        if (e.flags & kCtrl) {
+            if (record.empty()) return true;
+            if (record[npc::kFlags13] & kImmortal) {
+                record[npc::kFlags13] &= static_cast<std::uint8_t>(~kImmortal);
+                say(world, "Immortality disabled.");
+            } else {
+                record[npc::kFlags13] |= kImmortal;
+                say(world, "Immortality enabled.");
+            }
+            return true;
+        }
+        if (npc != 0 && !world.state.avatar_in_stasis) kernel.fail_processes(npc, Kernel::kAnyType, 1);
+        kernel.fail_processes(0, kDeathSilence, 1);
+        Item* item = world.get(npc);
+        if (world.is_dead(npc) || (item && item->shape == 0x5D6)) {
+            if (npc == kPlayer && item) world.set_shape(*item, 1);
+            if (item) world.clear_broken(*item);  // NPC_10f8_22cf
+            if (!record.empty()) record[npc::kFlags13] &= static_cast<std::uint8_t>(~kDead);
+            const Item* controlled = world.get(world.state.controlled_npc);
+            world.set_npc_word(npc, 0x00, types.max_hp(types.index(controlled ? controlled->shape : 0)));
+            return true;
+        }
+        if (npc == kPlayer) give_everything_regret(world);
+        return true;
+    }
     // Kernel_fail_processes(DS:2852, any type): owner 0 would be every owner.
     if (npc != 0 && !(us_123 && world.state.avatar_in_stasis)) kernel.fail_processes(npc, Kernel::kAnyType, 1);
     kernel.fail_processes(0, kDeathSilence, 1);
@@ -168,10 +326,33 @@ bool cheat_f10(Kernel& kernel, World& world, const dtable::NpcTypes& types, cons
     return true;
 }
 
+// No Regret (1008:1565) keeps f and Ctrl+M: Ctrl+M forbids the Christmas
+// music (DS:46CA) and plays the next track, 1 after 0x15 (I_playMusic).
+// Gone: ~, T, Ctrl+Q and the coordinates of Ctrl+L (which drops the weapon,
+// player_commands.hpp). Not reproduced: Ctrl+V (the version box, with the
+// map and position) and Ctrl+F7 (DS:12DE).
 // @orig 1008:1565
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 bool cheat_command(World& world, std::uint16_t code, bool us_123) {
     GameState::Cheats& c = world.state.cheats;
+    if (!world.remorse()) {
+        if (code == 'f') {
+            if (!c.enabled) return true;
+            world.state.avatar_in_stasis = false;
+            c.bounding_boxes = !c.bounding_boxes;
+            return true;
+        }
+        if (code == 0x432) {  // Ctrl+M
+            Audio* audio = world.audio();
+            if (!audio) return true;
+            audio->music.allow_christmas(false);
+            int track = audio->music.current() + 1;
+            if (track < 0 || track > 0x15) track = 1;
+            const Item* player = world.get(kPlayer);
+            audio->music.play_regret(track, player ? player->map_number : 0);
+            return true;
+        }
+        return false;
+    }
     switch (code) {
     case '~':
         if (!c.enabled) return true;

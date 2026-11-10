@@ -94,7 +94,7 @@ void Music::play_regret(int track, int player_map) {
     const bool map_music = track == kMapMusic;
     if (map_music) track = map_track(player_map);
     if (track == current_) return;
-    start(track, map_music && christmas_ ? std::optional<std::string>("xmas") : file_name(track));
+    start(track, map_music && christmas_allowed_ && christmas() ? std::optional<std::string>("xmas") : file_name(track));
 }
 
 // No Remorse's I_playMusic (1200:0143), and the play of both games' menu,

@@ -25,6 +25,7 @@
 #include "engine/ui/weasel_gump.hpp"
 #include "engine/ui/shape_dialog.hpp"
 #include "engine/world/item_selection.hpp"
+#include "core/png_writer.hpp"
 #include "engine/world/player_commands.hpp"
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/inventory.hpp"
@@ -427,6 +428,7 @@ void Game::reset_world() {
     hooks.show_message = [this](const std::string& text) { show_message(text); };
     hooks.autosave = [this] { autosave(); };
     hooks.flush_keys = [this] { keyboard_.reset(); };
+    hooks.take_picture = [this] { picture_pending_ = true; };
     hooks.quit_game = [this] {
         world_->state.cycle_paused = true;
         quit_ = true;
@@ -1063,8 +1065,11 @@ void Game::play_end_credits() {
     menu_->show_credits();
 }
 
+// No Regret's Controller keys (1148:09FD) are read: Escape also clears the
+// "cru stasis", the digits choose a weapon and the volume needs Ctrl, R
+// steps the marker style; the typed codes (1148:34D2) and F10 are in
+// cheats.hpp.
 // @orig 1148:09FD 1008:1565
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0896, similarity 0.32)
 // TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void Game::on_key(const GameKeyEvent& e) {
     // A movie only looks at the keys held (1468:2869).
@@ -1089,7 +1094,11 @@ void Game::on_key(const GameKeyEvent& e) {
     }
     // CRUSADER_1138_0896: '=' and '-' (scancodes 0x0D, 0x0C) step the music
     // volume, up to 0x30.
-    if (e.pressed && audio_ && (e.scancode == 0x0D || e.scancode == 0x0C)) {
+    // No Regret (1148:0B6D): without Ctrl, the digits, - and = choose a
+    // weapon; the volume needs Ctrl.
+    if (e.pressed && !world_->remorse() && e.scancode >= 0x02 && e.scancode <= 0x0D && !(e.flags & kCtrl)) {
+        choose_weapon(*world_, e.scancode - 2);
+    } else if (e.pressed && audio_ && (e.scancode == 0x0D || e.scancode == 0x0C)) {
         if (e.scancode == 0x0D && config_.music_volume < 0x30) ++config_.music_volume;
         if (e.scancode == 0x0C && config_.music_volume != 0) --config_.music_volume;
         audio_->mixer.set_music_volume(config_.music_volume);
@@ -1103,6 +1112,7 @@ void Game::on_key(const GameKeyEvent& e) {
     // taken from a camera monitor, or none once it died), instead of the menu.
     if (e.pressed && e.scancode == 0x01 && (e.flags & (kCtrl | kAlt)) != (kCtrl | kAlt) &&
         world_->state.controlled_npc != 1) {
+        if (!world_->remorse()) world_->state.cru_stasis = false;  // 1148:0A3F: Ultima8Engine_I_clrCruStasis
         set_controlled_npc(*kernel_, *world_, anims_, 1);
         return;
     }
@@ -1121,7 +1131,7 @@ void Game::on_key(const GameKeyEvent& e) {
     if (cheat_f10(*kernel_, *world_, npc_types_, e, data_version_ == "1.23")) return;
     // CRUSADER_1138_2B03, at the head of the Controller's keys: the typed
     // cheat code, which sees every key (Shift too).
-    cheat_code_key(*world_, e);
+    cheat_code_key(*kernel_, *world_, npc_types_, e);
     // Port addition (GameConfig::toggle_run): a Shift press flips running, and
     // the Controller sees Shift held exactly while it is on.
     GameKeyEvent ev = e;
@@ -1690,6 +1700,26 @@ void Game::render(Surface8& screen, RenderStats* stats) {
         if (screen_) screen_->draw(s);
         cursor_.draw(s);
     });
+    if (picture_pending_) {
+        picture_pending_ = false;
+        save_picture(screen);
+    }
+}
+
+// No Regret's PIX pictures (1148:08F0): the 640 x 480 screen, saved in the
+// current directory as the first CRU%04d.TGA that does not exist.
+// @orig 1148:08F0
+void Game::save_picture(const Surface8& screen) {
+    Surface8 shot(kScreenWidth, kScreenHeight);
+    copy_block(screen, ui_x_, ui_y_, shot, 0, 0, kScreenWidth, kScreenHeight);
+    for (int n = 0; n < 10000; ++n) {
+        char name[16];
+        std::snprintf(name, sizeof name, "cru%04d.tga", n);
+        std::error_code ec;
+        if (std::filesystem::exists(name, ec)) continue;
+        write_tga(name, shot, world_->state.screen_palette);
+        return;
+    }
 }
 
 // @orig 1198:1332

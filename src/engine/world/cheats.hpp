@@ -52,6 +52,27 @@
 //   - with no NPC controlled (0), F10 fails the processes of every owner in
 //     the original; the port fails none for that call.
 
+//
+// No Regret (1148:34D2, read on every key of the Controller) has five typed
+// codes, each with its own count:
+//   LOOSECANNON16  the cheats on / off as above (the player also leaves
+//                  stasis), sound 0x190, "Cheats are now active." (or
+//                  "Merry Christmas, CHEATER!" at Christmas, 1210:0000);
+//   JASSICA16      No Remorse's code: "Of course we changed the cheats...duh.",
+//                  sound 0x1E5, and the player, standing, shape 1, alive and
+//                  with full hit points, goes to map 0xE6 to the Christmas
+//                  music (DS:46C9 forced, DS:46CA allowed);
+//   PIX            Backspace saves the screen as CRU%04d.TGA (1148:08F0);
+//   MEMORY         the memory profiler (not shown by the port);
+//   VIDTEST        "Video test activated.", then the ORIGIN and ANIM01 movies
+//                  in a loop (not reproduced).
+// Its F10: Ctrl flips the immortality only; otherwise a dead or frozen
+// (0x5D6) NPC is brought back, or the player gets the battery 0x3A3, the
+// shield 0x530, full energy, the weapons of DS:2F5F, stacks of 0x560, 0x39A,
+// 0x55F, 0x351, 0x4ED (one), 0x52D (one), 0x582, 0x11E, 0x61C, 0x63E, 0x616,
+// 0x191, 0x613 and full clips of 0x33F, 0x340, 0x341, 0x33E, 0x615, 0x614;
+// no credits. Of the keys of the game view only f and Ctrl+M remain.
+
 #include "core/dtable.hpp"
 #include "engine/input/keyboard.hpp"
 #include "engine/kernel.hpp"
@@ -61,11 +82,17 @@
 
 namespace crusader {
 
-// CRUSADER_1138_2B03: one key event towards the typed code.
-void cheat_code_key(World& world, const GameKeyEvent& e);
+// CRUSADER_1138_2B03 (No Remorse) / 1148:34D2 (No Regret): one key event
+// towards the typed codes.
+void cheat_code_key(Kernel& kernel, World& world, const dtable::NpcTypes& types, const GameKeyEvent& e);
 
 // CRUSADER_1138_0896, F10: true when it acted (the key is used).
 bool cheat_f10(Kernel& kernel, World& world, const dtable::NpcTypes& types, const GameKeyEvent& e, bool us_123);
+
+// CONTROL_1148_01FB (CRUSADER_1138_01BD): the ammunition `shape` full (100
+// rounds, 99 in No Regret): the one carried, else a new one in a free
+// ammunition slot (Item::I_setQuality only works for family 1).
+void give_ammo(World& world, std::uint16_t shape);
 
 // World_on_key's cheat and debugging keys: true when `code` is one of them
 // (acted on or not).

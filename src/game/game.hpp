@@ -333,6 +333,8 @@ private:
     void end_movie();
     void save_config();
     void draw_autosave_icon(Surface8& screen);
+    void save_picture(const Surface8& screen);
+    bool picture_pending_ = false;  // Backspace with PIX on (1148:08F0)
 
 
     // Data, kept open for the whole run.

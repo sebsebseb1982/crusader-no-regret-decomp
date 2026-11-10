@@ -48,6 +48,13 @@ public:
     // forces it): the map music is then "xmas". Set by the program from the
     // clock; never by the tests.
     void set_christmas(bool christmas) { christmas_ = christmas; }
+    // DS:46C9: Christmas forced, whatever the date (around the joke code's
+    // music, cheats.hpp); DS:46CA: the Christmas music allowed (1 at start,
+    // 0 once Ctrl+M stepped the tracks).
+    void force_christmas(bool forced) { christmas_forced_ = forced; }
+    void allow_christmas(bool allowed) { christmas_allowed_ = allowed; }
+    // 1210:0000.
+    bool christmas() const { return christmas_forced_ || christmas_; }
     // I_playMusic of No Regret (1210:01A2): `track`, or the player's map's
     // when it is kMapMusic.
     void play_regret(int track, int player_map);
@@ -86,6 +93,8 @@ private:
     char m16_ = 'a';  // the letter of "m16a" (DS:3C43 + 3)
     bool remorse_ = false;
     bool christmas_ = false;
+    bool christmas_forced_ = false;
+    bool christmas_allowed_ = true;
     int current_ = 0;  // DS:91A4 (DS:8624 in No Remorse)
     int flags_ = 0;    // DS:3BFB
     std::array<int, 4> stack_{};  // DS:861C

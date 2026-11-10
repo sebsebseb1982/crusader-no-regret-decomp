@@ -114,3 +114,38 @@ void write_png(const std::filesystem::path& path, const Surface8& s, const Palet
 }
 
 }  // namespace crusader
+
+namespace crusader {
+
+// @orig 12C8:0000 12C8:07A6 12C8:0084
+bool write_tga(const std::filesystem::path& path, const Surface8& surface, const Palette& palette) {
+    std::vector<std::uint8_t> out;
+    auto u16 = [&](unsigned v) {
+        out.push_back(static_cast<std::uint8_t>(v));
+        out.push_back(static_cast<std::uint8_t>(v >> 8));
+    };
+    out.push_back(0);  // no image id
+    out.push_back(1);  // colour map present
+    out.push_back(1);  // uncompressed, colour-mapped
+    u16(0);            // first map entry
+    u16(256);          // map entries
+    out.push_back(24); // bits per entry
+    u16(0);
+    u16(0);
+    u16(static_cast<unsigned>(surface.width));
+    u16(static_cast<unsigned>(surface.height));
+    out.push_back(8);     // bits per pixel
+    out.push_back(0x20);  // origin at the top left
+    for (const Rgb& c : palette.colors) {
+        out.push_back(c.b);
+        out.push_back(c.g);
+        out.push_back(c.r);
+    }
+    out.insert(out.end(), surface.pixels.begin(), surface.pixels.end());
+    std::ofstream f(path, std::ios::binary);
+    if (!f) return false;
+    f.write(reinterpret_cast<const char*>(out.data()), static_cast<std::streamsize>(out.size()));
+    return static_cast<bool>(f);
+}
+
+}  // namespace crusader

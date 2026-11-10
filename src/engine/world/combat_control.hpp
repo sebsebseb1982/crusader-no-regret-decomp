@@ -92,6 +92,7 @@ protected:
 
 private:
     bool keypad_command(const GameKeyEvent& e);
+    bool fire_interrupts(ObjId npc);
     bool fire(bool explicit_call);
     void use_round(ObjId npc);
     void reload(ObjId npc);

@@ -14,11 +14,11 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 200 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 189 lines are left:
 
 | File | Lines |
 |---|---:|
-| `src/game/game.cpp` | 32 |
+| `src/game/game.cpp` | 31 |
 | `src/engine/ui/weasel_gump.cpp` | 19 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
 | `src/engine/world/actor_anim.cpp` | 10 |
@@ -30,13 +30,11 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/item_selection.cpp` | 7 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
 | `src/engine/ui/help_screen.cpp` | 5 |
-| `src/engine/world/cheats.cpp` | 5 |
 | `src/core/game_config.cpp` | 4 |
 | `src/engine/ui/difficulty_screen.cpp` | 4 |
 | `src/engine/ui/main_menu.cpp` | 4 |
 | `src/engine/world/activity.cpp` | 4 |
 | `src/engine/world/aim_mode.cpp` | 4 |
-| `src/engine/world/combat_control.cpp` | 4 |
 | `src/core/avi_movie.cpp` | 3 |
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
@@ -58,7 +56,6 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/avatar_mover.cpp` | 1 |
 | `src/engine/world/inventory.cpp` | 1 |
 | `src/engine/world/item_damage.cpp` | 1 |
-| `src/engine/world/player_commands.cpp` | 1 |
 | `src/engine/world/sprite_process.cpp` | 1 |
 
 ## Intrinsics

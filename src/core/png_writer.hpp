@@ -16,3 +16,12 @@ void write_png(const std::filesystem::path& path, const Surface8& surface, const
                std::optional<std::uint8_t> transparent = std::nullopt);
 
 }  // namespace crusader
+
+namespace crusader {
+
+// Writes `surface` as an uncompressed colour-mapped TGA (type 1, 256 BGR
+// entries, rows from the top), as No Regret's PIX pictures (TARGA.C, segment
+// 12C8: 640 x 480, 8 bits). False when the file cannot be written.
+bool write_tga(const std::filesystem::path& path, const Surface8& surface, const Palette& palette);
+
+}  // namespace crusader

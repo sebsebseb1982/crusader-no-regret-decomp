@@ -90,6 +90,8 @@ void next_weapon(Kernel& kernel, World& world, const AnimDat& anims);
 // first; any other item loses one of its quality and is destroyed at 0. False
 // when the player carries no item of that shape or the item is in no slot.
 bool remove_item_cru(Kernel& kernel, World& world, const AnimDat& anims, ObjId item);
+// No Regret's digit keys: the weapon of rank `index` (0..11) of DS:2F5F.
+void choose_weapon(World& world, int index);
 void previous_item(World& world);
 void next_item(World& world);
 void use_active_item(World& world);
