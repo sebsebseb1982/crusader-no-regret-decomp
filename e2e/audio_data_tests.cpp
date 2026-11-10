@@ -43,6 +43,7 @@ void test_music(const std::filesystem::path& data) {
     // Track names; 16 moves on before loading.
     AsylumMixer mixer;
     Music music(mixer, dir);
+    music.set_remorse(true);  // these are checks of the No Remorse tracks
     CHECK(music.file_name(1) == "m01" && music.file_name(15) == "m15" && music.file_name(17) == "cred" &&
           music.file_name(18) == "menu" && !music.file_name(0) && !music.file_name(19));
     music.play(16);

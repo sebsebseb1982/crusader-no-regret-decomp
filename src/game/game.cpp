@@ -236,6 +236,7 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     regret_ = info.regret;
     dtable::select_game(regret_);
     if (audio_) audio_->sources.set_max_sfx(regret_ ? 0x400 : 0x200);
+    if (audio_) audio_->music.set_remorse(!regret_);
     intrinsic_numbering_ = intrinsic_numbering(info);
     set_text_language(info.text_language());
     set_config(config_);

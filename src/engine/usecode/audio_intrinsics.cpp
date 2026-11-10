@@ -96,9 +96,18 @@ std::vector<std::uint16_t> register_audio_intrinsics(UCMachine& m, World& w) {
         if (Audio* audio = w.audio()) audio->stop_all();
         return 0;
     });
-    // MusicProcess::I_playMusic (1200:0143): the track number.
+    // MusicProcess::I_playMusic (1210:01A2): the track number; in No Regret
+    // 0x45 is the track of the player's map (Actor::I_getMap).
     m.set_intrinsic(0x012, [&w](UCMachine&, UCProcess&, Args a) -> std::uint32_t {
-        if (Audio* audio = w.audio()) audio->music.play(static_cast<std::int16_t>(arg16(a, 0)));
+        Audio* audio = w.audio();
+        if (!audio) return 0;
+        const int track = static_cast<std::int16_t>(arg16(a, 0));
+        if (w.remorse()) {
+            audio->music.play(track);
+        } else {
+            const Item* player = w.get(1);
+            audio->music.play_regret(track, player ? player->map_number : 0);
+        }
         return 0;
     });
     // MusicProcess::I_stopMusic (1200:0223).

@@ -14,7 +14,7 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 253 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 251 lines are left:
 
 | File | Lines |
 |---|---:|
@@ -50,7 +50,6 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/gravity.cpp` | 3 |
 | `src/engine/world/teleport.cpp` | 3 |
 | `src/core/dtable.cpp` | 2 |
-| `src/engine/audio/music.cpp` | 2 |
 | `src/engine/palette_fader.cpp` | 2 |
 | `src/engine/ui/computer_gump.cpp` | 2 |
 | `src/engine/world/map_change.cpp` | 2 |
@@ -76,10 +75,8 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 |---|---|---|---|---:|---|---|
 | 0x06D | 1448:0B5A | new | 0x46D | 169 | `MovieGump::I_playMovieCutsceneRegret` |  |
 | 0x0C0 | 1390:0005 | modified | 0x0FE | 25 | `ComputerGump::I_readComputer` |  |
-| 0x081 | 1210:02DF | modified | 0x091 | 9 | `MusicProcess::I_stopMusic` |  |
 | 0x145 | 1008:009C | modified | 0x095 | 6 | `Game::I_playCredits` |  |
 | 0x0BE | 13B0:00FE | modified | 0x0C5 | 3 | `KeypadGump::I_showKeypad` |  |
-| 0x05A | 1210:01A2 | modified | 0x012 | 2 | `MusicProcess::I_playMusic` |  |
 | 0x0BC | 10B0:3CD8 | modified | 0x129 | 2 | `Actor::I_createActorCru` |  |
 | 0x001 | 10B0:0826 | constants | 0x001 | 566 | `Item::I_getFrame` | NPC record layout, data addresses or assert line only |
 | 0x0A3 | 10B0:0882 | constants | 0x002 | 462 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
@@ -114,6 +111,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x0DA | 10F8:3E26 | constants | 0x01D | 12 | `Actor::I_getLastAnimSet` | NPC record layout, data addresses or assert line only |
 | 0x036 | 1140:258E | modified | 0x044 | 10 | `Item::I_getRangeIfVisible` | only a guard for a null item, already in the port |
 | 0x0E0 | 1048:134F | modified | 0x028 | 10 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x081 | 1210:02DF | modified | 0x091 | 9 | `MusicProcess::I_stopMusic` | forgets the current track |
 | 0x0B6 | 1008:005D | new | 0x4B6 | 9 | `UCMachine::I_true` | status bar redraw flags: nothing to do |
 | 0x113 | 10F8:2278 | constants | 0x03C | 9 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
 | 0x152 | 10B0:0882 | constants | 0x002 | 9 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
@@ -148,6 +146,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x15C | 10F8:3E0C | constants | 0x01C | 3 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
 | 0x024 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
 | 0x04F | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
+| 0x05A | 1210:01A2 | modified | 0x012 | 2 | `MusicProcess::I_playMusic` | track table, map music 0x45, same track ignored, xmas |
 | 0x09C | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
 | 0x0D6 | 10F8:2EB9 | constants | 0x0E0 | 2 | `Actor::I_setEquip` | NPC record layout, data addresses or assert line only |
 | 0x0DB | 10F8:2198 | constants | 0x0AC | 2 | `Actor::I_isFalling` | NPC record layout, data addresses or assert line only |

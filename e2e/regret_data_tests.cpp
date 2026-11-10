@@ -11,6 +11,7 @@
 #include "core/png_writer.hpp"
 #include "core/shape.hpp"
 #include "core/typeflags.hpp"
+#include "engine/audio/audio.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
 #include "game/game.hpp"
 
@@ -173,6 +174,12 @@ void test_new_game(const std::filesystem::path& data) {
     shot(game, "new_game.png");
     player = w.get(1);
     std::printf("after 30 s: map %d, player at (%d, %d, %d)\n", w.current_map(), player->x, player->y, player->z);
+    // The mission's music: the track of map 1 ("ninth"), asked as track 0x45.
+    if (Audio* audio = w.audio()) {
+        std::printf("music: track %d\n", audio->music.current());
+        CHECK(audio->music.current() == Music::map_track(w.current_map()) && Music::map_track(1) == 1);
+        CHECK(audio->music.file_name(1) == std::optional<std::string>("ninth"));
+    }
     // The No Regret only intrinsic not written yet: the Xan movie (0x06D).
     const std::set<std::uint16_t> todo = {0x46D};
     bool unknown_unbound = false;

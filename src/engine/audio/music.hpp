@@ -32,7 +32,25 @@ public:
     static constexpr int kCredits = 0x11;
     static constexpr int kMenu = 0x12;
 
+    // No Regret: I_playMusic(0x45) plays the track of the player's map.
+    static constexpr int kMapMusic = 0x45;
+
     Music(AsylumMixer& mixer, std::filesystem::path sound_dir);
+
+    // The tracks of No Regret (the default) or of No Remorse. No Regret
+    // (STDINT 1210:0100) names 21 tracks in a table (DS:45E1: "ninth", "phil"...
+    // 17 is "cred" and 18 "regret", the menu's), does nothing when asked for
+    // the track that plays, and has no "m16a/b/c" rotation.
+    void set_remorse(bool remorse) { remorse_ = remorse; }
+    // No Regret, 1210:0186: the track of a map (DS:463D), 1 from map 26 on.
+    static int map_track(int map);
+    // No Regret, 1210:0000: the date is 24 to 31 December (or the cheat that
+    // forces it): the map music is then "xmas". Set by the program from the
+    // clock; never by the tests.
+    void set_christmas(bool christmas) { christmas_ = christmas; }
+    // I_playMusic of No Regret (1210:01A2): `track`, or the player's map's
+    // when it is kMapMusic.
+    void play_regret(int track, int player_map);
 
     // MusicProcess::I_playMusic (1200:0143, intrinsic 0x012).
     void play(int track);
@@ -61,10 +79,14 @@ public:
     void resume();
 
 private:
+    void start(int track, const std::optional<std::string>& name);
+
     AsylumMixer& mixer_;
     std::filesystem::path dir_;
     char m16_ = 'a';  // the letter of "m16a" (DS:3C43 + 3)
-    int current_ = 0;  // DS:8624
+    bool remorse_ = false;
+    bool christmas_ = false;
+    int current_ = 0;  // DS:91A4 (DS:8624 in No Remorse)
     int flags_ = 0;    // DS:3BFB
     std::array<int, 4> stack_{};  // DS:861C
     int depth_ = 0;               // DS:3BFD

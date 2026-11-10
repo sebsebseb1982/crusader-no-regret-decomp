@@ -23,6 +23,7 @@
 #include "core/png_writer.hpp"
 #include "crusader_version.hpp"
 #include "engine/world/inventory.hpp"
+#include "engine/audio/audio.hpp"
 #include "game/game.hpp"
 #include "platform/sdl_audio.hpp"
 #include "platform/sdl_gamepad.hpp"
@@ -34,6 +35,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <exception>
 #include <fstream>
 #include <memory>
@@ -164,6 +166,13 @@ int main(int argc, char** argv) {
                                      "': copy the files of an install of the game (French 1.08, US 1.23 or English 1.01) there, or its .iso image (GAME.GOG in the GOG release)");
         }
         Game game(data, {}, mod);
+        // No Regret plays "xmas" as map music from 24 to 31 December (STDINT 1210:0000).
+        if (Audio* audio = game.audio()) {
+            const std::time_t now = std::time(nullptr);
+            if (const std::tm* date = std::localtime(&now)) {
+                audio->music.set_christmas(date->tm_mon == 11 && date->tm_mday >= 24);
+            }
+        }
         game.set_port_version(CRUSADER_VERSION);
         if (start_map > 0) game.set_start(start_map, static_cast<std::uint16_t>(start_egg));
         if (laurie) game.enable_cheats();

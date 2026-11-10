@@ -34,9 +34,27 @@ constexpr int kM16 = 0x10;
 
 Music::Music(AsylumMixer& mixer, std::filesystem::path sound_dir) : mixer_(mixer), dir_(std::move(sound_dir)) {}
 
+namespace {
+// DS:45E1: the file names of No Regret's tracks 1..21.
+constexpr const char* kRegretTracks[] = {nullptr,  "ninth",  "phil",   "straight", "party",  "demo",
+                                         "stint",  "mk",     "space2", "d3",       "space",  "rhythm",
+                                         "intent", "m03",    "silver", "m01",      "techno", "cred",
+                                         "regret", "m13",    "retro",  "metal"};
+// DS:463D: the track of maps 0..25.
+constexpr int kMapTracks[] = {0, 1, 10, 2, 0, 3, 11, 4, 16, 5, 20, 6, 0, 7, 13, 8, 15, 9, 12, 10, 19, 14, 21, 0, 0, 2};
+}  // namespace
+
+// @orig 1210:0186
+int Music::map_track(int map) {
+    return map >= 0 && map < static_cast<int>(std::size(kMapTracks)) ? kMapTracks[map] : 1;
+}
+
 // @orig 1210:0100
-// TODO(regret): modified in REGRET.EXE (No Remorse 1200:00C8, similarity 0.60)
 std::optional<std::string> Music::file_name(int track) const {
+    if (!remorse_) {
+        if (track >= 1 && track < static_cast<int>(std::size(kRegretTracks))) return kRegretTracks[track];
+        return std::nullopt;
+    }
     switch (track) {
     case kM16:
         return std::string("m16") + m16_;
@@ -62,25 +80,50 @@ void Music::resume() {
     flags_ &= ~kPaused;
 }
 
+// No Regret also forgets the current track (DS:91A4 = 0xFFFF).
+// @orig 1210:02DF
 void Music::stop() {
+    if (!remorse_) current_ = -1;
     if (!(flags_ & kPlaying)) return;
     flags_ = 0;
     mixer_.stop_music();
 }
 
 // @orig 1210:01A2
-// TODO(regret): modified in REGRET.EXE (No Remorse 1200:0143, similarity 0.46)
+void Music::play_regret(int track, int player_map) {
+    const bool map_music = track == kMapMusic;
+    if (map_music) track = map_track(player_map);
+    if (track == current_) return;
+    start(track, map_music && christmas_ ? std::optional<std::string>("xmas") : file_name(track));
+}
+
+// No Remorse's I_playMusic (1200:0143), and the play of both games' menu,
+// credits and saved track.
+// @orig 1210:01A2
 void Music::play(int track) {
+    if (!remorse_) {
+        if (track == current_) return;
+        start(track, file_name(track));
+        return;
+    }
     stop();
     if (track == kM16) m16_ = m16_ == 'c' ? 'a' : static_cast<char>(m16_ + 1);
-    const auto name = file_name(track);
+    start(track, file_name(track));
+}
+
+// @orig 1210:01A2
+void Music::start(int track, const std::optional<std::string>& name) {
+    stop();
     // The original builds the path whatever the file; a missing one is
     // silence here.
     std::optional<AmfModule> module;
     if (name) module = AmfModule::load(find_module(dir_, *name));
     if (!module) {
+        // No Remorse: silence, track 0. No Regret: a track without file
+        // becomes the current one, a file that does not load changes nothing.
         flags_ = 0;
-        current_ = 0;
+        if (remorse_) current_ = 0;
+        else if (!name) current_ = track;
         return;
     }
     pause();
