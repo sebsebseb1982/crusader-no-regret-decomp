@@ -226,8 +226,9 @@ void restart_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId 
     set_activity(kernel, world, anims, id, activity);
 }
 
-// @orig 1160:00BF
-// TODO(regret): modified in REGRET.EXE (No Remorse 1150:009C, similarity 0.76)
+// No Regret's routine takes the starting direction as an argument; all its
+// callers go through SPRITE_1160_0084, which passes the NPC's own.
+// @orig 1160:0084 1160:00BF
 Pid turn_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int dir, bool always, bool relaxed) {
     const Item* item = world.get(id);
     if (!item) return 0;

@@ -2,6 +2,7 @@
 
 #include "core/dtable.hpp"
 #include "engine/audio/audio.hpp"
+#include "engine/usecode/item_intrinsics.hpp"
 #include "engine/usecode/world_intrinsics.hpp"
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/aim_mode.hpp"
@@ -306,8 +307,368 @@ Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shoote
     return last;
 }
 
+namespace {
+
+// No Regret 1140:0018, 1140:018B and 1140:0000: the end of the last boss.
+// Started when the last NPC of shape 0x5B1 of map 0xE6 dies: at once the
+// player is held (avatar stasis), his processes end, he stands up if he
+// kneels and turns to direction 6; 420 ticks after the death his
+// immortality goes and an explosion of 255 points (fire type 3, DS:2DBE set
+// so that it takes him apart) hits him; once his animation is over and 120
+// ticks have passed, the game quits.
+class BossEndProcess : public Process {
+public:
+    BossEndProcess(World& world, const AnimDat& anims) : world_(world), anims_(anims) {}
+
+protected:
+    void on_added() override {
+        start_ = kernel().ticks();
+        world_.state.avatar_in_stasis = true;
+        if (world_.hooks().fail_processes) world_.hooks().fail_processes(1);
+        const auto record = world_.npc_record(1);
+        if (!record.empty() && (record[npc::kFlags13] & 0x04))
+            wait_for(do_anim(kernel(), world_, anims_, 1, 0x29, kDirCurrent, 0, false));
+        wait_for(turn_to(kernel(), world_, anims_, 1, 6, true, true));  // SPRITE_1160_0084(1, 6, 1, 1)
+    }
+
+    void run() override {
+        const std::uint32_t elapsed = kernel().ticks() - start_;
+        if (!blown_) {
+            if (elapsed < kDelay) {
+                sleep(kDelay - elapsed);
+                return;
+            }
+            blown_ = true;
+            if (auto record = world_.npc_record(1); !record.empty())
+                record[npc::kFlags13] &= static_cast<std::uint8_t>(~0x02);  // Actor::I_clrImmortal
+            world_.state.forced_blast_death = true;
+            apply_damage(kernel(), world_, anims_, 1, 0, kDirCurrent, 0xFF, 3);  // Item::I_receiveHit
+            world_.state.forced_blast_death = false;
+            start_ = kernel().ticks();
+            if (const Process* anim = kernel().find_process(1, ActorAnimProcess::kType)) wait_for(anim->pid());
+            return;
+        }
+        if (elapsed < kQuitDelay) {
+            sleep(kQuitDelay - elapsed);
+            return;
+        }
+        if (world_.hooks().quit_game) world_.hooks().quit_game();
+        terminate();
+    }
+
+private:
+    static constexpr std::uint32_t kDelay = 0x1A4;
+    static constexpr std::uint32_t kQuitDelay = 0x78;
+    World& world_;
+    const AnimDat& anims_;
+    std::uint32_t start_ = 0;
+    bool blown_ = false;
+};
+
+// Container::I_destroyContents (10B0:14F3) on an NPC (family 6).
+void destroy_contents(Kernel& kernel, World& world, ObjId id) {
+    const Item* item = world.get(id);
+    if (!item) return;
+    const std::uint8_t family = world.family_of(item->shape);
+    if (family != kFamilyContainer && family != kFamilyActorContainer) return;
+    for (ObjId c : std::vector<ObjId>(item->contents)) destroy_item(kernel, world, c);
+}
+
+// The rest of No Regret's damage routine (1140:04EF) for an NPC. Changes
+// from No Remorse: shape 0x5B1's shield (in place of Vargas's) flashes and
+// lets the hit go on with no damage; a dead NPC of shape 0x5D6 (frozen) can
+// be hit again and breaks (0x5EF); new deaths for fire types 0x10..0x14 and
+// four robot families; an explosion may also take a human apart (0x656);
+// the cries are drawn from longer tables, and the player's own cries when
+// hurt one time in three; electricity no longer shakes the player but makes
+// him cry out, and stops robots four times in ten with sparks; the contents
+// of a dead NPC other than the player are destroyed.
+void damage_npc_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId target, ObjId attacker, int dir,
+                       int damage, int fire_type, const World::Point* hit_at) {
+    Item* item = world.get(target);
+    if (!item) return;
+    const int facing = world.npc_direction(target);
+    bool fell = false;  // the death took its own animations
+    // The point hit: the NPC's position when none is given (ITEM_10b0_03fa).
+    const World::Point at = hit_at ? *hit_at : World::Point{item->x, item->y, item->z & 0xFF};
+    const std::uint16_t shape = item->shape;
+    if (shape == 0x5B1 && world.state.boss_shield != 0) {
+        world.state.boss_shield = static_cast<std::int16_t>(world.state.boss_shield - damage);
+        damage = 0;
+        if (world.state.boss_shield < 1) {
+            world.state.boss_shield = 0;
+            create_sprite(kernel, world, 0x4F1, 10, 0x13, 3, at);
+            if (Audio* audio = world.audio()) audio->sources.play(world, 0x1EB, target);
+        } else {
+            create_sprite(kernel, world, 0x4F1, 0, 9, 3, at);
+        }
+        item = world.get(target);
+        if (!item) return;
+    }
+    if (world.is_dead(target) && shape != 0x5D6) return;
+    auto record = world.npc_record(target);
+    if (record.empty()) return;
+    const std::uint32_t now = kernel.ticks();
+    record[npc::kLastHit] = static_cast<std::uint8_t>(now);
+    record[npc::kLastHit + 1] = static_cast<std::uint8_t>(now >> 8);
+    record[npc::kLastHit + 2] = static_cast<std::uint8_t>(now >> 16);
+    record[npc::kLastHit + 3] = static_cast<std::uint8_t>(now >> 24);
+    const ObjId controlled = world.state.controlled_npc;
+    if (target != controlled && target != 1) {
+        if (in_combat(world, target)) {
+            if (world.npc_word(target, npc::kActivity) == 8) set_activity(kernel, world, anims, target, 5);
+            set_target(kernel, world, anims, target, controlled);
+        } else {
+            set_activity(kernel, world, anims, target, 0x72);
+            if (in_combat(world, target)) set_target(kernel, world, anims, target, controlled);
+        }
+        const Item* shooter = world.get(attacker);
+        if (shooter && is_npc_id(attacker) && attacker == controlled && (record[npc::kCombatFlags] & 0x20)) {
+            const int distance = std::max({std::abs(static_cast<std::int16_t>(item->x - shooter->x)),
+                                           std::abs(static_cast<std::int16_t>(item->y - shooter->y)),
+                                           std::abs((item->z & 0xFF) - (shooter->z & 0xFF))});
+            if (distance <= 0x280 && world.is_partly_in_combat_zone(*item)) {
+                const int back = closest_direction_in_range(item->x, item->y, shooter->x, shooter->y, 16, 0, 15);
+                if (fire_distance(world, anims, target, attacker, back) != 0)
+                    kernel.fail_processes(target, PathfinderProcess::kType, 1);
+            }
+        }
+    }
+    // The player's shields, as in No Remorse.
+    if (target == 1) {
+        int shield = world.npc_word(1, npc::kShieldLevel);
+        if (shield == 3) shield = 4;
+        const dtable::FireType* ft = dtable::fire_type(fire_type);
+        if (shield != 0 && ft && (shield & ft->shield_mask()) && ft->shield_cost() <= world.npc_mana(1)) {
+            world.set_npc_word(1, npc::kEnergy, static_cast<std::uint16_t>(world.npc_mana(1) - ft->shield_cost()));
+            if (Audio* audio = world.audio()) audio->sources.retrigger(world, 0x48, 1);
+            damage = 0;
+            if (world.state.shield_sprite == 0) {
+                if (shield == 4) {
+                    const World::Point on{item->x + 16, item->y + 24, item->z & 0xFF};
+                    const Pid pid = create_sprite(kernel, world, 0x52B, 0, 8, 4, on);
+                    if (auto* sprite = dynamic_cast<SpriteProcess*>(kernel.get(pid))) {
+                        world.state.shield_sprite = pid;
+                        world.state.shield_sprite_item = sprite->sprite();
+                    }
+                } else {
+                    create_sprite(kernel, world, 0x5A9, shield == 1 ? 7 : 0, shield == 1 ? 13 : 6, 4, at);
+                }
+                item = world.get(target);
+                if (!item) return;
+            }
+        }
+    }
+    if (record[npc::kFlags13] & 0x02) damage = 0;  // immortal (NPC_10f8_23e4)
+    const int old_hp = world.npc_hp(target);
+    const int hp = std::max(0, old_hp - damage);
+    world.set_npc_word(target, 0, static_cast<std::uint16_t>(hp));
+    const int dealt = old_hp - hp;
+    if (dealt > 0 && target == controlled && world.hooks().player_damaged) world.hooks().player_damaged(dealt);
+    const bool human = takes_full_bullet_damage(world, item->shape);
+    const bool female = is_female(world, target);
+
+    if (hp != 0) {
+        // Electricity on the player: sprite 0x62B (frames 0..9) on him, which
+        // follows him as the large shield does.
+        if (target == 1 && fire_type == 7) {
+            const Pid pid = create_sprite(kernel, world, 0x62B, 0, 9, 4, World::Point{item->x, item->y, item->z & 0xFF});
+            if (auto* sprite = dynamic_cast<SpriteProcess*>(kernel.get(pid))) {
+                world.state.shield_sprite = pid;
+                world.state.shield_sprite_item = sprite->sprite();
+            }
+            item = world.get(target);
+            if (!item) return;
+        }
+        if (damage == 0) return;
+        Audio* audio = world.audio();
+        if (human || (fire_type == 8 && target == 1)) {
+            // DS:2DF3 (men) and DS:2E05 (women: rand() * 1 / 0x8000, its first entry).
+            static constexpr int kMan[] = {0x8F, 0x230, 0x239, 0x23A, 0x23B, 0x23C, 0x23D, 0x23E, 0x23F};
+            static constexpr int kWoman[] = {0xD8};
+            const int cry = female ? kWoman[crt_rnd(world, 1)] : kMan[crt_rnd(world, 9)];
+            if (!(audio && audio->sources.is_playing(cry, target)) &&
+                (target != controlled || random_range(world.state.random_state, 3) == 0)) {
+                if (audio) audio->sources.play(world, cry, target);
+            }
+        }
+        if (fire_type == 0xF || fire_type == 7) {
+            if (target == 1) {
+                if (damage > 0) {
+                    const int sfx = crt_rnd(world, 2) != 0 ? 5 : 0x14;
+                    if (audio) audio->sources.play(world, sfx, 1);
+                }
+            } else {
+                switch (item->shape) {
+                case 0x4E6: case 0x338: case 0x385: case 0x383: case 0x30C: case 0x319: case 0x5E2:
+                    if (crt_rnd(world, 10) >= 6) {
+                        if (auto* attack = dynamic_cast<AttackProcess*>(kernel.find_process(target, AttackProcess::kType))) {
+                            attack->set_pacing();  // ATTACK 1120:1455
+                            const int first = crt_rnd(world, 2) * 10;
+                            create_sprite(kernel, world, 0x4F1, first, first + 9, 3, at);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+        return;
+    }
+
+    // Death.
+    if (Audio* audio = world.audio()) audio->sources.stop_item(target);
+    if (world.hooks().fail_processes) world.hooks().fail_processes(target);
+    if (target == controlled) {
+        designate(kernel, world, anims, 0);
+        if (target == 1) {
+            if (fire_type != 0x10 && fire_type != 0x12) kernel.spawn<DeathSilence>(world);
+        } else {
+            set_controlled_npc(kernel, world, anims, 0);
+        }
+    }
+    // The violence option (UCMachine::I_true 0x06D in No Regret) is always on.
+    const auto become = [&](std::uint16_t new_shape, std::uint16_t pose) {
+        world.set_shape(*item, new_shape);
+        set_pose(world, anims, target, pose);
+    };
+    if (shape == 0x5D6) {
+        // A frozen body hit again breaks, unless it is still falling.
+        if (!actor_busy(kernel, target)) {
+            world.clear_broken(*item);  // NPC_10f8_22cf
+            record[npc::kFlags13] &= static_cast<std::uint8_t>(~0x01);
+            become(0x5EF, 0x12);
+        }
+    } else if (fire_type == 3 || fire_type == 4 || fire_type == 10 || fire_type == 12) {
+        if (human) {
+            // A damage roll of the fire type: from 6/10 of it the human burns
+            // and runs (0x576), unless from 8/10 a coin toss (or DS:2DBE)
+            // takes him apart (0x656); type 12 always burns. The original
+            // pushes the NPC out of the world to test the new shape's place
+            // (ITEMFIND.C 1874) and puts it back.
+            const dtable::FireType* ft = dtable::fire_type(fire_type);
+            const int roll = ft ? rnd_between(world, ft->min_damage(), ft->max_damage()) : 0;
+            const int high = static_cast<std::int16_t>(roll << 3) / 10;
+            const int low = static_cast<std::int16_t>(roll * 6) / 10;
+            const World::Point here{item->x, item->y, item->z};
+            const bool burns =
+                ((damage < high || random_range(world.state.random_state, 2) != 0) && !world.state.forced_blast_death) ||
+                fire_type == 0xC;
+            if (!burns) {
+                if (position_free(world, 0x656, here, nullptr, target)) {
+                    fell = true;
+                    become(0x656, 0x12);
+                    do_anim(kernel, world, anims, target, 0x12, kDirCurrent, 10000, true);
+                }
+            } else if (damage >= low && position_free(world, 0x576, here, nullptr, target)) {
+                fell = true;
+                int turn = world.npc_direction(target);
+                become(0x576, 1);
+                const int spins = crt_rnd(world, 9);
+                if (turn & 1) turn = (turn + 1) & 0xF;
+                for (int i = 0; i < spins; ++i) {
+                    turn = (turn + 2 * rnd_between(world, -1, 1)) & 0xF;
+                    do_anim(kernel, world, anims, target, 1, turn, 10000, false);
+                }
+                do_anim(kernel, world, anims, target, 0x12, kDirCurrent, 10000, false);
+                const int falls = crt_rnd(world, 3) + 1;
+                for (int i = 0; i < falls; ++i) do_anim(kernel, world, anims, target, 0x14, kDirCurrent, 10000, false);
+                do_anim(kernel, world, anims, target, 0x17, kDirCurrent, 10000, false);
+                special_frame(kernel, world, anims, target);
+            }
+        }
+    } else if (fire_type == 6) {
+        if (human) become(0x58F, 0);  // burnt
+    } else if (fire_type == 0xE) {
+        if (human) become(0x596, 0x12);
+    } else if (fire_type == 0xF) {
+        if (human) become(0x59C, 0x12);
+    } else if (fire_type == 0x10 || fire_type == 0x12) {
+        if (human) become(0x5D6, 0x12);  // frozen
+    } else if (fire_type == 0x11) {
+        if (human) become(0x62D, 0x12);
+    } else if (fire_type == 0x14) {
+        if (human) become(0x278, 0x12);
+    } else if (fire_type == 7 && target == 1) {
+        do_anim(kernel, world, anims, 1, 0x37, kDirCurrent, 0, false);
+    }
+    item = world.get(target);
+    if (!item) return;
+
+    if (!fell) {
+        // Robots whose shape did not change get their wreck.
+        if (item->shape == shape) {
+            switch (shape) {
+            case 0x5FF: case 0x5D7: become(0x606, 0x12); break;
+            case 0x625: case 0x626: become(0x62E, 0x12); break;
+            case 0x5F0: case 0x2C3: become(0x5D5, 0x12); break;
+            case 0x62F: case 0x630: become(0x631, 0x12); break;
+            default: break;
+            }
+        }
+        // The fall, as in No Remorse.
+        std::array<int, 9> around{};
+        around[0] = facing;
+        for (int k = 1; k < 9; ++k) around[k] = (facing + ((k + 1) >> 1) * ((k & 1) ? 1 : -1)) & 0xF;
+        bool random_side = facing >= 0x10 || item->shape == 899 || item->shape == 0x58F || item->shape == 0x596;
+        bool forward = false;
+        if (!random_side) {
+            for (int k = 0; k < 9; ++k) {
+                if (around[k] != dir) continue;
+                if (k == 8) random_side = true;
+                else forward = true;
+                break;
+            }
+        }
+        std::uint16_t action = 0x12;
+        if (anims.action(item->shape, 0x14)) {
+            if (random_side) forward = crt_rnd(world, 2) == 0;
+            if (forward) action = 0x14;
+        }
+        do_anim(kernel, world, anims, target, action, kDirCurrent, 10000, false);
+        // Death cry of the shapes with TYPEFLAG byte 6 bit 7 (ITEM_10b0_06de):
+        // DS:2DD1 for women, DS:2DD9 for five shapes, DS:2DBF for the others.
+        const ShapeInfo* info = world.shape_info(item->shape);
+        if (info && (info->bytes[6] & 0x80)) {
+            static constexpr int kWoman[] = {0xD8, 0x10, 0x21F, 0x220};
+            static constexpr int kSpecial[] = {0x22B, 0x22E, 0x231, 0x232, 0x233, 0x235, 0x223,
+                                               0x22C, 0x22D, 0x22F, 0x234, 0x237, 0x238};
+            static constexpr int kMan[] = {0x88, 0x8C, 0x8F, 0x221, 0x224, 0x227, 0x228, 0x229, 0x22A};
+            int cry;
+            if (female) cry = kWoman[crt_rnd(world, 4)];
+            else if (shape == 0x371 || shape == 0x4D1 || shape == 0x62F || shape == 0x630 || shape == 0x528)
+                cry = kSpecial[crt_rnd(world, 13)];
+            else cry = kMan[crt_rnd(world, 9)];
+            play_once(world, target, cry);
+        }
+    }
+
+    if (world.npc_hp(target) != 0) return;
+    if (target != 1) destroy_contents(kernel, world, target);
+    item = world.get(target);
+    if (!item) return;
+    world.set_broken(*item);  // Actor::I_setDead
+    record[npc::kFlags13] |= 0x01;
+    // The last NPC of shape 0x5B1 of map 0xE6 (a search of the whole map,
+    // "@ % 0x5B1 = $") ends the game.
+    const Item* player = world.get(1);
+    if (shape == 0x5B1 && player && player->map_number == 0xE6) {
+        static constexpr std::uint8_t kScript[] = {'@', '%', 0xB1, 0x05, '=', '$'};
+        bool all_dead = true;
+        for (ObjId id : world.area_search(1, 0x7FFF, kScript)) {
+            if (!world.is_dead(id)) {
+                all_dead = false;
+                break;
+            }
+        }
+        if (all_dead) kernel.add(std::make_unique<BossEndProcess>(world, anims));
+    }
+}
+
+}  // namespace
+
 // @orig 1140:04EF
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:026B, similarity 0.46)
 void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId target, ObjId attacker, int dir,
                   int damage, int fire_type, const World::Point* at) {
     Item* item = world.get(target);
@@ -325,7 +686,8 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
         (fire_type == 1 || fire_type == 2 || fire_type == 0xB || fire_type == 0xD)) {
         damage /= 3;
     }
-    damage = std::clamp(damage, 1, 250);
+    if (damage > 250) damage = 250;
+    else if (damage == 0) damage = 1;
 
     if (!is_npc_id(target)) {
         hit_item(kernel, world, anims, target, damage, fire_type);
@@ -341,6 +703,10 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
             const int rx = rnd_between(world, 10, 25);
             hurl(kernel, world, target, kThrowX[dir & 0xF] * rx, kThrowY[dir & 0xF] * ry, 0, 2);
         }
+        return;
+    }
+    if (!world.remorse()) {
+        damage_npc_regret(kernel, world, anims, target, attacker, dir, damage, fire_type, at);
         return;
     }
     // Vargas (shape 0x3AC) with his shield up: the hit only flashes the

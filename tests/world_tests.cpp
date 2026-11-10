@@ -13,6 +13,7 @@
 #include "engine/world/collision.hpp"
 #include "engine/world/gravity.hpp"
 #include "engine/world/pathfind.hpp"
+#include "engine/world/projectile.hpp"
 #include "engine/world/render.hpp"
 #include "engine/world/world.hpp"
 
@@ -1155,7 +1156,71 @@ void test_save_fresh_slots() {
 
 }  // namespace
 
+// No Regret's damage to NPCs (1140:04EF): the shield of shape 0x5B1, the
+// frozen death of fire type 0x10 and its second death, the wrecks of robots,
+// the contents of the dead destroyed.
+void test_regret_npc_damage() {
+    constexpr std::size_t table = AnimDat::kShapes * 4, action = table + AnimDat::kActions * 4;
+    std::vector<std::uint8_t> bytes(action + 4);
+    auto u32 = [&](std::size_t at, std::size_t value) {
+        for (int k = 0; k < 4; ++k) bytes[at + k] = static_cast<std::uint8_t>(value >> (k * 8));
+    };
+    u32(4, table);
+    u32(table + 4, action);
+    const AnimDat anims = AnimDat::parse(bytes);
+
+    std::vector<ShapeInfo> tf(0x700);
+    // Families as in No Regret's TYPEFLAG.DAT: the frozen body (0x5D6) is
+    // not a container, the wreck (0x606) is.
+    for (std::uint16_t s : {0x308, 0x5B1, 0x5FF, 0x606}) tf[s].family = kFamilyContainer;
+    tf[0x308].bytes[6] = 0x80;  // a human with death cries
+    World w(tf);
+    CHECK(!w.remorse());
+    Kernel k;
+    auto npc = [&](ObjId id, std::uint16_t shape, std::uint16_t hp) {
+        Item i;
+        i.id = id;
+        i.shape = shape;
+        i.x = 0x1000 + id * 0x100;
+        i.y = 0x1000;
+        w.add_with_id(i);
+        w.set_npc_word(id, 0, hp);
+    };
+
+    // The shield takes the hit (50 x 5 at difficulty 1), the NPC keeps its points.
+    npc(2, 0x5B1, 100);
+    apply_damage(k, w, anims, 2, 0, 0, 50, 3);
+    CHECK(w.state.boss_shield == 1250);
+    CHECK(w.npc_hp(2) == 100);
+    CHECK(!w.is_dead(2));
+
+    // Frozen (0x5D6), then broken (0x5EF) by a second hit on the body. The
+    // contents go only when the dead NPC's shape is a container.
+    npc(3, 0x308, 10);
+    const ObjId carried = w.create(0x50, 0);
+    w.pop_to_container(3);
+    CHECK(w.get(3)->contents.size() == 1);
+    apply_damage(k, w, anims, 3, 0, 0, 50, 0x10);
+    CHECK(w.npc_hp(3) == 0);
+    CHECK(w.is_dead(3));
+    CHECK(w.get(3)->shape == 0x5D6);
+    CHECK(w.get(carried) != nullptr);
+    apply_damage(k, w, anims, 3, 0, 0, 50, 0x10);
+    CHECK(w.get(3)->shape == 0x5EF);
+    CHECK(w.is_dead(3));
+
+    // A robot keeps its shape until it dies, then gets its wreck.
+    npc(4, 0x5FF, 10);
+    const ObjId part = w.create(0x50, 0);
+    w.pop_to_container(4);
+    apply_damage(k, w, anims, 4, 0, 0, 50, 1);
+    CHECK(w.get(4)->shape == 0x606);
+    CHECK(w.is_dead(4));
+    CHECK(w.get(part) == nullptr);
+}
+
 int main() {
+    test_regret_npc_damage();
     test_typeflag_decode();
     test_world_ids();
     test_create_npc_reuses_a_slot();

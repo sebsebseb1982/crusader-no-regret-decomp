@@ -88,7 +88,8 @@ Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shoote
 
 // CRUSADER_1130_026b (reproduced part, see above). `dir` is the direction the
 // projectile travelled in, `at` the point hit (null from I_receiveHit, where
-// the original reads a null pointer).
+// No Remorse reads a null pointer and No Regret takes the NPC's position).
+// No Regret's NPC part (1140:04EF) is its own function: see projectile.cpp.
 void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId target, ObjId attacker, int dir,
                   int damage, int fire_type, const World::Point* at = nullptr);
 

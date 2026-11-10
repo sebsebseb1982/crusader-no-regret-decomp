@@ -427,6 +427,10 @@ void Game::reset_world() {
     hooks.show_message = [this](const std::string& text) { show_message(text); };
     hooks.autosave = [this] { autosave(); };
     hooks.flush_keys = [this] { keyboard_.reset(); };
+    hooks.quit_game = [this] {
+        world_->state.cycle_paused = true;
+        quit_ = true;
+    };
     hooks.autosave_soon = [this] { request_autosave(); };
     hooks.designated_target_moved = [this](ObjId item, std::int32_t x, std::int32_t y, std::int32_t z) {
         designated_target_moved(*kernel_, *world_, anims_, item, x, y, z);

@@ -135,7 +135,13 @@ struct GameState {
     // it until it is empty. World::I_resetVargasShield puts it back to 500
     // unless it is already empty.
     std::int16_t vargas_shield = 5000;
-    std::uint16_t difficulty = 1;     // World::I_gameDifficulty
+    // No Regret DS:2FC4: the shield of shape 0x5B1, 1500 at start; hits take
+    // from it (apply_damage) until it is empty.
+    std::int16_t boss_shield = 1500;
+    // No Regret DS:2DBE: set by 1140:018B around the hit that ends the game,
+    // so that the explosion takes the player apart (shape 0x656).
+    bool forced_blast_death = false;
+    std::uint16_t difficulty = 1;    // World::I_gameDifficulty
     std::uint16_t battery = 0;        // DS:7E1F, MainActor::I_getMaxEnergy
     std::uint32_t keycards = 0;       // DS:7E1B, bit n: keycard n (MainActor::I_hasKeycard)
     // The 21-byte player block at DS:7E0E (saved game entry 20) as last
@@ -366,6 +372,9 @@ struct WorldHooks {
     // KERNEL 11E8:33E3: the keys held and the key queue are forgotten
     // (Ultima8Engine::I_clrCruStasis in No Regret).
     std::function<void()> flush_keys;
+    // No Regret 1140:0000: DS:6810 +0x40 = 1, then system_shutdown (the end
+    // of the last boss, apply_damage).
+    std::function<void()> quit_game;
 };
 
 class World {
