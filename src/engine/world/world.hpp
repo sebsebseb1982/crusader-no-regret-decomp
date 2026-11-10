@@ -250,6 +250,9 @@ struct GameState {
     // NPC.C 10F0:0245): the time (DS:2869), how long it counts (DS:286D,
     // ticks) and the spread divisor of NPC shots meanwhile (DS:2877, 1 at
     // start). Read by the aiming spread (SPRITE_1140_09c9, CRUSADER_1130_1180).
+    // No Regret, NPC 10F8:2865: the last two sounds NPCs said in combat
+    // (DS:17BB, DS:17BD), not said again at once.
+    std::int16_t last_bark = -1, previous_bark = -1;
     std::uint32_t player_moved_at = 0;
     std::uint32_t player_move_window = 0;
     std::uint16_t player_move_accuracy = 1;

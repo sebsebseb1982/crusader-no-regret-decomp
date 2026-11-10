@@ -79,13 +79,15 @@ bool is_female(World& world, ObjId npc) {
     return !record.empty() && (record[npc::kStance] & 0x04);
 }
 
-// CRUSADER_1130_01f7: shapes that take full damage from bullets (not robots).
+// Shapes that take full damage from bullets (not robots). The second line
+// of shapes is No Regret's.
 // @orig 1140:044A
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:01F7, similarity 0.60)
-bool takes_full_bullet_damage(std::uint16_t shape) {
+bool takes_full_bullet_damage(const World& world, std::uint16_t shape) {
     switch (shape) {
     case 0x4C8: case 0x338: case 0x45D: case 0x2CB: case 0x4E6: case 0x383: case 0x385:
         return false;
+    case 0x1CD: case 0x5E6: case 0x319: case 0x30C: case 0x5E2: case 0x5B1: case 0x5BA:
+        return world.remorse();
     default:
         return true;
     }
@@ -110,9 +112,10 @@ std::uint16_t projectile_frame(int fire_type, int dir, World& w) {
     }
 }
 
-// SPRITE_1140_09c9: divisor of the aiming spread.
+// Divisor of the aiming spread. In No Regret a shooter that is not an NPC
+// divides by the player's movement only (No Remorse: by 5 when the player
+// kneels, else by three times the movement).
 // @orig 1150:0A7A
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:09C9, similarity 0.68)
 int spread_divisor(const World& w, ObjId shooter, int fire_type, std::uint32_t now) {
     if (shooter == w.state.controlled_npc) {
         switch (fire_type) {
@@ -128,6 +131,7 @@ int spread_divisor(const World& w, ObjId shooter, int fire_type, std::uint32_t n
         if (!record.empty() && record[npc::kLongBurst] != 0) return 2;
         return controlled_npc_still(w, now) ? 8 : moving;
     }
+    if (!w.remorse()) return moving;
     const auto player = w.npc_record(w.state.controlled_npc);
     if (!player.empty() && (player[npc::kFlags13] & 0x04)) return 5;  // Actor::I_isKneeling
     return moving * 3;
@@ -270,7 +274,10 @@ Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shoote
                                : std::nullopt;
     // A target is aimed with spread (SPRITE_1140_09c9 with 1), a shot
     // straight ahead when aiming is asked (SPRITE_1140_0e01): both need `aim`.
-    const bool spread_shot = (aim || crosshair) && !ft->no_spread();
+    // No Regret (1150:0A7A): a robot (a shape that bullets hardly hurt) shoots
+    // without spread.
+    const bool robot = !world.remorse() && is_npc_id(shooter) && !takes_full_bullet_damage(world, item->shape);
+    const bool spread_shot = (aim || crosshair) && !ft->no_spread() && !robot;
 
     Pid last = 0;
     for (int i = 0; i < ft->projectiles(); ++i) {
@@ -309,7 +316,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
         if (difficulty == 1) damage /= 5;
         else if (difficulty == 2) damage /= 3;
     }
-    if (!takes_full_bullet_damage(item->shape) &&
+    if (!takes_full_bullet_damage(world, item->shape) &&
         (fire_type == 1 || fire_type == 2 || fire_type == 0xB || fire_type == 0xD)) {
         damage /= 3;
     }
@@ -422,7 +429,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     if (hp != 0) {
         // Hurt: humans (and the player by fire type 8) cry out, 0x8F or 0xD8
         // for a woman.
-        if (damage != 0 && (takes_full_bullet_damage(item->shape) || (fire_type == 8 && target == 1)))
+        if (damage != 0 && (takes_full_bullet_damage(world, item->shape) || (fire_type == 8 && target == 1)))
             play_once(world, target, is_female(world, target) ? 0xD8 : 0x8F);
         // Electric shots (types 7, 15) shake the player (action 0x37, its
         // animations cut); robots (0x4E6, 0x338, 0x385, 0x383) fight for 8 to
@@ -434,7 +441,8 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
             } else if ((item->shape == 0x4E6 || item->shape == 0x338 || item->shape == 0x385 || item->shape == 0x383) &&
                        rnd_between(world, 0, 2) == 0) {
                 if (auto* attack = dynamic_cast<AttackProcess*>(kernel.find_process(target, AttackProcess::kType)))
-                    attack->set_timed(kernel.ticks(), crt_rnd(world, 10));
+                    if (world.remorse()) attack->set_timed(kernel.ticks(), crt_rnd(world, 10));
+                    else attack->set_pacing();  // ATTACK 1120:1455
             }
         }
         return;
@@ -452,7 +460,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     }
     // Special deaths of humans (not the robot shapes), with VIOLENCE=1 (the
     // option string DS:0953 of the executable) where noted.
-    const bool human = takes_full_bullet_damage(item->shape);
+    const bool human = takes_full_bullet_damage(world, item->shape);
     if (human && (fire_type == 3 || fire_type == 4 || fire_type == 10 || fire_type == 12)) {
         // Blown apart when the damage reaches a fraction of a damage roll of
         // the fire type (3/5 for type 3, 2/5 otherwise) and shape 0x576 fits.
@@ -518,7 +526,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     do_anim(kernel, world, anims, target, action, kDirCurrent);
     // Death cry of humans (with VIOLENCE=1): electrocuted (type 15) DS:273E,
     // else DS:2738 for men, DS:2742 for women.
-    if (takes_full_bullet_damage(item->shape)) {
+    if (takes_full_bullet_damage(world, item->shape)) {
         static constexpr int kElectrocuted[] = {0xD9, 0xDA};  // SCREAM11, SCREAM14
         static constexpr int kMan[] = {0x88, 0x8C, 0x8F};     // DETHUM01, 02, 05
         static constexpr int kWoman[] = {0xD8, 0x10};         // FW04, FEMSCRM3

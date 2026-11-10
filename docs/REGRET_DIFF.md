@@ -14,7 +14,7 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 251 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 240 lines are left:
 
 | File | Lines |
 |---|---:|
@@ -23,10 +23,9 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/actor_anim.cpp` | 12 |
 | `src/engine/world/world.cpp` | 12 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
-| `src/engine/world/projectile.cpp` | 11 |
-| `src/engine/world/attack.cpp` | 10 |
 | `src/engine/world/world_mouse.cpp` | 10 |
 | `src/engine/ui/load_screen.cpp` | 9 |
+| `src/engine/world/projectile.cpp` | 9 |
 | `src/engine/ui/movie_player.cpp` | 8 |
 | `src/engine/ui/options_screen.cpp` | 8 |
 | `src/engine/world/item_selection.cpp` | 7 |
@@ -45,13 +44,14 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
 | `src/engine/ui/status_bar.cpp` | 3 |
-| `src/engine/world/actor_create.cpp` | 3 |
 | `src/engine/world/avatar_mover.cpp` | 3 |
 | `src/engine/world/gravity.cpp` | 3 |
 | `src/engine/world/teleport.cpp` | 3 |
 | `src/core/dtable.cpp` | 2 |
 | `src/engine/palette_fader.cpp` | 2 |
 | `src/engine/ui/computer_gump.cpp` | 2 |
+| `src/engine/world/actor_create.cpp` | 2 |
+| `src/engine/world/attack.cpp` | 2 |
 | `src/engine/world/map_change.cpp` | 2 |
 | `src/engine/world/pathfind.cpp` | 2 |
 | `src/engine/world/pickup_list.cpp` | 2 |
@@ -77,7 +77,6 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x0C0 | 1390:0005 | modified | 0x0FE | 25 | `ComputerGump::I_readComputer` |  |
 | 0x145 | 1008:009C | modified | 0x095 | 6 | `Game::I_playCredits` |  |
 | 0x0BE | 13B0:00FE | modified | 0x0C5 | 3 | `KeypadGump::I_showKeypad` |  |
-| 0x0BC | 10B0:3CD8 | modified | 0x129 | 2 | `Actor::I_createActorCru` |  |
 | 0x001 | 10B0:0826 | constants | 0x001 | 566 | `Item::I_getFrame` | NPC record layout, data addresses or assert line only |
 | 0x0A3 | 10B0:0882 | constants | 0x002 | 462 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
 | 0x05D | 10B0:0882 | constants | 0x002 | 261 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
@@ -148,6 +147,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x04F | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
 | 0x05A | 1210:01A2 | modified | 0x012 | 2 | `MusicProcess::I_playMusic` | track table, map music 0x45, same track ignored, xmas |
 | 0x09C | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
+| 0x0BC | 10B0:3CD8 | modified | 0x129 | 2 | `Actor::I_createActorCru` | weapon slots 1..12, only 0x597 is a woman, no alert switch; the difficulty 4 weapon is still to read |
 | 0x0D6 | 10F8:2EB9 | constants | 0x0E0 | 2 | `Actor::I_setEquip` | NPC record layout, data addresses or assert line only |
 | 0x0DB | 10F8:2198 | constants | 0x0AC | 2 | `Actor::I_isFalling` | NPC record layout, data addresses or assert line only |
 | 0x0E5 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |

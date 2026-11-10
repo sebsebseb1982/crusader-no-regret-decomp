@@ -68,7 +68,7 @@ ObjId create_plain_actor(World& world, const dtable::NpcTypes& types, std::uint1
         const ObjId gun = world.create(dtable::weapon_at(weapon).shape(), 0);
         world.pop_to_coords(at.x, at.y, at.z);
         int slot = 0;
-        for (int s = 1; s <= 5 && slot == 0; ++s) {
+        for (int s = 1; s <= (world.remorse() ? 5 : 12) && slot == 0; ++s) {
             if (world.npc_equip(npc, s) == 0) slot = s;
         }
         set_equip(world, npc, slot, gun);
@@ -92,8 +92,11 @@ struct ActorSpec {
     bool start_default;      // Actor::I_setActivity(0x70) once placed
 };
 
+// No Regret (10B0:3CD8, NPC 10F8:27B9): only shape 0x597 is a woman, the
+// weapon goes in the first free weapon slot of 1..12, and without a free NPC
+// slot the original stops (No Remorse switched the alert lights again).
 // @orig 10B0:3CD8
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:3D3F, similarity 0.76)
+// TODO(regret): the weapon of difficulty 4 (ITEM 10B0:3A71, modified) is still No Remorse's
 ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtable::NpcTypes& types,
                  const World::Point& at, const ActorSpec& spec) {
     const std::uint16_t shape = types.word(spec.type, 0x3E);
@@ -105,7 +108,7 @@ ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtabl
     if (npc == 0) {
         // No slot: with the alert on, the lights are switched again. A monster
         // egg does it in the other order, which leaves the alert off.
-        if (world.state.alert_active) {
+        if (world.remorse() && world.state.alert_active) {
             set_alert(world, spec.start_default);
             set_alert(world, !spec.start_default);
         }
@@ -114,7 +117,7 @@ ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtabl
     auto r = world.npc_record(npc);
     // NPC_10f0_2610: the first record of the shape, not necessarily `type`.
     set_word(r, 0x00, types.max_hp(types.index(shape)));
-    if (shape == 0x597 || shape == 0x3AC) r[npc::kStance] |= 0x04;
+    if (shape == 0x597 || (world.remorse() && shape == 0x3AC)) r[npc::kStance] |= 0x04;
     set_word(r, npc::kTactic, 0);
     r[0x0C] = static_cast<std::uint8_t>(spec.facing * 2);
     world.pop_to_coords(at.x, at.y, at.z);
@@ -132,7 +135,7 @@ ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtabl
     const int chosen = spec.other_weapon && weapon2 != 0 ? weapon2 : weapon;
     if (chosen != 0) {
         int slot = 0;
-        for (int s = 1; s <= 5 && slot == 0; ++s) {
+        for (int s = 1; s <= (world.remorse() ? 5 : 12) && slot == 0; ++s) {
             if (world.npc_equip(npc, s) == 0) slot = s;
         }
         if (slot != 0) {
@@ -148,7 +151,6 @@ ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtabl
 }  // namespace
 
 // @orig 10B0:3CD8
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:3D3F, similarity 0.76)
 ObjId create_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtable::NpcTypes& types, ObjId egg_id,
                    ObjId kind_id) {
     const Item* egg = world.get(egg_id);

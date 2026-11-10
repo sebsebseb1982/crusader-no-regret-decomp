@@ -48,7 +48,6 @@ bool weapon_keeps_actions(const World& w, ObjId id) {
 
 // NPC_10f0_1f9a: hit within the last 120 ticks.
 // @orig 10F8:2231
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:1F9A, similarity 0.84)
 bool recently_hit(const World& w, ObjId id, std::uint32_t now) {
     const auto r = w.npc_record(id);
     if (r.empty()) return false;
@@ -157,7 +156,11 @@ void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, 
         auto process = std::make_unique<AttackProcess>(world, anims, id);
         AttackProcess& attack = *process;
         if (current == 8) attack.set_from_activity_8();
-        if (activity == 0xC) attack.set_timed(kernel.ticks(), crt_rnd(world, 10));
+        if (!world.remorse()) attack.init_remarks(kernel.ticks());
+        if (activity == 0xC) {
+            if (world.remorse()) attack.set_timed(kernel.ticks(), crt_rnd(world, 10));
+            else attack.set_pacing();
+        }
         const Pid pid = kernel.add(std::move(process));
         // Constructor (ATTACK_1110_0000), the parts needing the kernel.
         if (word_at(r, npc::kTarget) != world.state.controlled_npc && world.state.controlled_npc == 1)
@@ -196,7 +199,6 @@ void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, 
 }
 
 // @orig 10F8:2107
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:1E71, similarity 0.91)
 void set_target(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, ObjId target) {
     auto r = world.npc_record(id);
     if (r.empty() || world.is_dead(id) || id == 1 || id == world.state.controlled_npc) return;
@@ -303,8 +305,9 @@ int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId
     return 0;
 }
 
+// No Regret (1120:0000): the slow weapons fire every 30 ticks for shape
+// 0x5B1 and every 60 otherwise; No Remorse had 15 ticks for shape 0x3AC.
 // @orig 1120:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 1110:0000, similarity 0.74)
 AttackProcess::AttackProcess(World& world, const AnimDat& anims, ObjId id) : world_(world), anims_(anims) {
     set_owner(id);
     set_type(kType);
@@ -316,8 +319,8 @@ AttackProcess::AttackProcess(World& world, const AnimDat& anims, ObjId id) : wor
             const Item* self = world.get(id);
             shot_delay_ = world.state.difficulty == 1   ? 0x78
                           : world.state.difficulty == 2 ? 0x5A
-                          : self && self->shape == 0x3AC ? 0x0F
-                                                          : 0x3C;
+                          : self && self->shape == (world.remorse() ? 0x3AC : 0x5B1) ? (world.remorse() ? 0x0F : 0x1E)
+                                                                                    : 0x3C;
         } else {
             first_delay_ = 0x1E;
             shot_delay_ = world.state.difficulty == 1   ? first_delay_
@@ -334,7 +337,6 @@ void AttackProcess::set_timed(std::uint32_t now, int seconds_minus_8) {
 }
 
 // @orig 1120:0321
-// TODO(regret): modified in REGRET.EXE (No Remorse 1110:03AA, similarity 0.71)
 bool AttackProcess::recently_started(std::uint32_t now) {
     const std::uint32_t limit = double_time_ ? 240 : 120;
     if (started_ != 0) {
@@ -346,10 +348,11 @@ bool AttackProcess::recently_started(std::uint32_t now) {
     return false;
 }
 
+// True at most every 90 ticks in No Regret (from the start: the time is 0
+// at first); every 480 ticks in No Remorse, and the first time.
 // @orig 1120:1403
-// TODO(regret): modified in REGRET.EXE (No Remorse 1110:0334, similarity 0.61)
 bool AttackProcess::bark_timer(std::uint32_t now) {
-    if (bark_time_ == 0 || now >= bark_time_ + 0x1E0) {
+    if (world_.remorse() ? bark_time_ == 0 || now >= bark_time_ + 0x1E0 : now >= bark_time_ + 0x5A) {
         bark_time_ = now;
         return true;
     }
@@ -366,7 +369,6 @@ bool AttackProcess::sighting_old(std::uint32_t now) const {
 }
 
 // @orig 1120:1330
-// TODO(regret): modified in REGRET.EXE (No Remorse 1110:13B7, similarity 0.90)
 bool AttackProcess::can_hit(int dir, std::uint32_t now) {
     if (recently_started(now)) return true;
     if (sighted_) return true;
@@ -452,7 +454,6 @@ void AttackProcess::fire(std::uint32_t now, ObjId weapon_id) {
 }
 
 // @orig 1120:2225
-// TODO(regret): modified in REGRET.EXE (No Remorse 1110:22CA, similarity 0.82)
 void AttackProcess::next_burst_shot() {
     // Message handler 1110:22CA, on the end of the animation listened to.
     const ObjId id = owner();
@@ -484,12 +485,291 @@ void AttackProcess::next_burst_shot() {
     }
 }
 
+// @orig 1118:0000
+void AttackProcess::init_remarks(std::uint32_t now) {
+    remark_time_ = rnd(world_, 3) == 0 ? 0 : now;
+    remark_seconds_ = static_cast<std::uint16_t>(crt_rnd(world_, 15) + 10);
+}
+
+// True the first time (time 0), then once the seconds are over.
+// @orig 1118:011D
+bool AttackProcess::remark_timer(std::uint32_t now) {
+    if (remark_time_ != 0 && now < remark_time_ + remark_seconds_ * 60u) return false;
+    remark_time_ = now;
+    return true;
+}
+
+namespace {
+
+// DS:16E9..17B9: the sounds of the combat remarks, by shape.
+struct Remarks {
+    std::initializer_list<std::uint16_t> shapes;
+    std::initializer_list<std::int16_t> sounds;
+};
+const Remarks kRemarks[] = {
+    {{0x308, 0x2C3, 0x5F0}, {0xD2, 0xD3, 0xD4, 0xD5, 0xE5, 0x100}},
+    {{0x371, 0x62F, 0x630}, {0x09, 0x79, 0x7A, 0x7B, 0x7C, 0x7D}},
+    {{0x4D1, 0x528}, {0x7E, 0x7F, 0x90, 0xB6, 0xC2, 0xD0}},
+    {{0x1B4, 0x626, 0x625}, {0x101, 0x102, 0x103, 0x104, 0x105, 0x106}},
+    {{0x57A, 0x5D7, 0x5FF}, {0x108, 0x109, 0x1AB, 0x1AC, 0x1AD, 0x1AF, 0x1AE}},
+    {{0x2DF}, {0x1B0, 0x1B1, 0x1B2, 0x1B3, 0x1B4}},
+    {{0x384}, {0x1B5, 0x1B6, 0x1B7, 0x1B8, 0x1B9, 0x1BA, 0x1BB}},
+    {{0x4E0}, {0x1C1, 0x1C0, 0x1BF, 0x1BE, 0x1BD, 0x1BC}},
+    {{0x2F5}, {0x1C2, 0x1C3, 0x1C4, 0x1C5, 0x1C6, 0x1C7}},
+    {{0x597}, {0x1C8, 0x1C9, 0x1CA, 0x1CB, 0x1CC, 0x1CD}},
+    {{0x2F7, 0x595}, {0x1D0, 0x1D1, 0x1D2, 0x1D3, 0x1D4, 0x1D5}},
+    {{0x2F6}, {0x1D7, 0x1D8, 0x1D9, 0x1DA, 0x1DB, 0x1DC}},
+    {{0x344}, {0x1DD, 0x1DE, 0x1DF, 0x1E0, 0x1E1, 0x1E2, 0x1E3}},
+    {{0x383}, {0x9B, 0x9C, 0x9D, 0x9E, 0x9F}},
+    {{0x5B1}, {0x1E7, 0x1E8, 0x1E9, 0x1EA, 0x1ED}},
+};
+constexpr std::size_t kNpcLastRemark = 0x8B;  // u16 of the NPC record
+
+}  // namespace
+
+// No Regret, NPC 10F8:2865: an NPC says one of the remarks of its shape. The
+// NPC is marked as having spoken (record +0x78 bit 4) whatever follows. Only
+// while the player is the controlled NPC and alive, and not while the NPC's
+// last remark still plays; the remark is skipped when it is the NPC's last
+// one or one of the last two said by anyone.
+// @orig 10F8:2865
+void combat_remark(World& world, ObjId id) {
+    auto r = world.npc_record(id);
+    const Item* self = world.get(id);
+    if (r.empty() || !self) return;
+    r[npc::kStance] |= 0x10;
+    if (world.state.controlled_npc != 1 || world.is_dead(1)) return;
+    const auto last = static_cast<std::int16_t>(word_at(r, kNpcLastRemark));
+    Audio* audio = world.audio();
+    if (audio && audio->sources.is_playing(last, id)) return;
+    for (const Remarks& set : kRemarks) {
+        if (std::find(set.shapes.begin(), set.shapes.end(), self->shape) == set.shapes.end()) continue;
+        const std::int16_t sound = *(set.sounds.begin() + crt_rnd(world, static_cast<int>(set.sounds.size())));
+        if (sound == last || sound == world.state.last_bark || sound == world.state.previous_bark) return;
+        world.state.previous_bark = world.state.last_bark;
+        world.state.last_bark = sound;
+        set_word(r, kNpcLastRemark, static_cast<std::uint16_t>(sound));
+        if (audio) audio->sources.play(world, sound, id);
+        return;
+    }
+}
+
+// The first item of shape 0x584 within 0x190 of the NPC in x and y (the
+// search "@ %0x584 = $" of 1120:1F32).
+ObjId AttackProcess::find_decoy() const {
+    const Item* self = world_.get(owner());
+    if (!self) return 0;
+    for (int cy = 0; cy < World::kGridSize; ++cy) {
+        for (int cx = 0; cx < World::kGridSize; ++cx) {
+            for (ObjId id : world_.cell(cx, cy)) {
+                const Item* i = world_.get(id);
+                if (i && i->shape == 0x584 && std::abs(i->x - self->x) <= 0x190 && std::abs(i->y - self->y) <= 0x190) return id;
+            }
+        }
+    }
+    return 0;
+}
+
+// No Regret's attack (1120:1485). What it changes from No Remorse's
+// (1110:14F6, AttackProcess::run below): the NPC may be drawn to an item of
+// shape 0x584 instead of the controlled NPC; activity 12 makes it pace once
+// instead of fighting for a time; it says remarks (combat_remark) instead of
+// the barks of No Remorse; and a stationary NPC no longer walks up a slope.
+// @orig 1120:1485
+void AttackProcess::run_regret() {
+    Kernel& k = kernel();
+    const ObjId id = owner();
+    Item* self = world_.get(id);
+    auto r = world_.npc_record(id);
+    if (!self || r.empty()) return;
+    const int dir = world_.npc_direction(id) & 0xF;
+    const std::uint32_t now = k.ticks();
+    if (actor_busy(k, id)) return;
+    if (pace_done_) {
+        pace_done_ = false;
+        set_activity(k, world_, anims_, id, 0xA);
+        return;
+    }
+    const ObjId weapon = world_.active_weapon(id);
+    const ObjId controlled = world_.state.controlled_npc;
+    const auto decoy = [this](ObjId item) {
+        const Item* i = world_.get(item);
+        return item != 0 && i && i->shape == 0x584;
+    };
+    const auto gone = [this](ObjId item) {
+        const Item* i = world_.get(item);
+        return item == 0 || !i || (i->z & 0xFF) == 0xFE;
+    };
+    if (ObjId target = word_at(r, npc::kTarget); target != controlled && (gone(target) || !decoy(target))) {
+        set_target(k, world_, anims_, id, controlled != 0 ? controlled : 1);
+    }
+    const ObjId target = word_at(r, npc::kTarget);
+    const Item* t = world_.get(target);
+    if (gone(target) || (!decoy(target) && world_.is_dead(target)) || !world_.is_partly_in_combat_zone(*t)) {
+        if (!decoy(target)) {
+            set_target(k, world_, anims_, id, 0);
+            if (stationary_) return;
+            // Wander to a random point within 0x200 (12 steps at most,
+            // stopping within 0x40, turning to the point at the end).
+            World::Point goal = world_.location(*self);
+            goal.x += rnd(world_, 0x401) - 0x200;
+            goal.y += rnd(world_, 0x401) - 0x200;
+            moved_ = true;
+            const Pid pid = walk_to(k, world_, anims_, id, 0, goal, 0xC, 0x40, true);
+            if (pid != 0) wait_for(pid);
+            return;
+        }
+    }
+    if (!t) return;
+
+    const std::uint16_t stance_action = in_combat(world_, id) ? 4 : 0;
+    int dirs = action_directions(world_, anims_, id, stance_action);
+
+    if (pacing_) {
+        // Three actions queued, the first replacing what plays, and one time
+        // in three no more; else three more. The NPC walks (1, 2, 1...), or
+        // holsters and draws (0xB, 7, 0xB... starting by what it has not).
+        const auto queue = [&](std::uint16_t a, std::uint16_t b, bool replace) {
+            do_anim(k, world_, anims_, id, a, kDirCurrent, 10000, replace);
+            do_anim(k, world_, anims_, id, b, kDirCurrent, 10000, false);
+            return do_anim(k, world_, anims_, id, a, kDirCurrent, 10000, false);
+        };
+        Pid first = 0, second = 0;
+        const int kind = crt_rnd(world_, 2);
+        if (kind == 0) {
+            first = queue(1, 2, true);
+            if (rnd(world_, 3) != 0) {
+                second = do_anim(k, world_, anims_, id, 2, kDirCurrent, 10000, false);
+                do_anim(k, world_, anims_, id, 1, kDirCurrent, 10000, false);
+                do_anim(k, world_, anims_, id, 2, kDirCurrent, 10000, false);
+            }
+        } else {
+            const bool drawn = r[npc::kStance] & 0x02;
+            const std::uint16_t a = drawn ? 7 : 0xB, b = drawn ? 0xB : 7;
+            first = queue(a, b, true);
+            if (rnd(world_, 3) != 0) {
+                second = do_anim(k, world_, anims_, id, b, kDirCurrent, 10000, false);
+                do_anim(k, world_, anims_, id, a, kDirCurrent, 10000, false);
+                do_anim(k, world_, anims_, id, b, kDirCurrent, 10000, false);
+            }
+        }
+        if (const Pid pid = second != 0 ? second : first; pid != 0) wait_for(pid);
+        pacing_ = false;   // ATTACK 1120:146E
+        pace_done_ = true;
+        return;
+    }
+
+    int target_dir = target_direction(target, dirs);
+    const int distance = chebyshev3(*self, *t);
+    const bool steep = std::abs((self->z & 0xFF) - (t->z & 0xFF)) * 2 >= distance;
+    const bool visible = world_.is_mostly_in_combat_zone(*self);
+    if (!stationary_ && (!visible || steep)) {
+        approach();
+        return;
+    }
+
+    if (target_dir == dir) {
+        const int roll = crt_rnd(world_, 10);
+        if (!visible) {
+            sleep(20);
+            return;
+        }
+        const bool go = moved_ || recently_started(now) || controlled_npc_still(world_, now) || roll < 3 ||
+                        (cautious_ && roll < 4);
+        if (!go) {
+            sleep(20);
+            return;
+        }
+        moved_ = false;
+        const bool hit_possible = recently_hit(world_, id, now) || can_hit(target_dir, now);
+        if (sighted_ && (rnd(world_, 5) == 0 || sighting_old(now))) sighted_ = false;
+        if (!hit_possible) {
+            // From a decoy back to the controlled NPC; else, every 90 ticks,
+            // to a decoy near enough that the NPC could hit.
+            bool give_up = false, retargeted = false;
+            if (decoy(target)) {
+                set_target(k, world_, anims_, id, controlled);
+            } else if (!bark_timer(now)) {
+                give_up = true;
+            } else if (const ObjId found = find_decoy(); found == 0) {
+                give_up = true;
+            } else {
+                const Item* f = world_.get(found);
+                const int d = closest_direction_in_range(self->x, self->y, f->x, f->y, 16, 0, 15);
+                if (fire_distance(world_, anims_, id, found, d) == 0) {
+                    give_up = true;
+                } else {
+                    set_target(k, world_, anims_, id, found);
+                    retargeted = true;
+                }
+            }
+            if (give_up && !stationary_) {
+                approach();
+                return;
+            }
+            if (!retargeted) sleep(15);
+            return;
+        }
+        if (!(r[npc::kStance] & 0x10)) {
+            if (rnd(world_, 3) == 0) combat_remark(world_, id);
+        } else if (remark_timer(now)) {
+            combat_remark(world_, id);
+        }
+        if (!weapon_drawn(world_, id)) {
+            started_ = now;
+            do_anim(k, world_, anims_, id, 7, kDirCurrent, 10000, true);
+            return;
+        }
+        const std::uint32_t since_start = now - reference_;
+        if (since_start <= first_delay_) {
+            if (since_start != 0) sleep(first_delay_ - since_start);
+            return;
+        }
+        const std::uint32_t since_shot = now - last_shot_;
+        if (since_shot <= shot_delay_) {
+            sleep(shot_delay_ - since_shot);
+            return;
+        }
+        fire(now, weapon);
+        return;
+    }
+
+    bool hit_possible = false;
+    if (recently_started(now) || forced_sight_) {
+        note_sighting(now);
+        forced_sight_ = false;
+        hit_possible = true;
+    } else {
+        if (dirs != 16) {
+            dirs = 16;
+            target_dir = target_direction(target, 16);
+        }
+        hit_possible = fire_distance(world_, anims_, id, target, target_dir) != 0;
+        if (hit_possible) note_sighting(now);
+    }
+    const bool drawn = weapon_drawn(world_, id);
+    if (!drawn && hit_possible) {
+        started_ = now;
+        do_anim(k, world_, anims_, id, 7, kDirCurrent, 10000, true);
+        return;
+    }
+    if (hit_possible || stationary_) {
+        turn_to(k, world_, anims_, id, target_dir, true, !drawn);
+        return;
+    }
+    approach();
+}
+
+// No Remorse's attack (1110:14F6); No Regret's is run_regret.
 // @orig 1120:0632 1120:1485
-// TODO(regret): modified in REGRET.EXE (No Remorse 1110:14F6, similarity 0.52)
 void AttackProcess::run() {
     if (listening_ != 0) {
         listening_ = 0;
         next_burst_shot();
+        return;
+    }
+    if (!world_.remorse()) {
+        run_regret();
         return;
     }
     Kernel& k = kernel();

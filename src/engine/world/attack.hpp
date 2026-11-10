@@ -97,6 +97,15 @@ public:
     // ATTACK_1110_1485 (activity 12): fight for 8..17 seconds, then
     // activity 5.
     void set_timed(std::uint32_t now, int seconds_minus_8);
+    // No Regret, activity 12 (ATTACK 1120:1455): the NPC paces once (walks
+    // up and down, or draws and holsters), then takes activity 10.
+    void set_pacing() {
+        if (!pace_done_) pacing_ = true;
+    }
+    // No Regret, the start of every activity process (TYPE 1118:0000): the
+    // time of the first combat remark (at once, one time in three) and the
+    // seconds between two (10 to 24).
+    void init_remarks(std::uint32_t now);
     void set_stationary() { stationary_ = true; }        // +0x7B, activities 9 and 11
     void set_cautious() { cautious_ = true; }            // +0x7C, activities 10 and 11
     void set_from_activity_8() { from_activity_8_ = true; }  // +0x97
@@ -108,6 +117,9 @@ protected:
     void run() override;
 
 private:
+    void run_regret();                                 // ATTACK 1120:1485
+    bool remark_timer(std::uint32_t now);              // TYPE 1118:011D
+    ObjId find_decoy() const;                          // shape 0x584 within 0x190
     bool recently_started(std::uint32_t now);          // ATTACK_1110_03aa
     bool bark_timer(std::uint32_t now);                // ATTACK_1110_0334
     void play_bark(std::int16_t sfx);                  // +0x88 = sfx, I_playSFXCru
@@ -140,6 +152,11 @@ private:
     bool sighted_ = false;           // +0x7E
     bool forced_sight_ = false;      // +0x7F
     bool timed_ = false;             // +0x80
+    // No Regret only (offsets of its attack process).
+    bool pacing_ = false;            // +0x86
+    bool pace_done_ = false;         // +0x87
+    std::uint32_t remark_time_ = 0;  // +0x44
+    std::uint16_t remark_seconds_ = 0;  // +0x42
     bool barked_ = false;            // +0x83
     bool moved_ = false;             // +0x96, came back from moving
     bool from_activity_8_ = false;   // +0x97
