@@ -457,6 +457,17 @@ public:
     // shape has TYPEFLAG byte 0 bit 7, and those NPCs, get usecode event 4
     // ("cachein"). Map 0 (reloading the NPCs) is not reproduced.
     void load_map(int map);
+    // No Regret's mission change (MainActor::I_switchMap, 1030:0C0B): every
+    // item and NPC goes, the player excepted. CDLOAD_1030_07d3 keeps the
+    // player's place, shape and frame, his NPC record, the items of his
+    // equipment slots and the markers 0x476 he carries (at any depth);
+    // ITEMCACH_10b8_17df, NPC_10f8_00ab, ITEMCACH_10b8_1644 and NPC_10f8_000c
+    // empty the item and NPC tables (no current map); CDLOAD_1030_09fe puts
+    // the player back (status and quality 0, off any map), makes the kept
+    // items again (shape, frame, quality, NPC and map numbers; the rest as
+    // Item::I_create leaves it) and puts them in him, equipped (0x200), the
+    // slots of his record naming the new ids.
+    void restart_with_player();
     // CameraProcess::I_moveTo with a map (ITEMCACH_10b0_13be): 0 = the
     // current map. Another map is loaded in place of the current one, and
     // the fast area is then entered as a whole.

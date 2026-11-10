@@ -1255,7 +1255,63 @@ void test_regret_typed_codes() {
     CHECK(w.state.cheats.pictures);
 }
 
+// No Regret's mission change (1030:0C0B): only the player stays, with his
+// record, his equipment (new ids in his slots) and the markers 0x476 he
+// carries, even inside a container; other items and NPCs go.
+void test_regret_restart_with_player() {
+    auto tf = test_typeflags();
+    tf[1].family = 6;  // the player's shape is a container
+    World w(tf);
+    w.load_map(3);
+    Item player;
+    player.id = 1;
+    player.shape = 1;
+    player.npc_number = 1;
+    player.x = 1000;
+    player.y = 2000;
+    player.z = 16;
+    w.add_with_id(player);
+    w.set_npc_word(1, 0x00, 77);
+    Item npc;
+    npc.id = 5;
+    npc.shape = 2;
+    npc.x = 900;
+    npc.y = 900;
+    w.add_with_id(npc);
+    const ObjId weapon = w.create(3, 2);
+    w.get(weapon)->quality = 9;
+    w.pop_to_container(1);
+    w.set_npc_word(1, npc::kEquip + 2 * 4, weapon);
+    const ObjId bag = w.create(6, 0);
+    w.pop_to_container(1);
+    const ObjId marker = w.create(0x476, 1);
+    w.get(marker)->quality = 0x1234;
+    w.pop_to_container(bag);
+    const ObjId floor = w.create(4, 0);
+    w.pop_to_coords(800, 800, 0);
+    CHECK(floor != 0);
+
+    w.restart_with_player();
+    CHECK(w.current_map() == -1);
+    CHECK(w.get(5) == nullptr);
+    CHECK(w.get(bag) == nullptr || w.get(bag)->shape != 6);
+    const Item* p = w.get(1);
+    CHECK(p && p->x == 1000 && p->y == 2000 && p->z == 16 && p->flags == 0);
+    CHECK(w.npc_word(1, 0x00) == 77);
+    const ObjId kept = w.npc_equip(1, 4);
+    CHECK(kept != 0 && w.get(kept)->shape == 3 && w.get(kept)->frame == 2 && w.get(kept)->quality == 9);
+    CHECK(w.get(kept)->parent == 1 && (w.get(kept)->flags & kItemEquipped));
+    CHECK(p->contents.size() == 2);
+    bool marker_kept = false;
+    for (ObjId id : p->contents) {
+        const Item* i = w.get(id);
+        if (i && i->shape == 0x476 && i->frame == 1 && i->quality == 0x1234 && (i->flags & kItemEquipped)) marker_kept = true;
+    }
+    CHECK(marker_kept);
+}
+
 int main() {
+    test_regret_restart_with_player();
     test_regret_npc_damage();
     test_regret_typed_codes();
     test_typeflag_decode();

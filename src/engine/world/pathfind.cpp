@@ -61,7 +61,7 @@ Pid walk_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, ObjId
 }
 
 // @orig 1128:08DC
-// TODO(regret): modified in REGRET.EXE (No Remorse 1118:08E4, similarity 0.84)
+// The same as No Remorse 1118:08E4 (debug breaks gone, the tables moved).
 int PathfinderProcess::choose_direction(World::Point& pos) {
     const ObjId npc = owner();
     const std::uint16_t action = walk_action(world_, npc);
@@ -137,7 +137,7 @@ int PathfinderProcess::choose_direction(World::Point& pos) {
 }
 
 // @orig 1128:0428
-// TODO(regret): modified in REGRET.EXE (No Remorse 1118:0428, similarity 0.90)
+// The same as No Remorse 1118:0428 (a debug break gone).
 void PathfinderProcess::run() {
     Kernel& k = kernel();
     const ObjId npc = owner();

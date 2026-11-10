@@ -38,7 +38,39 @@ private:
     bool was_busy_;
 };
 
-// @orig 10A0:011F 10A0:0223
+// The player to teleport egg `egg_number` of `map` (loading it first when it
+// is not the current one); without that egg, back where he was. A mission's
+// start (egg 0x1E) is autosaved (port addition). No Regret's SwitchMap does
+// the same at once (CDLOAD_1030_0000), there with no message; its other case
+// (DS:0ADC clear, no player: the camera moves instead) does not occur here.
+// @orig 10A0:011F 1030:0000
+void teleport_to_egg_now(Kernel& kernel, World& world, int map, std::uint16_t egg_number) {
+    Item* player = world.get(kPlayer);
+    if (!player) return;
+    const std::int32_t old_x = player->x, old_y = player->y, old_z = player->z;
+    const int old_map = player->map_number;
+    const bool same_map = map == world.current_map();
+    if (!same_map) world.teleport(kPlayer, 0, 0, 0, map);
+
+    const ObjId egg = find_teleport_egg(world, egg_number);
+    if (egg == 0) {
+        if (!same_map) {
+            g_returning = true;
+            world.teleport(kPlayer, old_x, old_y, old_z, old_map);
+            g_returning = false;
+        }
+        if (world.remorse()) std::fprintf(stderr, "No destination for this egg! (map %d, egg %u)\n", map, egg_number);
+        return;
+    }
+    const Item& e = *world.get(egg);
+    const std::int32_t x = e.x, y = e.y, z = e.z;
+    world.teleport(kPlayer, x, y, z, map);
+    player = world.get(kPlayer);
+    if (!(support_mask(world, player->shape, x, y, z, true, kPlayer) & 0x10)) fall(kernel, world, kPlayer);
+    if (egg_number == kTeleportStartEgg && world.hooks().autosave_soon) world.hooks().autosave_soon();
+}
+
+// @orig 10A0:011F
 class TeleportToEgg : public Process {
 public:
     TeleportToEgg(Kernel& kernel, World& world, int map, std::uint16_t egg)
@@ -46,37 +78,7 @@ public:
 
 protected:
     void run() override {
-        if (g_returning) {
-            terminate();
-            return;
-        }
-        Item* player = world_.get(kPlayer);
-        if (!player) {
-            terminate();
-            return;
-        }
-        const std::int32_t old_x = player->x, old_y = player->y, old_z = player->z;
-        const int old_map = player->map_number;
-        const bool same_map = map_ == world_.current_map();
-        if (!same_map) world_.teleport(kPlayer, 0, 0, 0, map_);
-
-        const ObjId egg = find_teleport_egg(world_, egg_);
-        if (egg == 0) {
-            if (!same_map) {
-                g_returning = true;
-                world_.teleport(kPlayer, old_x, old_y, old_z, old_map);
-                g_returning = false;
-            }
-            std::fprintf(stderr, "No destination for this egg! (map %d, egg %u)\n", map_, egg_);
-        } else {
-            const Item& e = *world_.get(egg);
-            const std::int32_t x = e.x, y = e.y, z = e.z;
-            world_.teleport(kPlayer, x, y, z, map_);
-            player = world_.get(kPlayer);
-            if (!(support_mask(world_, player->shape, x, y, z, true, kPlayer) & 0x10)) fall(kernel_, world_, kPlayer);
-            // Port addition: a mission starts (autosave).
-            if (egg_ == kTeleportStartEgg && world_.hooks().autosave_soon) world_.hooks().autosave_soon();
-        }
+        if (!g_returning) teleport_to_egg_now(kernel_, world_, map_, egg_);
         terminate();
     }
 
@@ -98,7 +100,7 @@ Pid spawn_teleport(Kernel& kernel, World& world, int map, std::uint16_t egg, boo
 }
 
 // @orig 10A0:0681 10A0:070E
-// TODO(regret): modified in REGRET.EXE (No Remorse 1098:0718, similarity 0.73)
+// The same as No Remorse 1098:0718 (two more locals, unused).
 class EggHatcher : public Process {
 public:
     static constexpr std::uint16_t kType = 0x20F;
@@ -149,8 +151,16 @@ private:
 };
 
 // Process DS:0566 (1028:0477).
+//
+// No Regret (1030:0C0B) changes missions instead. After the same reset
+// (1030:0B6F, which also shows a loading picture, gump shape 7, on a black
+// screen in the game palette, the colour cycling running: only the palette
+// is reproduced), only the player and his equipment stay
+// (World::restart_with_player). He then goes to egg 0x1E at once
+// (CDLOAD_1030_0000) and, on a map up to 200, the screen goes black
+// (PaletteFaderProcess::I_jumpToAllBlack). Not reproduced: SPMGR_11c8_0d39
+// at the end (the status bar, which the port redraws whole).
 // @orig 1030:0BCA 1030:0C0B 1148:3FB5
-// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0477, similarity 0.62)
 class SwitchMap : public Process {
 public:
     SwitchMap(Kernel& kernel, World& world, int map) : kernel_(kernel), world_(world), map_(map) {}
@@ -174,7 +184,19 @@ protected:
             audio->stop_all();
             audio->sources.clear();
         }
-        start_teleport_to_egg(kernel_, world_, map_, kTeleportStartEgg, true, false);
+        if (world_.remorse()) {
+            start_teleport_to_egg(kernel_, world_, map_, kTeleportStartEgg, true, false);
+            return;
+        }
+        GameState& s = world_.state;
+        s.screen_palette = s.game_palette;
+        s.cycle_paused = false;
+        world_.restart_with_player();
+        teleport_to_egg_now(kernel_, world_, map_, kTeleportStartEgg);
+        if (map_ <= 200) {
+            s.cycle_paused = true;
+            s.screen_palette = Palette::filled(0, 0, 0);
+        }
     }
 
 private:

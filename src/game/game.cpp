@@ -303,8 +303,11 @@ void Game::set_config(GameConfig config) {
     }
 }
 
+// No Regret's reset (1030:0B6F) first shows a loading picture (CDLOAD_1030_022e:
+// gump shape 7 centred on a black screen), not reproduced, and also empties
+// caches the port does not have (sound cache, memory, the robot control of
+// shape 0x4FE).
 // @orig 1030:0B6F
-// TODO(regret): modified in REGRET.EXE (No Remorse 1028:03F6, similarity 0.78)
 void Game::reset_world() {
     // The sounds of the previous world go with it.
     if (audio_) {

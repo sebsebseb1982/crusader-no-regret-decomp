@@ -5,6 +5,8 @@
 
 #include "engine/world/world.hpp"
 
+#include <optional>
+
 namespace crusader {
 
 // @orig 10B8:04C9 (No Remorse 10B0:04C9)
@@ -109,6 +111,82 @@ void World::load_map(int map) {
         cachein(id);
     }
     current_map_ = map;
+}
+
+// @orig 1030:07D3 10B8:17DF 10F8:00AB 10B8:1644 10F8:000C 1030:09FE
+void World::restart_with_player() {
+    // ITEMDATA_10c0_0330 / 0574: what makes an item again.
+    struct Kept {
+        std::uint16_t shape;
+        std::uint16_t frame;
+        std::uint16_t quality;
+        std::uint8_t npc_number, map_number;
+    };
+    auto keep = [](const Item& i) { return Kept{i.shape, i.frame, i.quality, i.npc_number, i.map_number}; };
+    const Item* p = get(1);
+    if (!p) return;
+    const Item player = *p;
+    const auto rec = npc_record(1);
+    std::vector<std::uint8_t> record(rec.begin(), rec.end());
+    std::vector<std::optional<Kept>> equipped(static_cast<std::size_t>(equip_slots()));
+    for (int slot = 0; slot < equip_slots(); ++slot) {
+        if (const Item* i = get(npc_equip(1, slot))) equipped[static_cast<std::size_t>(slot)] = keep(*i);
+    }
+    // ITEMFIND_10d0_0def with "@ %0x476 = $": the markers in the player.
+    std::vector<Kept> markers;
+    auto walk = [&](auto&& self, const Item& container) -> void {
+        for (ObjId id : container.contents) {
+            const Item* i = get(id);
+            if (!i) continue;
+            if (i->shape == 0x476) markers.push_back(keep(*i));
+            self(self, *i);
+        }
+    };
+    walk(walk, player);
+
+    // The tables, empty.
+    items_.clear();
+    pending_.clear();
+    for (auto& cell : cells_) cell.clear();
+    tracked_.fill(0);
+    tracked_count_ = 0;
+    std::fill(npcs_.begin(), npcs_.end(), std::uint8_t{0});
+    init_free_slots();
+    fast_area_ = {};
+    drawn_reset_ = true;
+    follow_active_ = false;
+    current_map_ = -1;
+
+    // NPC_10f8_000c, then ITEMDATA_10c0_04df: item 1 where it was, on no map.
+    Item back;
+    back.id = 1;
+    back.x = player.x;
+    back.y = player.y;
+    back.z = player.z;
+    back.shape = player.shape;
+    back.frame = player.frame;
+    back.npc_number = player.npc_number;
+    back.off_map = true;
+    add_with_id(std::move(back));
+    auto make = [this](const Kept& k) -> ObjId {
+        const ObjId id = create(k.shape, k.frame);
+        Item* i = get(id);
+        if (!i) return 0;
+        i->quality = k.quality;
+        i->npc_number = k.npc_number;
+        i->map_number = k.map_number;
+        pop_to_container(1);
+        if ((i = get(id))) i->flags |= kItemEquipped;
+        return id;
+    };
+    for (std::size_t slot = 0; slot < equipped.size(); ++slot) {
+        const ObjId id = equipped[slot] ? make(*equipped[slot]) : 0;
+        record[npc::kEquip + 2 * slot] = static_cast<std::uint8_t>(id);
+        record[npc::kEquip + 2 * slot + 1] = static_cast<std::uint8_t>(id >> 8);
+    }
+    auto r = npc_record(1);
+    std::copy(record.begin(), record.end(), r.begin());
+    for (const Kept& k : markers) make(k);
 }
 
 // @orig 10B8:13E7
