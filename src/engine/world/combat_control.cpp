@@ -124,8 +124,8 @@ bool CombatControl::fire_key_down() const {
     return keyboard_.down(kKeySpace, false) != 0 || keyboard_.down(kKeyInsert, false) != 0;
 }
 
-// @orig ?: No Remorse 1138:220A, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig 1148:2AB9
+// TODO(regret): 1148:2AB9 (No Remorse 1138:220A, missing from the Ghidra function list) is to read
 void CombatControl::handle_key(const GameKeyEvent& e) {
     const ObjId npc = world_.state.controlled_npc;
     if (npc == 0 || world_.is_dead(npc)) return;
@@ -147,7 +147,7 @@ void CombatControl::handle_key(const GameKeyEvent& e) {
 
 // @orig 1008:0D71 1008:0EB5
 // TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C72, similarity 0.68)
-// TODO(regret): No Remorse 1138:220A has no counterpart in REGRET.EXE
+// TODO(regret): 1148:2AB9 (No Remorse 1138:220A, missing from the Ghidra function list) is to read
 bool CombatControl::keypad_command(const GameKeyEvent& e) {
     if (e.scancode == 0x0F || e.scancode == 0x24) {  // Tab, J: at every repeat
         jump(kernel(), world_, anims_);

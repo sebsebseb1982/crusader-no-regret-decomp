@@ -53,6 +53,17 @@
 // Not reproduced: the status bar boxes marked for redrawing
 // (SPMGR_11b8_09ba; the port redraws the whole bar).
 //
+// No Regret (1008:1565) changes these keys: the player may not act when
+// frozen (shape 0x5D6) either; M, E and the new X (item 0x61C) lower the
+// quality first, then use the item (destroyed at 0, the next item becoming
+// active first when it was the active one); U does the same with the
+// active item (the next item after), does nothing for the credits (0x112)
+// and only uses 0x4ED and 0x191 as it does the datalink; R uses the item
+// 0x191 carried and V the item 0x4ED (both not in "cru stasis"); B also
+// sets off the items 0x63E; Ctrl+D uses the datalink and Ctrl+L (0x426)
+// drops the weapon, 0x334 being the one kept. R also steps the target
+// marker's style (the Controller, Game::on_key).
+//
 // Tab and J (the Controller, 1138:253F) make the player jump, when he is the
 // controlled NPC: action 0x3A (a standing jump forward, about 110 units, up
 // to 24 high) when idle (CRUSADER_1138_0014), 0x38 (the same without the

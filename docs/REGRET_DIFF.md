@@ -14,7 +14,7 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 206 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 200 lines are left:
 
 | File | Lines |
 |---|---:|
@@ -28,7 +28,6 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/ui/movie_player.cpp` | 8 |
 | `src/engine/ui/options_screen.cpp` | 8 |
 | `src/engine/world/item_selection.cpp` | 7 |
-| `src/engine/world/player_commands.cpp` | 7 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
 | `src/engine/ui/help_screen.cpp` | 5 |
 | `src/engine/world/cheats.cpp` | 5 |
@@ -59,6 +58,7 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/avatar_mover.cpp` | 1 |
 | `src/engine/world/inventory.cpp` | 1 |
 | `src/engine/world/item_damage.cpp` | 1 |
+| `src/engine/world/player_commands.cpp` | 1 |
 | `src/engine/world/sprite_process.cpp` | 1 |
 
 ## Intrinsics
