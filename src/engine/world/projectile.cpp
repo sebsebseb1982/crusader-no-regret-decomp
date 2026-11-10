@@ -275,9 +275,15 @@ Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shoote
     // it then flies towards the crosshair (SPRITE_1140_0e88), with spread, at
     // the muzzle's height (param_4 already holds the shooter's z + dz).
     if (shooter == world.state.controlled_npc && !world.state.aim.active) enter_aim_mode(kernel, world, anims);
-    const auto crosshair = target_item == 0 && shooter == world.state.controlled_npc && world.state.aim.active
-                               ? crosshair_aim(world, origin.z)
-                               : std::nullopt;
+    auto crosshair = target_item == 0 && shooter == world.state.controlled_npc && world.state.aim.active
+                         ? crosshair_aim(world, origin.z)
+                         : std::nullopt;
+    // No Regret (1150:0F30) aims six times as far from the shooter as the
+    // crosshair is (6 x crosshair - 5 x shooter, in 16 bits).
+    if (crosshair && !world.remorse()) {
+        crosshair->x = static_cast<std::int16_t>(crosshair->x * 6 - item->x * 5);
+        crosshair->y = static_cast<std::int16_t>(crosshair->y * 6 - item->y * 5);
+    }
     // A target is aimed with spread (SPRITE_1140_09c9 with 1), a shot
     // straight ahead when aiming is asked (SPRITE_1140_0e01): both need `aim`.
     // No Regret (1150:0A7A): a robot (a shape that bullets hardly hurt) shoots
@@ -935,8 +941,6 @@ ProjectileProcess::ProjectileProcess(World& world, const AnimDat& anims, ObjId s
 }
 
 // @orig 1150:0A7A 1150:0EA9 1150:0F30
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:09C9, similarity 0.68)
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:0E88, similarity 0.56)
 void ProjectileProcess::on_added() {
     sprite_ = world_.create(kProjectileShape, frame_);
     if (sprite_) {
@@ -950,8 +954,7 @@ void ProjectileProcess::on_terminate() {
     sprite_ = 0;
 }
 
-// @orig 1150:123B 1150:1FFA
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:1098, similarity 0.98)
+// @orig 1150:123B
 void ProjectileProcess::impact(ObjId hit) {
     if (hit != 0) {
         // An NPC is hit from the shot's direction; an item from a random one
@@ -964,18 +967,46 @@ void ProjectileProcess::impact(ObjId hit) {
                                         : 0x10;
         apply_damage(kernel(), world_, anims_, hit, shooter_, dir, damage_, fire_type_, &pos_);
     }
-    // SPRITE_1140_1e09: splash damage of the fire type around the impact,
-    // sparing the item hit and the shooter (unless it is the controlled NPC).
+    burst(hit);
+    terminate();
+}
+
+// Splash damage of the fire type around the projectile, sparing the item hit
+// and the shooter (unless it is the controlled NPC), and its impact sprite.
+// @orig 1150:1FFA
+void ProjectileProcess::burst(ObjId hit) {
     const dtable::FireType* ft = dtable::fire_type(fire_type_);
     if (ft && ft->splash() != 0) {
         splash_damage(kernel(), world_, anims_, pos_, ft->splash(), damage_, fire_type_, hit, shooter_);
     }
     impact_sprite(kernel(), world_, fire_type_, pos_);
-    terminate();
+}
+
+// After a step: the sprite follows; fire types 0xE, 0x11 and 0x14 (No
+// Regret's) cycle through their frames (0x47..0x4B; groups of 6 and of 3 by
+// direction); fire type 3 leaves smoke (0x426, frames 0..9, 3 ticks a frame)
+// where it was a step before.
+// @orig 1150:10AC
+void ProjectileProcess::flown() {
+    Item* sprite = sprite_ ? world_.get(sprite_) : nullptr;
+    if (sprite) {
+        world_.move_item(sprite_, pos_.x, pos_.y, pos_.z);
+        sprite = world_.get(sprite_);
+    }
+    if (sprite) {
+        const int f = sprite->frame;
+        if (fire_type_ == 0xE) sprite->frame = static_cast<std::uint16_t>(f + 1 > 0x4B ? 0x47 : f + 1);
+        else if (fire_type_ == 0x11) sprite->frame = static_cast<std::uint16_t>((f + 1) % 6 == 0 ? f - 5 : f + 1);
+        else if (fire_type_ == 0x14)
+            sprite->frame = static_cast<std::uint16_t>(static_cast<std::uint16_t>(f - 0xDB) % 3 == 0 ? f - 2 : f + 1);
+    }
+    if (fire_type_ == 3) {
+        if (smoke_at_) create_sprite(kernel(), world_, 0x426, 0, 9, 3, *smoke_at_);
+        smoke_at_ = pos_;
+    }
 }
 
 // @orig 1150:0A7A
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:09C9, similarity 0.68)
 void ProjectileProcess::set_homing(ObjId target, int dir) {
     // SPRITE_1140_09c9, first launch of fire type 9.
     homing_ = true;
@@ -985,7 +1016,6 @@ void ProjectileProcess::set_homing(ObjId target, int dir) {
 }
 
 // @orig 1150:16C1
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:151D, similarity 0.95)
 World::Point ProjectileProcess::homing_step() {
     // SPRITE_1140_151d: within the fire type's range the velocity turns
     // towards the target (or keeps the launch direction): a step per axis,
@@ -1029,7 +1059,6 @@ World::Point ProjectileProcess::homing_step() {
 }
 
 // @orig 1150:16C1
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:151D, similarity 0.95)
 bool ProjectileProcess::ricochet(ObjId blocker, const World::Point& at) {
     // SPRITE_1140_151d: fire type 5 bounces off items whose TYPEFLAG byte 1
     // has bit 2, five times at most: the x or y part of the flight is
@@ -1059,7 +1088,6 @@ bool ProjectileProcess::ricochet(ObjId blocker, const World::Point& at) {
 }
 
 // @orig 1150:16C1
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:151D, similarity 0.95)
 void ProjectileProcess::run() {
     World::Point next = homing_ ? homing_step()
                                 : World::Point{start_.x + (target_.x - start_.x) * step_ / steps_,
@@ -1078,7 +1106,10 @@ void ProjectileProcess::run() {
     }
     if (r.blocker == 0) {
         pos_ = next;
-        if (sprite_ && world_.get(sprite_)) world_.move_item(sprite_, pos_.x, pos_.y, pos_.z);
+        flown();
+        // No Regret: fire type 0x16 bursts on its way, every third step from
+        // the sixth.
+        if (fire_type_ == 0x16 && step_ > 5 && step_ % 3 == 0) burst(0);
         sleep(fire_type_ == 9 ? 3 : 2);
         return;
     }

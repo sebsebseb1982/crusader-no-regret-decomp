@@ -61,6 +61,7 @@
 #include "engine/world/world.hpp"
 
 #include <cstdint>
+#include <optional>
 
 namespace crusader {
 
@@ -113,6 +114,8 @@ protected:
 
 private:
     void impact(ObjId hit);
+    void burst(ObjId hit);
+    void flown();
     World::Point homing_step();
     bool ricochet(ObjId blocker, const World::Point& at);
 
@@ -133,6 +136,7 @@ private:
     int dir_ = 0;              // +0xBD
     World::Point velocity_{};  // +0x36, +0x38, +0x3A
     int ricochets_ = 0;        // +0xB1
+    std::optional<World::Point> smoke_at_;  // +0x54 (x -1: none), fire type 3
 };
 
 }  // namespace crusader
