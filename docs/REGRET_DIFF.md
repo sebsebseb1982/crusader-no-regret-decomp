@@ -14,17 +14,17 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 258 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 253 lines are left:
 
 | File | Lines |
 |---|---:|
 | `src/game/game.cpp` | 33 |
 | `src/engine/ui/weasel_gump.cpp` | 19 |
-| `src/engine/world/projectile.cpp` | 13 |
 | `src/engine/world/actor_anim.cpp` | 12 |
 | `src/engine/world/world.cpp` | 12 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
-| `src/engine/world/attack.cpp` | 11 |
+| `src/engine/world/projectile.cpp` | 11 |
+| `src/engine/world/attack.cpp` | 10 |
 | `src/engine/world/world_mouse.cpp` | 10 |
 | `src/engine/ui/load_screen.cpp` | 9 |
 | `src/engine/ui/movie_player.cpp` | 8 |
@@ -35,12 +35,12 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/aim_mode.cpp` | 6 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
 | `src/engine/ui/main_menu.cpp` | 5 |
-| `src/engine/world/activity.cpp` | 5 |
 | `src/engine/world/cheats.cpp` | 5 |
 | `src/engine/world/combat_control.cpp` | 5 |
 | `src/engine/world/sprite_process.cpp` | 5 |
 | `src/core/game_config.cpp` | 4 |
 | `src/engine/ui/difficulty_screen.cpp` | 4 |
+| `src/engine/world/activity.cpp` | 4 |
 | `src/core/avi_movie.cpp` | 3 |
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
@@ -48,12 +48,12 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/actor_create.cpp` | 3 |
 | `src/engine/world/avatar_mover.cpp` | 3 |
 | `src/engine/world/gravity.cpp` | 3 |
-| `src/engine/world/map_change.cpp` | 3 |
 | `src/engine/world/teleport.cpp` | 3 |
 | `src/core/dtable.cpp` | 2 |
 | `src/engine/audio/music.cpp` | 2 |
 | `src/engine/palette_fader.cpp` | 2 |
 | `src/engine/ui/computer_gump.cpp` | 2 |
+| `src/engine/world/map_change.cpp` | 2 |
 | `src/engine/world/pathfind.cpp` | 2 |
 | `src/engine/world/pickup_list.cpp` | 2 |
 | `src/core/shape.cpp` | 1 |
@@ -70,133 +70,133 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 
 The No Regret usecode calls 350 intrinsics. Calls: call sites in the usecode. Port number: the number the engine binds the routine under (0x4xx: No Regret only).
 
-Those whose routine is not identical to the No Remorse one:
+Those whose routine is not identical to the No Remorse one, the ones not read yet first. Port: what was found when the routine was read against `REGRET.EXE` and brought into the port.
 
-| No Regret | Routine | Status | Port number | Calls | ScummVM name |
-|---|---|---|---|---:|---|
-| 0x001 | 10B0:0826 | constants | 0x001 | 566 | `Item::I_getFrame` |
-| 0x002 | 10B0:0882 | constants | 0x002 | 53 | `Item::I_setFrame` |
-| 0x00C | 10B0:13D7 | modified | 0x00A | 252 | `Item::I_destroy` |
-| 0x00D | 10F8:44F4 | constants | 0x00B | 77 | `Actor::I_getUnkByte` |
-| 0x017 | 10F8:3E0C | constants | 0x01C | 120 | `Actor::I_getDir` |
-| 0x018 | 10F8:3E26 | constants | 0x01D | 1 | `Actor::I_getLastAnimSet` |
-| 0x019 | 1140:1A86 | modified | 0x01E | 93 | `Item::I_fireWeapon` |
-| 0x01C | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` |
-| 0x024 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x027 | 1150:00DE | modified | 0x0C7 | 85 | `SpriteProcess::I_createSprite` |
-| 0x02F | 10F8:39EA | constants | 0x07D | 29 | `Actor::I_getHp` |
-| 0x030 | 10F8:3B4A | constants | 0x083 | 18 | `MainActor::I_getMana` |
-| 0x033 | 10B0:3A33 | identical, not an intrinsic in No Remorse | 0x433 | 3 | `AudioProcess::I_setVolumeForObjectSFX` |
-| 0x036 | 1140:258E | modified | 0x044 | 10 | `Item::I_getRangeIfVisible` |
-| 0x03C | 1008:03AB | modified | 0x03A | 62 | `MainActor::I_addItemCru` |
-| 0x04D | 10F8:3A03 | constants | 0x052 | 14 | `Actor::I_getCurrentActivityNo` |
-| 0x04E | 10F8:2278 | constants | 0x03C | 5 | `Actor::I_isDead` |
-| 0x04F | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` |
-| 0x050 | 10F8:329D | constants | 0x054 | 14 | `Actor::I_setDefaultActivity0` |
-| 0x051 | 10F8:32BA | constants | 0x055 | 16 | `Actor::I_setDefaultActivity1` |
-| 0x052 | 10F8:32D7 | constants | 0x056 | 21 | `Actor::I_setDefaultActivity2` |
-| 0x053 | 10F8:33B5 | modified | 0x057 | 1 | `Actor::I_setActivity` |
-| 0x057 | 10F8:3B64 | constants | 0x084 | 13 | `MainActor::I_setMana` |
-| 0x05A | 1210:01A2 | modified | 0x012 | 2 | `MusicProcess::I_playMusic` |
-| 0x05D | 10B0:0882 | constants | 0x002 | 261 | `Item::I_setFrame` |
-| 0x05E | 10F8:3E26 | constants | 0x01D | 3 | `Actor::I_getLastAnimSet` |
-| 0x061 | 10F8:2499 | constants | 0x038 | 18 | `?` |
-| 0x062 | 10F8:039A | modified | 0x039 | 163 | `Actor::I_doAnim` |
-| 0x066 | 1048:13EB | modified | 0x040 | 32 | `Item::I_fall` |
-| 0x067 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x06C | 1210:02A3 | identical, not an intrinsic in No Remorse | 0x46C | 7 | `MusicProcess::I_pauseMusic` |
-| 0x06D | 1448:0B5A | new | 0x46D | 169 | `MovieGump::I_playMovieCutsceneRegret` |
-| 0x06E | 1210:02C1 | identical, not an intrinsic in No Remorse | 0x46E | 6 | `MusicProcess::I_unpauseMusic` |
-| 0x071 | 1008:00ED | modified | 0x076 | 17 | `Ultima8Engine::I_clrCruStasis` |
-| 0x072 | 1418:0923 | modified, not an intrinsic in No Remorse | 0x472 | 5 | `PaletteFaderProcess::I_jumpToAllGivenColor` |
-| 0x074 | 10F8:2278 | constants | 0x03C | 14 | `Actor::I_isDead` |
-| 0x076 | 10B0:2952 | new | 0x476 | 3 | `UCMachine::I_false` |
-| 0x07A | 10B0:1575 | modified | 0x06C | 7 | `Item::I_move` |
-| 0x081 | 1210:02DF | modified | 0x091 | 9 | `MusicProcess::I_stopMusic` |
-| 0x082 | 1418:080F | modified | 0x090 | 35 | `PaletteFaderProcess::I_jumpToAllBlack` |
-| 0x088 | 10F8:241E | constants | 0x07C | 5 | `Actor::I_clrImmortal` |
-| 0x089 | 10F8:33B5 | modified | 0x057 | 3 | `Actor::I_setActivity` |
-| 0x08D | 1198:0CE8 | modified | 0x042 | 29 | `CameraProcess::I_moveTo` |
-| 0x08E | 10F8:2403 | constants | 0x086 | 6 | `Actor::I_setImmortal` |
-| 0x095 | 10B0:2B34 | modified | 0x08C | 8 | `Item::I_enterFastArea` |
-| 0x097 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x09C | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` |
-| 0x0A3 | 10B0:0882 | constants | 0x002 | 462 | `Item::I_setFrame` |
-| 0x0A7 | 10F8:3E26 | constants | 0x01D | 1 | `Actor::I_getLastAnimSet` |
-| 0x0AB | 10F8:2278 | constants | 0x03C | 3 | `Actor::I_isDead` |
-| 0x0AC | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x0B0 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x0B2 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x0B5 | 1008:0B7F | identical, not an intrinsic in No Remorse | 0x4B5 | 4 | `MainActor::I_removeItemCru` |
-| 0x0B6 | 1008:005D | new | 0x4B6 | 9 | `UCMachine::I_true` |
-| 0x0BB | 10F8:2278 | constants | 0x03C | 23 | `Actor::I_isDead` |
-| 0x0BC | 10B0:3CD8 | modified | 0x129 | 2 | `Actor::I_createActorCru` |
-| 0x0BD | 10F8:33B5 | modified | 0x057 | 48 | `Actor::I_setActivity` |
-| 0x0BE | 13B0:00FE | modified | 0x0C5 | 3 | `KeypadGump::I_showKeypad` |
-| 0x0C0 | 1390:0005 | modified | 0x0FE | 25 | `ComputerGump::I_readComputer` |
-| 0x0C2 | 10B0:2952 | new | 0x476 | 1 | `UCMachine::I_false` |
-| 0x0C3 | 10F8:3E0C | constants | 0x01C | 56 | `Actor::I_getDir` |
-| 0x0C6 | 1048:134F | modified | 0x028 | 4 | `Item::I_hurl` |
-| 0x0CC | 10F8:30B8 | modified | 0x065 | 3 | `Actor::I_teleport` |
-| 0x0D0 | 10F8:21B7 | constants | 0x0CD | 4 | `Actor::I_isInCombat` |
-| 0x0D1 | 10F8:452F | constants | 0x0DD | 16 | `Actor::I_getLastActivityNo` |
-| 0x0D2 | 10F8:3C8C | constants | 0x0DE | 3 | `Actor::I_setCombatTactic` |
-| 0x0D3 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` |
-| 0x0D5 | 10F8:2E86 | constants | 0x0DF | 3 | `Actor::I_getEquip` |
-| 0x0D6 | 10F8:2EB9 | constants | 0x0E0 | 2 | `Actor::I_setEquip` |
-| 0x0D7 | 10F8:332B | constants | 0x0E1 | 1 | `Actor::I_getDefaultActivity0` |
-| 0x0D8 | 10F8:3345 | constants | 0x0E2 | 1 | `Actor::I_getDefaultActivity1` |
-| 0x0D9 | 10F8:335F | constants | 0x0E3 | 1 | `Actor::I_getDefaultActivity2` |
-| 0x0DA | 10F8:3E26 | constants | 0x01D | 12 | `Actor::I_getLastAnimSet` |
-| 0x0DB | 10F8:2198 | constants | 0x0AC | 2 | `Actor::I_isFalling` |
-| 0x0DF | 10F8:4511 | constants | 0x0E6 | 4 | `Actor::I_setUnkByte` |
-| 0x0E0 | 1048:134F | modified | 0x028 | 10 | `Item::I_hurl` |
-| 0x0E1 | 10F8:22A8 | constants | 0x021 | 3 | `Actor::I_setDead` |
-| 0x0E5 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0E7 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0E9 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0EB | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0ED | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0EF | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0F1 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0F3 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0F5 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x0F8 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` |
-| 0x0FA | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` |
-| 0x0FB | 10F8:3A6B | identical, not an intrinsic in No Remorse | 0x4FB | 1 | `Actor::I_getMaxHp` |
-| 0x0FC | 10F8:3C56 | constants, not an intrinsic in No Remorse | 0x4FC | 1 | `Actor::I_setHp` |
-| 0x0FF | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x102 | 10F8:2278 | constants | 0x03C | 2 | `Actor::I_isDead` |
-| 0x103 | 10F8:33B5 | modified | 0x057 | 1 | `Actor::I_setActivity` |
-| 0x105 | 10F8:3E26 | constants | 0x01D | 1 | `Actor::I_getLastAnimSet` |
-| 0x106 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` |
-| 0x10C | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x10F | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` |
-| 0x112 | 10B0:2952 | new | 0x476 | 1 | `UCMachine::I_false` |
-| 0x113 | 10F8:2278 | constants | 0x03C | 9 | `Actor::I_isDead` |
-| 0x114 | 10F8:241E | constants | 0x07C | 4 | `Actor::I_clrImmortal` |
-| 0x117 | 10F8:33B5 | modified | 0x057 | 46 | `Actor::I_setActivity` |
-| 0x12E | 10F8:3E0C | constants | 0x01C | 3 | `Actor::I_getDir` |
-| 0x133 | 1048:134F | modified | 0x028 | 8 | `Item::I_hurl` |
-| 0x138 | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` |
-| 0x13B | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` |
-| 0x13E | 10B0:0882 | constants | 0x002 | 41 | `Item::I_setFrame` |
-| 0x140 | 12D8:05BA | identical, not an intrinsic in No Remorse | 0x540 | 2 | `AudioProcess::I_isSFXPlaying` |
-| 0x141 | 10E8:0247 | modified | 0x0B7 | 2 | `World::I_clrAlertActive` |
-| 0x142 | 1418:0B3B | constants | 0x0A0 | 2 | `PaletteFaderProcess::I_fadeToGivenColor` |
-| 0x143 | 10F8:2278 | constants | 0x03C | 8 | `Actor::I_isDead` |
-| 0x144 | 10F8:22A8 | constants | 0x021 | 3 | `Actor::I_setDead` |
-| 0x145 | 1008:009C | modified | 0x095 | 6 | `Game::I_playCredits` |
-| 0x146 | 1418:0899 | modified | 0x0DA | 2 | `PaletteFaderProcess::I_jumpToAllWhite` |
-| 0x14C | 10E8:0000 | modified | 0x0B5 | 1 | `World::I_setAlertActive` |
-| 0x14E | 1008:03AB | modified | 0x03A | 1 | `MainActor::I_addItemCru` |
-| 0x150 | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` |
-| 0x151 | 1418:0923 | modified, not an intrinsic in No Remorse | 0x472 | 2 | `PaletteFaderProcess::I_jumpToAllGivenColor` |
-| 0x152 | 10B0:0882 | constants | 0x002 | 9 | `Item::I_setFrame` |
-| 0x154 | 10F8:3E0C | constants | 0x01C | 3 | `Actor::I_getDir` |
-| 0x157 | 10F8:3E0C | constants | 0x01C | 6 | `Actor::I_getDir` |
-| 0x158 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` |
-| 0x15C | 10F8:3E0C | constants | 0x01C | 3 | `Actor::I_getDir` |
+| No Regret | Routine | Status | Port number | Calls | ScummVM name | Port |
+|---|---|---|---|---:|---|---|
+| 0x06D | 1448:0B5A | new | 0x46D | 169 | `MovieGump::I_playMovieCutsceneRegret` |  |
+| 0x0C0 | 1390:0005 | modified | 0x0FE | 25 | `ComputerGump::I_readComputer` |  |
+| 0x081 | 1210:02DF | modified | 0x091 | 9 | `MusicProcess::I_stopMusic` |  |
+| 0x145 | 1008:009C | modified | 0x095 | 6 | `Game::I_playCredits` |  |
+| 0x0BE | 13B0:00FE | modified | 0x0C5 | 3 | `KeypadGump::I_showKeypad` |  |
+| 0x05A | 1210:01A2 | modified | 0x012 | 2 | `MusicProcess::I_playMusic` |  |
+| 0x0BC | 10B0:3CD8 | modified | 0x129 | 2 | `Actor::I_createActorCru` |  |
+| 0x001 | 10B0:0826 | constants | 0x001 | 566 | `Item::I_getFrame` | NPC record layout, data addresses or assert line only |
+| 0x0A3 | 10B0:0882 | constants | 0x002 | 462 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
+| 0x05D | 10B0:0882 | constants | 0x002 | 261 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
+| 0x00C | 10B0:13D7 | modified | 0x00A | 252 | `Item::I_destroy` | type flag 0x66 instead of a shape list |
+| 0x062 | 10F8:039A | modified | 0x039 | 163 | `Actor::I_doAnim` | case by case: rolls, aim and turn sets, movement window |
+| 0x017 | 10F8:3E0C | constants | 0x01C | 120 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
+| 0x019 | 1140:1A86 | modified | 0x01E | 93 | `Item::I_fireWeapon` | frames of fire types 0x10..0x16, NPC damage floor, NPC target |
+| 0x027 | 1150:00DE | modified | 0x0C7 | 85 | `SpriteProcess::I_createSprite` | read; the wait of the control process on a sprite at the player is still to write |
+| 0x00D | 10F8:44F4 | constants | 0x00B | 77 | `Actor::I_getUnkByte` | NPC record layout, data addresses or assert line only |
+| 0x03C | 1008:03AB | modified | 0x03A | 62 | `MainActor::I_addItemCru` | credits 0x112, unique items 0x4ED and 0x191 |
+| 0x0C3 | 10F8:3E0C | constants | 0x01C | 56 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
+| 0x002 | 10B0:0882 | constants | 0x002 | 53 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
+| 0x0BD | 10F8:33B5 | modified | 0x057 | 48 | `Actor::I_setActivity` | activity 0xC in combat, weapon-drawn bit; activity 0xD process still to write |
+| 0x117 | 10F8:33B5 | modified | 0x057 | 46 | `Actor::I_setActivity` | activity 0xC in combat, weapon-drawn bit; activity 0xD process still to write |
+| 0x13E | 10B0:0882 | constants | 0x002 | 41 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
+| 0x082 | 1418:080F | modified | 0x090 | 35 | `PaletteFaderProcess::I_jumpToAllBlack` | nothing while a fade runs |
+| 0x066 | 1048:13EB | modified | 0x040 | 32 | `Item::I_fall` | weightless items with flag 0x66 fall |
+| 0x02F | 10F8:39EA | constants | 0x07D | 29 | `Actor::I_getHp` | NPC record layout, data addresses or assert line only |
+| 0x08D | 1198:0CE8 | modified | 0x042 | 29 | `CameraProcess::I_moveTo` | read; one per-item word (DS:3638) not identified |
+| 0x0BB | 10F8:2278 | constants | 0x03C | 23 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x052 | 10F8:32D7 | constants | 0x056 | 21 | `Actor::I_setDefaultActivity2` | NPC record layout, data addresses or assert line only |
+| 0x030 | 10F8:3B4A | constants | 0x083 | 18 | `MainActor::I_getMana` | NPC record layout, data addresses or assert line only |
+| 0x061 | 10F8:2499 | constants | 0x038 | 18 | `?` | NPC record layout, data addresses or assert line only |
+| 0x071 | 1008:00ED | modified | 0x076 | 17 | `Ultima8Engine::I_clrCruStasis` | also forgets the keys held |
+| 0x051 | 10F8:32BA | constants | 0x055 | 16 | `Actor::I_setDefaultActivity1` | NPC record layout, data addresses or assert line only |
+| 0x0D1 | 10F8:452F | constants | 0x0DD | 16 | `Actor::I_getLastActivityNo` | NPC record layout, data addresses or assert line only |
+| 0x04D | 10F8:3A03 | constants | 0x052 | 14 | `Actor::I_getCurrentActivityNo` | NPC record layout, data addresses or assert line only |
+| 0x050 | 10F8:329D | constants | 0x054 | 14 | `Actor::I_setDefaultActivity0` | NPC record layout, data addresses or assert line only |
+| 0x074 | 10F8:2278 | constants | 0x03C | 14 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x057 | 10F8:3B64 | constants | 0x084 | 13 | `MainActor::I_setMana` | NPC record layout, data addresses or assert line only |
+| 0x0DA | 10F8:3E26 | constants | 0x01D | 12 | `Actor::I_getLastAnimSet` | NPC record layout, data addresses or assert line only |
+| 0x036 | 1140:258E | modified | 0x044 | 10 | `Item::I_getRangeIfVisible` | only a guard for a null item, already in the port |
+| 0x0E0 | 1048:134F | modified | 0x028 | 10 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0B6 | 1008:005D | new | 0x4B6 | 9 | `UCMachine::I_true` | status bar redraw flags: nothing to do |
+| 0x113 | 10F8:2278 | constants | 0x03C | 9 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x152 | 10B0:0882 | constants | 0x002 | 9 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
+| 0x095 | 10B0:2B34 | modified | 0x08C | 8 | `Item::I_enterFastArea` | a dead NPC is left as it is |
+| 0x133 | 1048:134F | modified | 0x028 | 8 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x143 | 10F8:2278 | constants | 0x03C | 8 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x06C | 1210:02A3 | identical, not an intrinsic in No Remorse | 0x46C | 7 | `MusicProcess::I_pauseMusic` | new intrinsic: bound |
+| 0x07A | 10B0:1575 | modified | 0x06C | 7 | `Item::I_move` | assert line only |
+| 0x06E | 1210:02C1 | identical, not an intrinsic in No Remorse | 0x46E | 6 | `MusicProcess::I_unpauseMusic` | new intrinsic: bound |
+| 0x08E | 10F8:2403 | constants | 0x086 | 6 | `Actor::I_setImmortal` | NPC record layout, data addresses or assert line only |
+| 0x157 | 10F8:3E0C | constants | 0x01C | 6 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
+| 0x04E | 10F8:2278 | constants | 0x03C | 5 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x072 | 1418:0923 | modified, not an intrinsic in No Remorse | 0x472 | 5 | `PaletteFaderProcess::I_jumpToAllGivenColor` | new: jump to a colour |
+| 0x088 | 10F8:241E | constants | 0x07C | 5 | `Actor::I_clrImmortal` | NPC record layout, data addresses or assert line only |
+| 0x0B5 | 1008:0B7F | identical, not an intrinsic in No Remorse | 0x4B5 | 4 | `MainActor::I_removeItemCru` | new: removeItemCru |
+| 0x0C6 | 1048:134F | modified | 0x028 | 4 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0D0 | 10F8:21B7 | constants | 0x0CD | 4 | `Actor::I_isInCombat` | NPC record layout, data addresses or assert line only |
+| 0x0DF | 10F8:4511 | constants | 0x0E6 | 4 | `Actor::I_setUnkByte` | NPC record layout, data addresses or assert line only |
+| 0x114 | 10F8:241E | constants | 0x07C | 4 | `Actor::I_clrImmortal` | NPC record layout, data addresses or assert line only |
+| 0x033 | 10B0:3A33 | identical, not an intrinsic in No Remorse | 0x433 | 3 | `AudioProcess::I_setVolumeForObjectSFX` | new intrinsic: bound |
+| 0x05E | 10F8:3E26 | constants | 0x01D | 3 | `Actor::I_getLastAnimSet` | NPC record layout, data addresses or assert line only |
+| 0x076 | 10B0:2952 | new | 0x476 | 3 | `UCMachine::I_false` | new: returns 0 |
+| 0x089 | 10F8:33B5 | modified | 0x057 | 3 | `Actor::I_setActivity` | activity 0xC in combat, weapon-drawn bit; activity 0xD process still to write |
+| 0x0AB | 10F8:2278 | constants | 0x03C | 3 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x0CC | 10F8:30B8 | modified | 0x065 | 3 | `Actor::I_teleport` | the tracker is no longer emptied |
+| 0x0D2 | 10F8:3C8C | constants | 0x0DE | 3 | `Actor::I_setCombatTactic` | NPC record layout, data addresses or assert line only |
+| 0x0D5 | 10F8:2E86 | constants | 0x0DF | 3 | `Actor::I_getEquip` | NPC record layout, data addresses or assert line only |
+| 0x0E1 | 10F8:22A8 | constants | 0x021 | 3 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
+| 0x12E | 10F8:3E0C | constants | 0x01C | 3 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
+| 0x144 | 10F8:22A8 | constants | 0x021 | 3 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
+| 0x154 | 10F8:3E0C | constants | 0x01C | 3 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
+| 0x15C | 10F8:3E0C | constants | 0x01C | 3 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
+| 0x024 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x04F | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
+| 0x09C | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
+| 0x0D6 | 10F8:2EB9 | constants | 0x0E0 | 2 | `Actor::I_setEquip` | NPC record layout, data addresses or assert line only |
+| 0x0DB | 10F8:2198 | constants | 0x0AC | 2 | `Actor::I_isFalling` | NPC record layout, data addresses or assert line only |
+| 0x0E5 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0E7 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0E9 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0EB | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0ED | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0EF | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0F1 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0F3 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0F5 | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x102 | 10F8:2278 | constants | 0x03C | 2 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x10F | 1048:134F | modified | 0x028 | 2 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x138 | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
+| 0x140 | 12D8:05BA | identical, not an intrinsic in No Remorse | 0x540 | 2 | `AudioProcess::I_isSFXPlaying` | new intrinsic: bound |
+| 0x141 | 10E8:0247 | modified | 0x0B7 | 2 | `World::I_clrAlertActive` | guard, shapes 0x660/0x661 |
+| 0x142 | 1418:0B3B | constants | 0x0A0 | 2 | `PaletteFaderProcess::I_fadeToGivenColor` | NPC record layout, data addresses or assert line only |
+| 0x146 | 1418:0899 | modified | 0x0DA | 2 | `PaletteFaderProcess::I_jumpToAllWhite` | nothing while a fade runs |
+| 0x150 | 10F8:389F | constants | 0x053 | 2 | `Actor::I_clrInCombat` | NPC record layout, data addresses or assert line only |
+| 0x151 | 1418:0923 | modified, not an intrinsic in No Remorse | 0x472 | 2 | `PaletteFaderProcess::I_jumpToAllGivenColor` | new: jump to a colour |
+| 0x018 | 10F8:3E26 | constants | 0x01D | 1 | `Actor::I_getLastAnimSet` | NPC record layout, data addresses or assert line only |
+| 0x01C | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
+| 0x053 | 10F8:33B5 | modified | 0x057 | 1 | `Actor::I_setActivity` | activity 0xC in combat, weapon-drawn bit; activity 0xD process still to write |
+| 0x067 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x097 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0A7 | 10F8:3E26 | constants | 0x01D | 1 | `Actor::I_getLastAnimSet` | NPC record layout, data addresses or assert line only |
+| 0x0AC | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0B0 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0B2 | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x0C2 | 10B0:2952 | new | 0x476 | 1 | `UCMachine::I_false` | new: returns 0 |
+| 0x0D3 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
+| 0x0D7 | 10F8:332B | constants | 0x0E1 | 1 | `Actor::I_getDefaultActivity0` | NPC record layout, data addresses or assert line only |
+| 0x0D8 | 10F8:3345 | constants | 0x0E2 | 1 | `Actor::I_getDefaultActivity1` | NPC record layout, data addresses or assert line only |
+| 0x0D9 | 10F8:335F | constants | 0x0E3 | 1 | `Actor::I_getDefaultActivity2` | NPC record layout, data addresses or assert line only |
+| 0x0F8 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
+| 0x0FA | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
+| 0x0FB | 10F8:3A6B | identical, not an intrinsic in No Remorse | 0x4FB | 1 | `Actor::I_getMaxHp` | new intrinsic: bound |
+| 0x0FC | 10F8:3C56 | constants, not an intrinsic in No Remorse | 0x4FC | 1 | `Actor::I_setHp` | new intrinsic: bound |
+| 0x0FF | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x103 | 10F8:33B5 | modified | 0x057 | 1 | `Actor::I_setActivity` | activity 0xC in combat, weapon-drawn bit; activity 0xD process still to write |
+| 0x105 | 10F8:3E26 | constants | 0x01D | 1 | `Actor::I_getLastAnimSet` | NPC record layout, data addresses or assert line only |
+| 0x106 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
+| 0x10C | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x112 | 10B0:2952 | new | 0x476 | 1 | `UCMachine::I_false` | new: returns 0 |
+| 0x13B | 1048:134F | modified | 0x028 | 1 | `Item::I_hurl` | no delay for the controlled NPC |
+| 0x14C | 10E8:0000 | modified | 0x0B5 | 1 | `World::I_setAlertActive` | guard, shapes 0x662/0x663 |
+| 0x14E | 1008:03AB | modified | 0x03A | 1 | `MainActor::I_addItemCru` | credits 0x112, unique items 0x4ED and 0x191 |
+| 0x158 | 10F8:22A8 | constants | 0x021 | 1 | `Actor::I_setDead` | NPC record layout, data addresses or assert line only |
 
 ## Routines by module
 

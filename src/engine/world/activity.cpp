@@ -288,7 +288,6 @@ bool sees_controlled(const World& world, const AnimDat& anims, ObjId npc, bool l
 }
 
 // @orig 1140:258E
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:1C01, similarity 0.90)
 int range_if_visible(const World& world, ObjId item_id, ObjId other_id) {
     const Item* item = world.get(item_id);
     const Item* other = world.get(other_id);

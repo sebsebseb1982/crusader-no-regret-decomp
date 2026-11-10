@@ -97,7 +97,7 @@ public:
     static constexpr std::uint16_t kType = 0x250;
 
     ProjectileProcess(World& world, const AnimDat& anims, ObjId shooter, World::Point start, World::Point target,
-                      int fire_type, int damage, std::uint8_t frame);
+                      int fire_type, int damage, std::uint16_t frame);
 
     const World::Point& position() const { return pos_; }
     const World::Point& target() const { return target_; }
@@ -121,7 +121,7 @@ private:
     World::Point start_, target_, pos_;
     int fire_type_;
     int damage_;
-    std::uint8_t frame_;
+    std::uint16_t frame_;
     std::int32_t steps_ = 1;   // n
     std::int32_t step_ = 1;    // i (+0x66)
     std::int32_t range_ = 0;

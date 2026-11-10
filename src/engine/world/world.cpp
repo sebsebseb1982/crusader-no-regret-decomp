@@ -861,7 +861,8 @@ void World::clear_broken(Item& item) {
 }
 
 // @orig 1198:0CE8
-// TODO(regret): modified in REGRET.EXE (No Remorse 1188:0CBA, similarity 0.92)
+// TODO(regret): 1198:0CE8 read: the only change clears the word of DS:3638 for the item of a display
+//   entry of kind 2 after Item_I_andStatus; what DS:3638 holds is not identified yet.
 void World::set_camera(std::int32_t x, std::int32_t y, std::int32_t z) {
     // 16-bit arithmetic of ANIMCACH.C: halves and quarters are taken before
     // the sum or difference.
@@ -871,7 +872,8 @@ void World::set_camera(std::int32_t x, std::int32_t y, std::int32_t z) {
 }
 
 // @orig 1198:0CE8
-// TODO(regret): modified in REGRET.EXE (No Remorse 1188:0CBA, similarity 0.92)
+// TODO(regret): 1198:0CE8 read: the only change clears the word of DS:3638 for the item of a display
+//   entry of kind 2 after Item_I_andStatus; what DS:3638 holds is not identified yet.
 void World::set_camera_view(std::int32_t x, std::int32_t y, std::int32_t z, int left, int top) {
     const std::uint16_t ux = static_cast<std::uint16_t>(x), uy = static_cast<std::uint16_t>(y);
     // ANIMCACH.C 0CBA moves the drawn area after the fast area.

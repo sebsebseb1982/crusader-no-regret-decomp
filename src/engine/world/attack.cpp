@@ -207,13 +207,14 @@ void set_target(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, Ob
     set_word(r, npc::kTarget, target);
 }
 
-// The NPC part of Item_I_enterFastArea (ITEM.C 2CA8).
+// The NPC part of Item_I_enterFastArea (ITEM.C 10B0:2B34). No Regret leaves
+// a dead NPC as it is.
 // @orig 10B0:2B34
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:2B30, similarity 0.93)
 void restart_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id) {
     auto r = world.npc_record(id);
     const Item* item = world.get(id);
     if (r.empty() || !item) return;
+    if (!world.remorse() && world.is_dead(id)) return;
     const std::uint16_t activity = word_at(r, npc::kActivity);
     set_word(r, npc::kPreviousActivity, 0);
     set_word(r, npc::kActivity, 0);

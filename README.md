@@ -27,7 +27,7 @@ This repository contains **no game files**: you need your own copy of the origin
 | Game data recognised (`REGRET.EXE`, 1.06) | done |
 | Usecode: the 350 intrinsics numbered; 336 share a routine with No Remorse | done |
 | New game: first map loaded and drawn, scripts running without fault | done |
-| Functions to review against `REGRET.EXE` (`TODO(regret)`) | 258 left of 349 |
+| Functions to review against `REGRET.EXE` (`TODO(regret)`) | 253 left of 349 |
 | Intrinsics that exist only in No Regret | 13 of 14 bound (the Xan movie is left) |
 | NPC records (45 equipment slots), weapon, item and fire type tables of `REGRET.EXE` | done |
 | Saved games (no saved game of the original to compare with yet) | to do |

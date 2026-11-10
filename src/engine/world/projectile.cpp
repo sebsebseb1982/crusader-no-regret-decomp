@@ -92,15 +92,20 @@ bool takes_full_bullet_damage(std::uint16_t shape) {
 }
 
 // Sprite frame of the projectile by fire type (Item::I_fireWeapon).
+// The frame of the projectile's shape for a fire type and a direction. The
+// fire types from 0x10 on are No Regret's (0x16 flies with the frames of 3).
 // @orig 1140:1A86
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:11DA, similarity 0.74)
-std::uint8_t projectile_frame(int fire_type, int dir, World& w) {
+std::uint16_t projectile_frame(int fire_type, int dir, World& w) {
     switch (fire_type) {
-    case 3: case 9: case 10: return static_cast<std::uint8_t>(dir + 0x11);
-    case 5: return static_cast<std::uint8_t>(dir + 1);
+    case 3: case 9: case 10: case 0x16: return static_cast<std::uint16_t>(dir + 0x11);
+    case 5: return static_cast<std::uint16_t>(dir + 1);
     case 6: return 0x46;
-    case 0xE: return static_cast<std::uint8_t>(crt_rnd(w, 5) + 0x47);
-    case 0xF: return 0x4C;
+    case 0xE: return static_cast<std::uint16_t>(crt_rnd(w, 5) + 0x47);
+    case 0xF: case 0x12: case 0x13: return 0x4C;
+    case 0x10: return static_cast<std::uint16_t>(dir + 0x50);
+    case 0x11: return static_cast<std::uint16_t>(dir * 6 + 0x78);
+    case 0x14: return static_cast<std::uint16_t>(dir * 3 + 0xDC);
+    case 0x15: return static_cast<std::uint16_t>(dir + 100);
     default: return 0;
     }
 }
@@ -186,8 +191,11 @@ World::Point aim_point(const World& world, ObjId shooter, ObjId target) {
     return {static_cast<std::uint16_t>(item->x - fx * 8), static_cast<std::uint16_t>(item->y - fy * 8), z & 0xFF};
 }
 
+// No Regret (1140:1A86) differs from No Remorse (1130:11DA) by the frames of
+// the new fire types, by the damage of an NPC's shot (the fire type's when
+// its weapon gives less than 2) and by the target of a shooter that is not
+// the controlled NPC (an NPC shoots at its own target).
 // @orig 1140:1A86
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:11DA, similarity 0.74)
 Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shooter, int dx, int dy, int dz,
                 int dir, int fire_type, bool aim) {
     const Item* item = world.get(shooter);
@@ -231,6 +239,7 @@ Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shoote
         if (const Item* source = from_item ? inv : world.get(world.active_weapon(shooter))) {
             damage = random_damage(dtable::weapon(source->shape).fire_type());
         }
+        if (!world.remorse() && damage < 2) damage = random_damage(fire_type);
     } else {
         damage = random_damage(fire_type);
     }
@@ -246,6 +255,8 @@ Pid fire_weapon(Kernel& kernel, World& world, const AnimDat& anims, ObjId shoote
                 record.empty() ? 0 : static_cast<std::uint16_t>(record[npc::kLastAnim] | record[npc::kLastAnim + 1] << 8);
             const AnimAction* action = anims.action(item->shape, last);
             target_item = find_target(world, shooter, dir, action && action->sixteen_directions());
+        } else if (!world.remorse() && is_npc_id(shooter)) {
+            target_item = world.npc_word(shooter, npc::kTarget);
         } else {
             target_item = world.state.controlled_npc;
         }
@@ -523,7 +534,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
 
 // @orig 1150:077F 1150:0973
 ProjectileProcess::ProjectileProcess(World& world, const AnimDat& anims, ObjId shooter, World::Point start,
-                                     World::Point target, int fire_type, int damage, std::uint8_t frame)
+                                     World::Point target, int fire_type, int damage, std::uint16_t frame)
     : world_(world),
       anims_(anims),
       shooter_(shooter),

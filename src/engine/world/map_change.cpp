@@ -124,8 +124,8 @@ void World::move_camera_to(std::int32_t x, std::int32_t y, std::int32_t z, int m
     set_camera(x, y, z);
 }
 
+// No Regret keeps the tracked items (No Remorse emptied the tracker here).
 // @orig 10F8:30B8
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:29FA, similarity 0.98)
 void World::teleport(ObjId npc, std::int32_t x, std::int32_t y, std::int32_t z, int map) {
     Item* item = get(npc);
     if (!item) return;
@@ -139,7 +139,7 @@ void World::teleport(ObjId npc, std::int32_t x, std::int32_t y, std::int32_t z, 
     item->y = y;
     item->z = z & 0xFF;
     item->map_number = static_cast<std::uint8_t>(map);
-    clear_tracked();  // TRACKER_1128_0066 + 0000
+    if (remorse_) clear_tracked();  // TRACKER_1128_0066 + 0000
     if (npc == 1 && state.camera_target == 1) move_camera_to(x, y, z, map);
     // Back at the head of its cell when on the current map (push + pop back).
     if (map == current_map_) {
