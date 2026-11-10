@@ -48,7 +48,6 @@ AnimDat AnimDat::load(const std::filesystem::path& path) {
 }
 
 // @orig 1180:0615 1178:0444
-// TODO(regret): modified in REGRET.EXE (No Remorse 1170:0615, similarity 0.97)
 AnimDat AnimDat::parse(std::span<const std::uint8_t> data) {
     AnimDat dat;
     for (std::size_t shape = 0; shape < kShapes; ++shape) {

@@ -1386,7 +1386,6 @@ bool Game::function_key(std::uint16_t code) {
 }
 
 // @orig 13D8:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 13F8:0000, similarity 0.99)
 void Game::ask(std::uint16_t shape, int sfx, std::function<void()> yes) {
     enter_menu_mode();
     if (audio_) audio_->play_sfx(sfx);

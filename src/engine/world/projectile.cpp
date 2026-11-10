@@ -43,7 +43,6 @@ int crt_rnd(World& w, int n) { return crt_rand_below(w.state.crt_rand_state, n);
 // death, a 1 Hz timer held back (flag 1) until its third period (1130:00D6),
 // then plays sound 9 and ends (1130:00B1): three seconds after the death.
 // @orig 1140:025B 1140:0329 1140:02FE
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:000E, similarity 0.94)
 // TODO(regret): modified in REGRET.EXE (No Remorse 1130:00B1, similarity 0.90)
 class DeathSilence : public TimedProcess {
 public:

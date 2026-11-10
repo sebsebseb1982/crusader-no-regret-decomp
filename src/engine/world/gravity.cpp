@@ -334,8 +334,9 @@ void drop_out_of_fast_area(Kernel& kernel, World& world, ObjId item) {
     if (!p->terminated()) p->terminate();
 }
 
+// A new fall starts 20 ticks later; in No Regret the controlled NPC's starts
+// at once.
 // @orig 1048:134F
-// TODO(regret): modified in REGRET.EXE (No Remorse 1040:12A6, similarity 0.93)
 Pid hurl(Kernel& kernel, World& world, ObjId item, int vx, int vy, int vz, int gravity) {
     GravityProcess* existing = nullptr;
     kernel.for_each_process([&](const Process& p) {
@@ -349,7 +350,7 @@ Pid hurl(Kernel& kernel, World& world, ObjId item, int vx, int vy, int vz, int g
         return existing->pid();
     }
     auto& g = kernel.spawn<GravityProcess>(world, item, vx, vy, vz, gravity);
-    g.sleep(20);
+    if (world.remorse() || item != world.state.controlled_npc) g.sleep(20);
     return g.pid();
 }
 

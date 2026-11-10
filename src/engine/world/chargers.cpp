@@ -58,7 +58,6 @@ private:
 }  // namespace
 
 // @orig 10F8:3B81
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:348B, similarity 0.96)
 int max_energy(const World& world, ObjId npc) {
     if (npc != kPlayer) return 0;
     switch (world.state.battery) {

@@ -23,10 +23,13 @@ std::uint16_t arg16(Args a, std::size_t pos) {
 
 }  // namespace
 
+// No Regret does nothing when the alert is already in the state asked, and
+// after the lights it swaps the shapes of a second search: 0x663 and 0x662
+// become 0x660 and 0x661 when the alert starts, and back when it ends
+// (frame 0 each time).
 // @orig 10E8:0000 10E8:0247
-// TODO(regret): modified in REGRET.EXE (No Remorse 10E0:0000, similarity 0.46)
-// TODO(regret): modified in REGRET.EXE (No Remorse 10E0:0121, similarity 0.47)
 void set_alert(World& world, bool on) {
+    if (!world.remorse() && world.state.alert_active == on) return;
     world.state.alert_active = on;
     // A search of the whole map ("@ %n = ... + $"), cell by cell.
     std::vector<ObjId> lights;
@@ -46,6 +49,22 @@ void set_alert(World& world, bool on) {
         } else if (item.frame == (on ? 0 : 1)) {
             world.set_frame(item, on ? 1 : 0);
         }
+    }
+    if (world.remorse()) return;
+    std::vector<ObjId> swapped;
+    for (int cy = 0; cy < World::kGridSize; ++cy) {
+        for (int cx = 0; cx < World::kGridSize; ++cx) {
+            for (ObjId id : world.cell(cx, cy)) {
+                const std::uint16_t s = world.get(id)->shape;
+                if (on ? (s == 0x663 || s == 0x662) : (s == 0x660 || s == 0x661)) swapped.push_back(id);
+            }
+        }
+    }
+    for (ObjId id : swapped) {
+        Item& item = *world.get(id);
+        // 0x663 <-> 0x660 and 0x662 <-> 0x661.
+        world.set_shape(item, static_cast<std::uint16_t>(0x660 + 0x663 - item.shape));
+        world.set_frame(item, 0);
     }
 }
 

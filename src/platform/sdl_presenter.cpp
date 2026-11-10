@@ -71,7 +71,6 @@ void SdlPresenter::resize(int width, int height) {
 }
 
 // @orig 1358:0FD6
-// TODO(regret): modified in REGRET.EXE (No Remorse 1360:0FD6, similarity 0.99)
 void SdlPresenter::warp_mouse(int x, int y) {
     int wx = 0, wy = 0;
     SDL_RenderLogicalToWindow(renderer_, static_cast<float>(x), static_cast<float>(y), &wx, &wy);

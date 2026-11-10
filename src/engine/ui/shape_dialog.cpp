@@ -80,8 +80,6 @@ void ShapeButtons::draw(Surface8& screen) const {
 }
 
 // @orig 13D8:0000 13D8:0383
-// TODO(regret): modified in REGRET.EXE (No Remorse 13F8:0000, similarity 0.99)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13F8:0383, similarity 0.98)
 ShapeDialog::ShapeDialog(ShapeCache& gumps, std::uint16_t shape, bool question)
     : gumps_(&gumps), shape_(shape), question_(question) {
     const ShapeFrame* f = first_frame(gumps, shape);

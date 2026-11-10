@@ -383,7 +383,6 @@ void send_contact(World& world, ObjId mover, ObjId other, std::uint16_t force) {
 }  // namespace
 
 // @orig 10F0:123A
-// TODO(regret): modified in REGRET.EXE (No Remorse 10E8:123A, similarity 0.99)
 void finish_move(World& world, ObjId mover, const SweepResult& r) {
     if (mover == 0) return;
     world.move_item(mover, r.end.x, r.end.y, r.end.z);

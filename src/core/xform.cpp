@@ -13,7 +13,6 @@ XformTable XformTable::load(const std::filesystem::path& xformpal_dat) {
 }
 
 // @orig 1038:0250 1038:0348
-// TODO(regret): modified in REGRET.EXE (No Remorse 1030:0348, similarity 0.98)
 XformTable XformTable::parse(std::span<const std::uint8_t> entry0) {
     if (entry0.size() < 256 + kSize) {
         throw std::runtime_error("XFORMPAL.DAT entry 0 too short");

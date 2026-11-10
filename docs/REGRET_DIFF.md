@@ -6,21 +6,21 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 | Status | Routines | Meaning |
 |---|---:|---|
-| identical | 2276 | same code: the No Remorse port applies as is |
+| identical | 2317 | same code: the No Remorse port applies as is |
 | constants | 201 | same instructions, other constants (often an assert line number; sometimes a real value) |
-| modified | 290 | the instructions changed |
+| modified | 249 | the instructions changed |
 | new | 215 | no counterpart in No Remorse |
 | removed | 210 | No Remorse routines without counterpart in No Regret |
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 272 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 258 lines are left:
 
 | File | Lines |
 |---|---:|
-| `src/game/game.cpp` | 34 |
+| `src/game/game.cpp` | 33 |
 | `src/engine/ui/weasel_gump.cpp` | 19 |
-| `src/engine/world/projectile.cpp` | 14 |
+| `src/engine/world/projectile.cpp` | 13 |
 | `src/engine/world/actor_anim.cpp` | 12 |
 | `src/engine/world/world.cpp` | 12 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
@@ -41,38 +41,30 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/world/sprite_process.cpp` | 5 |
 | `src/core/game_config.cpp` | 4 |
 | `src/engine/ui/difficulty_screen.cpp` | 4 |
-| `src/engine/world/gravity.cpp` | 4 |
 | `src/core/avi_movie.cpp` | 3 |
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
 | `src/engine/ui/status_bar.cpp` | 3 |
 | `src/engine/world/actor_create.cpp` | 3 |
 | `src/engine/world/avatar_mover.cpp` | 3 |
+| `src/engine/world/gravity.cpp` | 3 |
 | `src/engine/world/map_change.cpp` | 3 |
 | `src/engine/world/teleport.cpp` | 3 |
 | `src/core/dtable.cpp` | 2 |
 | `src/engine/audio/music.cpp` | 2 |
 | `src/engine/palette_fader.cpp` | 2 |
 | `src/engine/ui/computer_gump.cpp` | 2 |
-| `src/engine/ui/shape_dialog.cpp` | 2 |
-| `src/engine/usecode/world_intrinsics.cpp` | 2 |
 | `src/engine/world/pathfind.cpp` | 2 |
 | `src/engine/world/pickup_list.cpp` | 2 |
-| `src/engine/world/screen_sprites.hpp` | 2 |
-| `src/core/anim_dat.cpp` | 1 |
 | `src/core/shape.cpp` | 1 |
 | `src/core/sound_flex.cpp` | 1 |
-| `src/core/trig.cpp` | 1 |
-| `src/core/xform.cpp` | 1 |
 | `src/engine/audio/asylum_voice.hpp` | 1 |
 | `src/engine/input/keyboard.cpp` | 1 |
 | `src/engine/ui/keypad_gump.cpp` | 1 |
 | `src/engine/ui/pickup_area.cpp` | 1 |
-| `src/engine/world/chargers.cpp` | 1 |
-| `src/engine/world/collision.cpp` | 1 |
 | `src/engine/world/inventory.cpp` | 1 |
 | `src/engine/world/item_damage.cpp` | 1 |
-| `src/platform/sdl_presenter.cpp` | 1 |
+| `src/engine/world/screen_sprites.hpp` | 1 |
 
 ## Intrinsics
 
@@ -84,7 +76,6 @@ Those whose routine is not identical to the No Remorse one:
 |---|---|---|---|---:|---|
 | 0x001 | 10B0:0826 | constants | 0x001 | 566 | `Item::I_getFrame` |
 | 0x002 | 10B0:0882 | constants | 0x002 | 53 | `Item::I_setFrame` |
-| 0x006 | 10B0:2A1E | modified | 0x006 | 10 | `Item::I_equip` |
 | 0x00C | 10B0:13D7 | modified | 0x00A | 252 | `Item::I_destroy` |
 | 0x00D | 10F8:44F4 | constants | 0x00B | 77 | `Actor::I_getUnkByte` |
 | 0x017 | 10F8:3E0C | constants | 0x01C | 120 | `Actor::I_getDir` |
@@ -125,7 +116,6 @@ Those whose routine is not identical to the No Remorse one:
 | 0x082 | 1418:080F | modified | 0x090 | 35 | `PaletteFaderProcess::I_jumpToAllBlack` |
 | 0x088 | 10F8:241E | constants | 0x07C | 5 | `Actor::I_clrImmortal` |
 | 0x089 | 10F8:33B5 | modified | 0x057 | 3 | `Actor::I_setActivity` |
-| 0x08C | 10F8:3B81 | modified | 0x082 | 7 | `MainActor::I_getMaxEnergy` |
 | 0x08D | 1198:0CE8 | modified | 0x042 | 29 | `CameraProcess::I_moveTo` |
 | 0x08E | 10F8:2403 | constants | 0x086 | 6 | `Actor::I_setImmortal` |
 | 0x095 | 10B0:2B34 | modified | 0x08C | 8 | `Item::I_enterFastArea` |
@@ -147,7 +137,6 @@ Those whose routine is not identical to the No Remorse one:
 | 0x0C2 | 10B0:2952 | new | 0x476 | 1 | `UCMachine::I_false` |
 | 0x0C3 | 10F8:3E0C | constants | 0x01C | 56 | `Actor::I_getDir` |
 | 0x0C6 | 1048:134F | modified | 0x028 | 4 | `Item::I_hurl` |
-| 0x0C9 | 10B0:2A1E | modified | 0x006 | 18 | `Item::I_equip` |
 | 0x0CC | 10F8:30B8 | modified | 0x065 | 3 | `Actor::I_teleport` |
 | 0x0D0 | 10F8:21B7 | constants | 0x0CD | 4 | `Actor::I_isInCombat` |
 | 0x0D1 | 10F8:452F | constants | 0x0DD | 16 | `Actor::I_getLastActivityNo` |
@@ -216,33 +205,33 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | Module | identical | constants | modified | new |
 |---|---:|---:|---:|---:|
 | WORLD | 30 | 2 | 32 | 13 |
-| NPC | 112 | 68 | 14 | 4 |
+| NPC | 113 | 68 | 13 | 4 |
 | SEG1470 | 0 | 0 | 0 | 15 |
 | SEG1468 | 0 | 0 | 0 | 14 |
 | SEG13A8 | 6 | 0 | 6 | 7 |
 | SEG13C0 | 0 | 0 | 12 | 1 |
 | SEG1478 | 4 | 0 | 1 | 12 |
-| ITEM | 144 | 4 | 8 | 4 |
 | SEG1118 | 11 | 8 | 4 | 8 |
-| CRUSADER | 16 | 0 | 8 | 4 |
 | CONTROL | 26 | 4 | 9 | 3 |
 | SEG1440 | 0 | 0 | 0 | 12 |
 | XANPLAY | 0 | 0 | 0 | 12 |
 | SEG1450 | 0 | 0 | 0 | 12 |
+| ITEM | 145 | 4 | 7 | 4 |
+| CRUSADER | 17 | 0 | 7 | 4 |
 | SEG13B8 | 25 | 2 | 11 | 0 |
 | CRUSYS | 8 | 0 | 6 | 4 |
 | SEG1458 | 0 | 0 | 0 | 10 |
 | ATTACK | 1 | 11 | 7 | 2 |
 | SPRITE | 16 | 0 | 9 | 0 |
 | ANIMPRIM | 3 | 6 | 9 | 0 |
-| SPMGR | 18 | 0 | 8 | 1 |
 | SPANKER | 4 | 4 | 8 | 1 |
-| SEG1000 | 206 | 10 | 3 | 5 |
-| GAMEPAL | 21 | 0 | 4 | 4 |
 | CACHE | 19 | 5 | 5 | 3 |
 | ASTREAM | 12 | 0 | 0 | 8 |
+| SPMGR | 19 | 0 | 7 | 1 |
 | KERNEL | 59 | 29 | 7 | 1 |
 | DSFXMAN | 25 | 0 | 1 | 7 |
+| SEG1000 | 207 | 10 | 2 | 5 |
+| GAMEPAL | 22 | 0 | 3 | 4 |
 | SHAPHAND | 15 | 3 | 7 | 0 |
 | SEG1210 | 12 | 0 | 4 | 3 |
 | SEG1460 | 0 | 0 | 0 | 7 |
@@ -256,54 +245,35 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | SEG1048 | 4 | 1 | 4 | 0 |
 | SEG1160 | 6 | 0 | 3 | 1 |
 | DLITEM | 9 | 2 | 3 | 1 |
-| PROCESS | 62 | 0 | 4 | 0 |
 | CPROTMEM | 17 | 6 | 4 | 0 |
 | SEG12A8 | 11 | 0 | 4 | 0 |
 | UNITFILE | 10 | 0 | 0 | 4 |
 | ITEMDATA | 3 | 0 | 0 | 3 |
-| ANIMFILE | 6 | 0 | 3 | 0 |
 | SEG11C8 | 8 | 1 | 2 | 1 |
-| MLIST | 11 | 0 | 3 | 0 |
-| FILE | 24 | 0 | 3 | 0 |
 | SEG1390 | 6 | 0 | 3 | 0 |
 | SEG13A0 | 7 | 0 | 3 | 0 |
 | U9SYS | 16 | 0 | 2 | 0 |
 | SEG10A0 | 21 | 0 | 2 | 0 |
-| GLOB | 12 | 0 | 2 | 0 |
 | SEG10E8 | 18 | 0 | 2 | 0 |
 | SEG1128 | 5 | 2 | 2 | 0 |
 | SEG1190 | 2 | 0 | 0 | 2 |
 | SEG1198 | 35 | 0 | 2 | 0 |
 | DLIST | 32 | 2 | 2 | 0 |
 | DESCRIPT | 18 | 0 | 0 | 2 |
-| SUPERVGA | 19 | 0 | 2 | 0 |
 | VPORT | 31 | 0 | 1 | 1 |
 | SYSTEM | 21 | 0 | 2 | 0 |
 | SNDMGR | 15 | 0 | 2 | 0 |
 | SNDCACHE | 12 | 0 | 2 | 0 |
 | DISPATCH | 34 | 8 | 2 | 0 |
-| MOUSECTL | 20 | 0 | 2 | 0 |
-| DEBUGUMP | 35 | 0 | 2 | 0 |
-| SEG13D0 | 9 | 0 | 2 | 0 |
-| SEG13D8 | 10 | 0 | 2 | 0 |
-| UPROCESS | 32 | 0 | 2 | 0 |
-| SEG10F0 | 13 | 0 | 1 | 0 |
+| GLOB | 13 | 0 | 1 | 0 |
 | TYPE | 7 | 0 | 1 | 0 |
 | DTABLE | 29 | 3 | 1 | 0 |
-| ANIMCACH | 11 | 0 | 1 | 0 |
 | DISPLAY | 10 | 1 | 1 | 0 |
 | KDAEMON | 18 | 0 | 1 | 0 |
-| SYSTIMER | 23 | 0 | 1 | 0 |
 | FASTFLEX | 5 | 0 | 1 | 0 |
-| PALETTE | 5 | 0 | 1 | 0 |
-| PFLOAT | 13 | 0 | 1 | 0 |
-| SEG1300 | 21 | 0 | 1 | 0 |
-| SEG1340 | 14 | 0 | 1 | 0 |
-| NEWGUMP | 47 | 0 | 1 | 0 |
 | SEG1370 | 15 | 0 | 1 | 0 |
-| SEG1378 | 25 | 0 | 1 | 0 |
 | SEG13B0 | 11 | 0 | 1 | 0 |
-| INTER | 10 | 1 | 1 | 0 |
+| SEG13D0 | 10 | 0 | 1 | 0 |
 | SEG1410 | 11 | 0 | 1 | 0 |
 | SEG1490 | 44 | 0 | 0 | 1 |
 | SEG1040 | 14 | 0 | 0 | 0 |
@@ -316,35 +286,54 @@ Module: the original source file of the segment, when known (`SEGxxxx` otherwise
 | ITEMFIND | 21 | 0 | 0 | 0 |
 | SEG10D8 | 6 | 0 | 0 | 0 |
 | SEG10E0 | 6 | 0 | 0 | 0 |
+| SEG10F0 | 14 | 0 | 0 | 0 |
 | TRACKER | 8 | 0 | 0 | 0 |
 | SEG1158 | 4 | 0 | 0 | 0 |
+| ANIMFILE | 9 | 0 | 0 | 0 |
+| ANIMCACH | 12 | 0 | 0 | 0 |
+| SYSTIMER | 24 | 0 | 0 | 0 |
 | KEYBOARD | 13 | 0 | 0 | 0 |
 | NOTLIST | 1 | 0 | 0 | 0 |
+| PROCESS | 66 | 0 | 0 | 0 |
+| MLIST | 14 | 0 | 0 | 0 |
 | STDINT | 15 | 0 | 0 | 0 |
 | SEG1220 | 1 | 2 | 0 | 0 |
 | SEG1228 | 1 | 0 | 0 | 0 |
+| FILE | 27 | 0 | 0 | 0 |
 | FILEPARS | 12 | 0 | 0 | 0 |
 | FILESPEC | 13 | 0 | 0 | 0 |
 | FLEX | 19 | 0 | 0 | 0 |
 | SEG1260 | 5 | 0 | 0 | 0 |
 | BASEPAL | 7 | 0 | 0 | 0 |
+| PALETTE | 6 | 0 | 0 | 0 |
+| SUPERVGA | 21 | 0 | 0 | 0 |
 | SEG12B0 | 15 | 0 | 0 | 0 |
 | SEG12B8 | 10 | 0 | 0 | 0 |
+| PFLOAT | 14 | 0 | 0 | 0 |
 | SEG12F8 | 12 | 0 | 0 | 0 |
+| SEG1300 | 22 | 0 | 0 | 0 |
 | SEG1308 | 13 | 0 | 0 | 0 |
 | CAFONT | 12 | 0 | 0 | 0 |
 | COMBOBOX | 6 | 0 | 0 | 0 |
 | SEG1328 | 7 | 0 | 0 | 0 |
 | FILEBOX | 18 | 0 | 0 | 0 |
 | GUMPSHAP | 10 | 0 | 0 | 0 |
+| SEG1340 | 15 | 0 | 0 | 0 |
 | SEG1348 | 36 | 0 | 0 | 0 |
 | SEG1350 | 6 | 0 | 0 | 0 |
+| MOUSECTL | 22 | 0 | 0 | 0 |
+| NEWGUMP | 48 | 0 | 0 | 0 |
 | SEG1368 | 4 | 0 | 0 | 0 |
+| SEG1378 | 26 | 0 | 0 | 0 |
 | SEG1380 | 10 | 0 | 0 | 0 |
 | SEG1388 | 13 | 0 | 0 | 0 |
+| DEBUGUMP | 37 | 0 | 0 | 0 |
 | U9MOUSE | 6 | 0 | 0 | 0 |
+| SEG13D8 | 12 | 0 | 0 | 0 |
 | DEBUGGER | 13 | 0 | 0 | 0 |
 | FLAG | 4 | 0 | 0 | 0 |
+| INTER | 11 | 1 | 0 | 0 |
+| UPROCESS | 34 | 0 | 0 | 0 |
 | YAMM | 25 | 0 | 0 | 0 |
 | FLICPLAY | 10 | 0 | 0 | 0 |
 | SNDSRC | 14 | 7 | 0 | 0 |

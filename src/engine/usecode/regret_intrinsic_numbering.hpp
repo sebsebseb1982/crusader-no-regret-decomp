@@ -21,7 +21,7 @@ constexpr std::array<std::uint16_t, 350> kRegretToFrench = {
     0x003,  // 003 10B0:0CEA identical Item::I_getMapArray
     0x004,  // 004 10B0:10AA identical Item::I_getStatus
     0x005,  // 005 10B0:25B6 identical Item::I_orStatus
-    0x006,  // 006 10B0:2A1E modified Item::I_equip
+    0x006,  // 006 10B0:2A1E identical Item::I_equip
     0x007,  // 007 10B0:41C1 identical Item::I_isPartlyOnScreen
     0x008,  // 008 10B0:24CA identical Actor::I_isNPC
     0x009,  // 009 10B0:0266 identical Item::I_getZ
@@ -155,7 +155,7 @@ constexpr std::array<std::uint16_t, 350> kRegretToFrench = {
     0x057,  // 089 10F8:33B5 modified Actor::I_setActivity
     0x07F,  // 08A 10B0:0D1C identical Item::I_getQuality
     0x080,  // 08B 10B0:0D60 identical Item::I_setQuality
-    0x082,  // 08C 10F8:3B81 modified MainActor::I_getMaxEnergy
+    0x082,  // 08C 10F8:3B81 identical MainActor::I_getMaxEnergy
     0x042,  // 08D 1198:0CE8 modified CameraProcess::I_moveTo
     0x086,  // 08E 10F8:2403 constants Actor::I_setImmortal
     0x087,  // 08F 1198:1D06 identical CameraProcess::I_getCameraX
@@ -216,7 +216,7 @@ constexpr std::array<std::uint16_t, 350> kRegretToFrench = {
     0x028,  // 0C6 1048:134F modified Item::I_hurl
     0x0CB,  // 0C7 10F8:3E40 identical Actor::I_addHp
     0x0F6,  // 0C8 1140:2A98 identical CruHealerProcess::I_create
-    0x006,  // 0C9 10B0:2A1E modified Item::I_equip
+    0x006,  // 0C9 10B0:2A1E identical Item::I_equip
     0x08D,  // 0CA 10B0:2614 identical Item::I_setBroken
     0x046,  // 0CB 10B0:1F2E identical Item::I_isOn
     0x065,  // 0CC 10F8:30B8 modified Actor::I_teleport

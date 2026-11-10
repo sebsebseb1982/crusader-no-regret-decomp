@@ -44,7 +44,6 @@ public:
         if (ScreenSprite* s = at(slot)) *s = ScreenSprite{};
     }
     // @orig 11B8:06DD
-    // TODO(regret): modified in REGRET.EXE (No Remorse 11A8:071E, similarity 0.99)
     void move(int slot, std::int32_t x, std::int32_t y, std::uint8_t z) {
         if (ScreenSprite* s = at(slot)) {
             s->x = x;
