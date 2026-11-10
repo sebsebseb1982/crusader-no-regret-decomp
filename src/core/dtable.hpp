@@ -14,6 +14,13 @@
 
 namespace crusader::dtable {
 
+// The tables below are those of No Regret (REGRET.EXE 1.06: DS:2590 ammunition,
+// DS:2614 weapons, DS:2792 items, DS:2B2E fire types) unless the game selects
+// No Remorse's, which the comments describe with the addresses of the French
+// CRUSADER.EXE. No Regret adds weapons BK-16, LNR-81 and XP-5, two kinds of
+// ammunition, seven items and fire types 0x10..0x16, and changes some values.
+void select_game(bool regret);
+
 // Weapon records (DS:215A, 21 x 0x12 bytes; DTABLE_1120_0145 finds one by
 // shape). Fields used so far: +0 shape, +2 sound of a shot, +4 ticks between shots (01ef), +6
 // ammo type, +8 shots per burst (02ce), +0xA energy per shot (byte, 01ad),

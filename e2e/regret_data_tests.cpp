@@ -5,6 +5,7 @@
 
 #include "core/anim_dat.hpp"
 #include "core/data_info.hpp"
+#include "core/dtable.hpp"
 #include "core/flex.hpp"
 #include "core/font.hpp"
 #include "core/png_writer.hpp"
@@ -149,6 +150,13 @@ void test_tables(const std::filesystem::path& data) {
 void test_new_game(const std::filesystem::path& data) {
     Game game(data, saves_dir());
     CHECK(game.data_version() == "1.06");
+    // The tables of REGRET.EXE: the new weapons, their ammunition and fire types.
+    CHECK(std::string(dtable::weapon_name(0x5F6)) == "BK-16" && std::string(dtable::weapon_name(0x198)) == "XP-5");
+    CHECK(dtable::ammo_shape(0x5F6) == 1557 && dtable::clip_size(0x5F6) == 12);
+    CHECK(std::string(dtable::item_name(1261)) == "VIR IMAGER" && dtable::item_icon(1261) == 32);
+    CHECK(dtable::fire_type(0x16) != nullptr && dtable::fire_type(0x17) == nullptr);
+    CHECK(dtable::fire_type(5)->min_damage() == 45 && dtable::fire_type(5)->max_damage() == 60);
+    CHECK(game.world().equip_slots() == 45);
     game.new_game(0);
     World& w = game.world();
     game.update(kFrameUs);

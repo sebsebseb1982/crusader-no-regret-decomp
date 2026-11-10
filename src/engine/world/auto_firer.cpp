@@ -23,17 +23,16 @@ const AnimFrame* firing_frame(const World& world, const AnimDat& anims) {
     return nullptr;
 }
 
+// One shot every 12 ticks in No Regret, every 6 in No Remorse.
 // @orig 1148:3E1F
-// TODO(regret): constants in REGRET.EXE (No Remorse 1138:2FFB, similarity 0.97)
 AutoFirer::AutoFirer(World& world, const AnimDat& anims, Fire fire)
     : world_(world), anims_(anims), fire_(std::move(fire)) {
     set_type(kType);
     set_owner(world.state.controlled_npc);
-    set_rate(6);
+    set_rate(world.remorse() ? 6 : 12);
 }
 
 // @orig 1148:3ED4
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:30B0, similarity 0.88)
 void AutoFirer::tick() {
     const ObjId npc = world_.state.controlled_npc;
     const Item* weapon = world_.get(world_.active_weapon(npc));

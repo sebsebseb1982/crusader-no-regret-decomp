@@ -306,8 +306,9 @@ int range_if_visible(const World& world, ObjId item_id, ObjId other_id) {
     return distance < 0x31 ? distance : 0;
 }
 
+// The shapes that must see the controlled NPC to wake: 0x2F5..0x2F7 in both
+// games, then 0x384 and 0x344 in No Regret (0x595 and 0x597 in No Remorse).
 // @orig 1148:3BD3
-// TODO(regret): constants in REGRET.EXE (No Remorse 1138:2DAF, similarity 0.98)
 void wake_npcs_on_screen(Kernel& kernel, World& world, const AnimDat& anims) {
     const ObjId controlled = world.state.controlled_npc;
     for (ObjId id = 2; id < 0x100; ++id) {
@@ -326,7 +327,8 @@ void wake_npcs_on_screen(Kernel& kernel, World& world, const AnimDat& anims) {
             continue;
         }
         const std::uint16_t s = self->shape;
-        const bool looks = s == 0x2F5 || s == 0x2F6 || s == 0x2F7 || s == 0x595 || s == 0x597;
+        const bool looks = s == 0x2F5 || s == 0x2F6 || s == 0x2F7 ||
+                           (world.remorse() ? s == 0x595 || s == 0x597 : s == 0x384 || s == 0x344);
         if (looks && range_if_visible(world, id, controlled) == 0) continue;
         set_activity(kernel, world, anims, id, 0x72);
         if (in_combat(world, id)) set_target(kernel, world, anims, id, controlled);

@@ -234,6 +234,7 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     data_version_ = info.version;
     data_language_ = info.language;
     regret_ = info.regret;
+    dtable::select_game(regret_);
     intrinsic_numbering_ = intrinsic_numbering(info);
     set_text_language(info.text_language());
     set_config(config_);

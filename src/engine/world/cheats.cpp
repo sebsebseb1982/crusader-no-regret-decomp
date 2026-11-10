@@ -35,7 +35,8 @@ constexpr std::array<std::uint16_t, 4> kAltWeapons = {0x332, 0x38B, 0x38C, kEndO
 constexpr std::array<std::uint16_t, 4> kStacks = {0x560, 0x39A, 0x55F, 0x351};
 constexpr std::array<std::uint16_t, 5> kAmmo = {0x33D, 0x33F, 0x340, 0x341, 0x33E};
 constexpr int kMaxStack = 0x14;
-constexpr std::uint16_t kFullAmmo = 100;
+// The clips a cheat gives: 99 in No Regret (1148:01FB), 100 in No Remorse.
+std::uint16_t full_ammo(const World& world) { return world.remorse() ? 100 : 99; }
 
 void say(World& world, const std::string& text) {
     if (world.hooks().show_message) world.hooks().show_message(text);
@@ -69,10 +70,9 @@ Given give(World& world, std::uint16_t shape) {
 }
 
 // @orig 1148:01FB
-// TODO(regret): constants in REGRET.EXE (No Remorse 1138:01BD, similarity 0.90)
 void give_ammo(World& world, std::uint16_t shape) {
     if (const ObjId carried_id = carried(world, shape)) {
-        set_quality_and_combine(world, carried_id, kFullAmmo);
+        set_quality_and_combine(world, carried_id, full_ammo(world));
         return;
     }
     const int slot = free_equip_slot(world, ammo_slots(world));  // 10F8:31EA
@@ -80,7 +80,7 @@ void give_ammo(World& world, std::uint16_t shape) {
     if (id == 0) return;
     const World::Point at = player_feet(world);
     world.pop_to_coords(at.x, at.y, at.z);
-    set_quality(world, id, kFullAmmo);
+    set_quality(world, id, full_ammo(world));
     if (slot != 0) {
         world.push(id);
         world.pop_to_end(kPlayer);
