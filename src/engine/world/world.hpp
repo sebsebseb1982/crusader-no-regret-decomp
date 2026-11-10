@@ -175,6 +175,9 @@ struct GameState {
     // DS:2889: target designation, on at start-up (data segment), toggled by
     // R. The original keeps it for the whole session, loads included.
     bool target_designation = true;
+    // No Regret DS:2FC2: the style of the target marker (0..3, frames 6n..6n+5
+    // of shape 0x59A), stepped by R (scancode 0x13, CONTROL_1148_09fd).
+    std::uint16_t marker_style = 0;
     // The cheats (cheats.hpp), kept for the whole session as in the original.
     struct Cheats {
         bool enabled = false;          // DS:08F0: typed code or "-laurie"

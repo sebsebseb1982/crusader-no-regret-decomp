@@ -283,7 +283,9 @@ void designate(Kernel& kernel, World& world, const AnimDat& anims, ObjId target)
     aim.checked_at = kernel.ticks();
     const Item* item = world.get(target);
     if (item && fire_distance(world, anims, npc, target, dir) != 0) {
-        create_sprite(kernel, world, SpriteProcess::kTargetMarker, 0, 5, 10,
+        // No Regret (1148:06C1): frames of the marker's style, 6 a style.
+        const int first = world.remorse() ? 0 : world.state.marker_style * 6;
+        create_sprite(kernel, world, SpriteProcess::kTargetMarker, first, first + 5, 10,
                       marker_place(world, target, item->x, item->y, item->z & 0xFF));
         aim.target = target;
     }

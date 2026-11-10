@@ -66,7 +66,8 @@ Pid create_sprite(Kernel& kernel, World& world, std::uint16_t shape, int first, 
 //   1, 11, 13: shape 0x1D8 (sparks; one of 4 frame ranges)   2: 0x1D8
 //   3, 4: 0x326 / 0x320 / 0x321   10: 0x31C / 0x31F / 0x322   6: 0x578
 //   14: 0x56B   15: 0x59B   others: 0x537 (frames 0..10)
-// Shown with a delay of 3 ticks.
+// Shown with a delay of 3 ticks. No Regret (1160:02F8) has its own table:
+// see sprite_process.cpp.
 void impact_sprite(Kernel& kernel, World& world, int fire_type, World::Point at);
 
 }  // namespace crusader

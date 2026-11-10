@@ -1094,6 +1094,10 @@ void Game::on_key(const GameKeyEvent& e) {
         if (e.scancode == 0x0C && config_.music_volume != 0) --config_.music_volume;
         audio_->mixer.set_music_volume(config_.music_volume);
     }
+    // No Regret (1148:0AA5): R (scancode 0x13) steps the target marker's style.
+    if (e.pressed && !world_->remorse() && e.scancode == 0x13) {
+        if (++world_->state.marker_style >= 4) world_->state.marker_style = 0;
+    }
     // CRUSADER_1138_0896: Escape (scancode 1) without both Ctrl and Alt gives
     // the control back to the player when another NPC is controlled (a robot
     // taken from a camera monitor, or none once it died), instead of the menu.

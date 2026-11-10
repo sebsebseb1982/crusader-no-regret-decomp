@@ -45,7 +45,6 @@ SpriteProcess::SpriteProcess(World& world, std::uint16_t shape, int first, int l
 }
 
 // @orig 1150:0343 1150:00DE
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:029F, similarity 0.98)
 // TODO(regret): 1150:00DE read: a sprite of shape 0x352, 0x609, 0x1F2, 0x3D5 or 0x62B made exactly at the
 //   player's position becomes the one the control process (DS:2F5A) waits for (its pid in DS:2F9C, when
 //   none is waited for yet). Not written: it needs the No Regret control process (segment 1148).
@@ -69,7 +68,6 @@ void SpriteProcess::on_added() {
 }
 
 // @orig 1150:0593
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:04E2, similarity 0.98)
 void SpriteProcess::run() {
     if (last_ < first_) --frame_;
     else ++frame_;
@@ -85,13 +83,14 @@ void SpriteProcess::run() {
 }
 
 // @orig 1150:04E8
-// TODO(regret): modified in REGRET.EXE (No Remorse 1140:0444, similarity 0.81)
 void SpriteProcess::on_terminate() {
     if (sprite_ && world_.get(sprite_)) world_.destroy(sprite_);
     sprite_ = 0;
     GameState::Aim& aim = world_.state.aim;
     if (slot_ != -1) {
-        if (slot_ == aim.marker) world_.state.screen_sprites.set_frame(slot_, 5);
+        if (slot_ == aim.marker)
+            world_.state.screen_sprites.set_frame(
+                slot_, static_cast<std::uint16_t>(world_.remorse() ? 5 : world_.state.marker_style * 6 + 5));
         else world_.state.screen_sprites.remove(slot_);
         slot_ = -1;
     }
@@ -107,9 +106,91 @@ Pid create_sprite(Kernel& kernel, World& world, std::uint16_t shape, int first, 
     return kernel.add(std::make_unique<SpriteProcess>(world, shape, first, last, delay, at));
 }
 
+namespace {
+
+// No Regret's impacts (1160:02F8): shapes DS:32D0 (explosions: four for
+// types 3 and 4, three for type 10), sounds DS:32E0..3302, new shapes
+// 0x641..0x643 for the fire types from 0x10. Bullets of types 2 and 0xD
+// sound one time in three and in four (UCMachine random_range).
+void impact_sprite_regret(Kernel& kernel, World& world, int fire_type, World::Point at) {
+    static constexpr int kBullet[] = {0x26, 0x27, 0x41, 0x42, 0x45, 0x46};  // DS:32E6
+    static constexpr int kBlast[] = {0x1C, 0x6C, 0x3E};                     // DS:32E0
+    static constexpr int kElectric[] = {0x48, 0x05};                        // DS:32F2
+    static constexpr int kCold[] = {0x08, 0x202};                           // DS:32F6
+    static constexpr int kFire[] = {0x205, 0x204};                          // DS:32FA
+    static constexpr int kPlasma[] = {0x207, 0x208, 0x209};                 // DS:32FE
+    std::uint16_t shape = 0x537;
+    int sound = 0;
+    switch (fire_type) {
+    case 1: case 0xB: shape = 0x1D8; sound = kBullet[rnd(world, 6)]; break;
+    case 2:
+        shape = 0x1D8;
+        if (random_range(world.state.random_state, 3) == 0) sound = kBullet[rnd(world, 6)];
+        break;
+    case 0xD:
+        shape = 0x1D8;
+        if (random_range(world.state.random_state, 4) == 0) sound = kBullet[rnd(world, 6)];
+        break;
+    case 3: case 4: {
+        static constexpr std::uint16_t kShapes[] = {0x326, 0x320, 0x321, 0x323};
+        shape = kShapes[rnd(world, 4)];
+        sound = kBlast[rnd(world, 3)];
+        break;
+    }
+    case 10: {
+        static constexpr std::uint16_t kShapes[] = {0x31C, 0x31F, 0x321};
+        shape = kShapes[rnd(world, 3)];
+        sound = kBlast[rnd(world, 3)];
+        break;
+    }
+    case 0x16: shape = 0x31F; sound = kBlast[rnd(world, 3)]; break;  // DS:32DE
+    case 5: sound = rnd(world, 2) == 0 ? 0x164 : 0x71; break;
+    case 6: shape = 0x578; sound = 0x206; break;
+    case 7: sound = kElectric[rnd(world, 2)]; break;
+    case 0xE: shape = 0x56B; sound = kFire[rnd(world, 2)]; break;
+    case 0xF: case 0x13: shape = 0x59B; sound = kElectric[rnd(world, 2)]; break;
+    case 0x10: shape = 0x643; sound = kCold[rnd(world, 2)]; break;
+    case 0x11: shape = 0x642; sound = 0x203; break;
+    case 0x12: shape = 0x59B; sound = kCold[rnd(world, 2)]; break;
+    case 0x14: shape = 0x641; sound = kPlasma[rnd(world, 3)]; break;
+    case 0x15: shape = 0x641; sound = 0x20A; break;
+    default: break;
+    }
+    // Port addition: the rumble of the explosions.
+    if (world.hooks().explosion) {
+        if (fire_type == 3 || fire_type == 0x16) world.hooks().explosion(1);
+        else if (fire_type == 4 || fire_type == 10) world.hooks().explosion(2);
+    }
+    int first = 0, last = 0x27;
+    switch (shape) {
+    case 0x56B: first = rnd(world, 3) * 6; last = first + 5; break;
+    case 0x537: last = 10; break;
+    case 0x578: case 0x642: first = rnd(world, 3) * 5; last = first + 4; break;
+    case 0x59B: first = rnd(world, 2) * 4; last = first + 3; break;
+    case 0x641: case 0x643: last = 3; break;
+    case 0x1D8: {
+        static constexpr int kRanges[4][2] = {{0, 4}, {5, 8}, {9, 12}, {13, 16}};
+        const int r = random_between(world.state.random_state, 0, 3);  // UCMachine::I_rndRange
+        first = kRanges[r][0];
+        last = kRanges[r][1];
+        break;
+    }
+    default: break;
+    }
+    create_sprite(kernel, world, shape, first, last, 3, at);
+    if (sound != 0) {
+        if (Audio* audio = world.audio()) audio->play_sfx(sound);
+    }
+}
+
+}  // namespace
+
 // @orig 1160:02F8
-// TODO(regret): modified in REGRET.EXE (No Remorse 1150:02DF, similarity 0.59)
 void impact_sprite(Kernel& kernel, World& world, int fire_type, World::Point at) {
+    if (!world.remorse()) {
+        impact_sprite_regret(kernel, world, fire_type, at);
+        return;
+    }
     // Sounds: DS:2A7A (bullets), DS:2A74 (explosions), DS:2A86 (electric).
     static constexpr int kBullet[] = {0x26, 0x27, 0x41, 0x42, 0x45, 0x46};
     static constexpr int kBlast[] = {0x1C, 0x6C, 0x3E};
