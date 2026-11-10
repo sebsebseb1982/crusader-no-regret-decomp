@@ -60,5 +60,8 @@ void fidget(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc);
 // Starts the process of a non-combat activity (Actor::I_setActivity).
 // Returns its pid (0 for none).
 Pid start_activity_process(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, std::uint16_t activity);
+// No Regret, activity 0xD: the "RollingThunder" process (1118:0EF5; see
+// activity.cpp), which rolls aside, fires and rolls back.
+Pid start_rolling_thunder(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc);
 
 }  // namespace crusader

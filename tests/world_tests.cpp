@@ -1310,7 +1310,40 @@ void test_regret_restart_with_player() {
     CHECK(marker_kept);
 }
 
+// No Regret's activity 0xD starts the RollingThunder process (type 0x263),
+// which another activity does not end; off screen it only aims at the
+// controlled NPC.
+void test_regret_rolling_thunder() {
+    const AnimDat anims = AnimDat::parse(std::vector<std::uint8_t>(AnimDat::kShapes * 4 + 8));
+    World w(test_typeflags());
+    Item player;
+    player.id = 1;
+    player.shape = 1;
+    player.x = player.y = 500;
+    w.add_with_id(player);
+    Item npc;
+    npc.id = 5;
+    npc.shape = 2;
+    npc.x = npc.y = 600;
+    npc.flags = kItemFastArea;
+    w.add_with_id(npc);
+    w.state.controlled_npc = 1;
+    Kernel k;
+    set_activity(k, w, anims, 5, 0xD);
+    CHECK(w.npc_word(5, npc::kActivity) == 0xD);
+    CHECK(k.find_process(5, 0x263) != nullptr);
+    CHECK(w.npc_record(5)[npc::kStance] & 0x02);
+    for (int f = 0; f < 120; ++f) {
+        k.advance_time(16667);
+        k.run_slice();
+    }
+    CHECK(w.npc_word(5, npc::kTarget) == 1);
+    set_activity(k, w, anims, 5, 1);
+    CHECK(k.find_process(5, 0x263) != nullptr);
+}
+
 int main() {
+    test_regret_rolling_thunder();
     test_regret_restart_with_player();
     test_regret_npc_damage();
     test_regret_typed_codes();

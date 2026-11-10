@@ -11,7 +11,7 @@
 //         weapon; NPC number: low nibble = direction / 2, high nibble ->
 //         record +0x12.
 // Nothing is made above the game's difficulty. At difficulty 4 the weapon is
-// drawn by shape (ITEM_10a8_3b10). The NPC (frame (direction + 4) & 15,
+// drawn by shape (ITEM_10a8_3b10; No Regret 10B0:3A71, another table). The NPC (frame (direction + 4) & 15,
 // record cleared, hit points of its type, combat tactic 0, flag 4 at +0x78
 // for shapes 0x597 and 0x3AC) is put where the egg is, with that place as
 // its home (+0x5E), status 2, and its weapon created and made active.

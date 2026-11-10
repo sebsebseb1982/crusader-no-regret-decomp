@@ -45,8 +45,9 @@ bool spot_controlled(Kernel& kernel, World& world, const AnimDat& anims, ObjId n
 
 // TYPE_1108_0000: the common start of activity processes. They are timer
 // processes (TimerProcess, 11E8:1814); only the loiter one starts its timer.
+// No Regret (1118:0000) first sets when the NPC's next combat remark is due
+// (RemarkTimer), and no longer puts the weapon away (record +0x78 bit 1).
 // @orig 1118:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 1108:0000, similarity 0.68)
 class ActivityProcess : public TimedProcess {
 public:
     ActivityProcess(World& world, const AnimDat& anims, ObjId npc, std::uint16_t type) : world_(world), anims_(anims) {
@@ -68,14 +69,17 @@ protected:
     }
 
     void on_added() override {
+        if (!world_.remorse()) remarks_.init(world_, kernel().ticks());
         const Item* self = world_.get(owner());
         if (!self || !anims_.action(self->shape, 0)) return;
         set_pose(world_, anims_, owner(), 0);
+        if (!world_.remorse()) return;
         if (auto r = world_.npc_record(owner()); !r.empty()) r[npc::kStance] &= static_cast<std::uint8_t>(~0x02);
     }
 
     World& world_;
     const AnimDat& anims_;
+    RemarkTimer remarks_;
 };
 
 // Activity 1 (1108:0359).
@@ -166,10 +170,10 @@ private:
     int blocked_ = 0;  // +0x44
 };
 
-// Activity 7 (1108:0383 / 04AB / 0437).
+// Activity 7 (1108:0383 / 04AB / 0437). No Regret (1118:0576) says a
+// combat remark (combat_remark) each time one is due (RemarkTimer) instead of
+// one plea from the tables below, still only when it sees the controlled NPC.
 // @orig 1118:0453 1118:0576 1118:0502
-// TODO(regret): modified in REGRET.EXE (No Remorse 1108:0383, similarity 0.89)
-// TODO(regret): modified in REGRET.EXE (No Remorse 1108:04AB, similarity 0.49)
 class SurrenderProcess : public ActivityProcess {
 public:
     SurrenderProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, 0x25F) {}
@@ -191,7 +195,10 @@ protected:
             const int dir = direction_8(self->x, self->y, other->x, other->y);
             if ((world_.npc_direction(npc) & 0xF) == dir) {
                 // Once it sees the controlled NPC, a plea drawn by shape.
-                if (!barked_ && range_if_visible(world_, npc, controlled) != 0) {
+                if (!world_.remorse()) {
+                    if (remarks_.due(k.ticks()) && range_if_visible(world_, npc, controlled) != 0)
+                        combat_remark(world_, npc);
+                } else if (!barked_ && range_if_visible(world_, npc, controlled) != 0) {
                     barked_ = true;
                     plead(*self);
                 }
@@ -256,7 +263,156 @@ protected:
     }
 };
 
+// No Regret, activity 0xD ("RollingThunder", type 0x263, 1118:0EF5): an NPC
+// that rolls aside, fires one to three shots and rolls back. Each second it
+// is not busy:
+// - its target becomes the controlled NPC (the player when there is none)
+//   unless it is that NPC or a decoy (shape 0x584) still on the map; a dead
+//   or vanished target is only replaced, the NPC then waits;
+// - mostly on screen, it tries a roll to one side drawn by rand(), then the
+//   other (roll): the roll must be possible, end mostly on screen, facing
+//   the target within two steps of its direction, and from there the
+//   controlled NPC must be in its line of fire (fire_distance_from) in that
+//   direction or one or two steps aside. It then rolls, turns to that
+//   direction, fires rand(1..3) times (the original also points each shot's
+//   animation at the controlled NPC, +0x42 / +0x4B: the port's NPC shots aim
+//   at their target, that NPC) and rolls back, and waits for that;
+// - without a roll, facing the target it fires when hit within the last 120
+//   ticks or in the line of fire, else may take a decoy as target
+//   (aim_at_decoy); not facing it, it turns to it.
+// set_activity does not end it (type 0x263 is not in its list).
+// @orig 1118:0EF5 1118:0FD9
+class RollingThunderProcess : public ActivityProcess {
+public:
+    static constexpr std::uint16_t kType = 0x263;
+    RollingThunderProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, kType) {}
+
+protected:
+    void run() override {
+        Kernel& k = kernel();
+        const ObjId npc = owner();
+        if (actor_busy(k, npc)) {
+            sleep(60);
+            return;
+        }
+        const ObjId controlled = world_.state.controlled_npc;
+        auto gone = [this](ObjId id) {
+            const Item* i = world_.get(id);
+            return id == 0 || !i || (i->z & 0xFF) == 0xFE;
+        };
+        auto shape_of = [this](ObjId id) {
+            const Item* i = world_.get(id);
+            return i ? i->shape : std::uint16_t{0};
+        };
+        ObjId target = world_.npc_word(npc, npc::kTarget);
+        if (target != controlled && (gone(target) || shape_of(target) != kDecoy))
+            set_target(k, world_, anims_, npc, controlled == 0 ? 1 : controlled);
+        target = world_.npc_word(npc, npc::kTarget);
+        if ((shape_of(target) != kDecoy && world_.is_dead(target)) || gone(target)) {
+            // The test after the new target reads the old one: always true.
+            if (target != controlled) set_target(k, world_, anims_, npc, controlled);
+            sleep(60);
+            return;
+        }
+        const Item* self = world_.get(npc);
+        if (self && world_.is_mostly_on_screen(*self)) {
+            const bool left_first = crt_rnd(world_, 2) != 0;
+            const int facing = world_.npc_direction(npc) & 0xF;
+            std::uint16_t action = left_first ? 0x3D : 0x3E;
+            int roll_dir = 0;
+            bool rolled = roll(action, roll_dir);
+            if (!rolled) {
+                action = left_first ? 0x3E : 0x3D;
+                rolled = roll(action, roll_dir);
+            }
+            if (rolled) {
+                do_anim(k, world_, anims_, npc, action, kDirCurrent, 0, false);
+                if (roll_dir != facing) turn_to(k, world_, anims_, npc, roll_dir, true, false);
+                const int shots = crt_rnd(world_, 3) + 1;
+                for (int i = 0; i < shots; ++i) do_anim(k, world_, anims_, npc, 8, kDirCurrent, 10000, false);
+                const Pid back = do_anim(k, world_, anims_, npc, action == 0x3D ? 0x3E : 0x3D, kDirCurrent, 10000, false);
+                if (back != 0) wait_for(back);
+            } else if (const Item* t = world_.get(target); t && (self = world_.get(npc))) {
+                const int toward = closest_direction_in_range(self->x, self->y, t->x, t->y, 16, 0, 15);
+                if (toward == (world_.npc_direction(npc) & 0xF)) {
+                    if (recently_hit(world_, npc, k.ticks()) || fire_distance(world_, anims_, npc, target, toward) != 0) {
+                        do_anim(k, world_, anims_, npc, 8, kDirCurrent, 0, false);
+                        return;
+                    }
+                    if (aim_at_decoy()) return;
+                } else {
+                    const auto r = world_.npc_record(npc);
+                    const bool relaxed = r.empty() || !(r[npc::kStance] & 0x02);
+                    const Pid turn = turn_to(k, world_, anims_, npc, toward, true, relaxed);
+                    if (turn != 0) {
+                        wait_for(turn);
+                        return;
+                    }
+                }
+            }
+        }
+        sleep(60);
+    }
+
+private:
+    static constexpr std::uint16_t kDecoy = 0x584;
+
+    // 1118:16BE: can the NPC roll with `action` (0x3D, 0x3E) and fire at the
+    // controlled NPC from where it ends? `dir` is then the direction from
+    // there to its target.
+    bool roll(std::uint16_t action, int& dir) {
+        const ObjId npc = owner();
+        const Item* self = world_.get(npc);
+        const Item* target = world_.get(world_.npc_word(npc, npc::kTarget));
+        if (!self || !world_.is_mostly_on_screen(*self)) return false;
+        const int facing = world_.npc_direction(npc) & 0xF;
+        const ActionTest test = test_action(world_, anims_, npc, action, facing, world_.location(*self));
+        if (!test.ok) return false;
+        // ITEM_10b0_40b4: the NPC would be mostly on screen there.
+        Item there = *self;
+        there.x = test.end.x;
+        there.y = test.end.y;
+        there.z = test.end.z;
+        if (!world_.is_mostly_on_screen(there)) return false;
+        dir = target ? closest_direction_in_range(test.end.x, test.end.y, target->x, target->y, 16, 0, 15) : 0;
+        const int d = dir - facing;  // without wrapping, as the original
+        if (d != 0 && d != 1 && d != -1 && d != 2 && d != -2) return false;
+        const ObjId controlled = world_.state.controlled_npc;
+        for (int step : {0, -1, 1, -2, 2}) {
+            if (fire_distance_from(world_, anims_, npc, controlled, (dir + step) & 0xF, test.end) != 0) return true;
+        }
+        return false;
+    }
+
+    // 1118:154D: at most every 90 ticks (1118:0F8B), a decoy in the line of
+    // fire becomes the target.
+    bool aim_at_decoy() {
+        Kernel& k = kernel();
+        const ObjId npc = owner();
+        const Item* target = world_.get(world_.npc_word(npc, npc::kTarget));
+        if (target && target->shape == kDecoy) return false;
+        const std::uint32_t now = k.ticks();
+        if (now < decoy_time_ + 0x5A) return false;
+        decoy_time_ = now;
+        const ObjId decoy = find_decoy(world_, npc);
+        const Item* self = world_.get(npc);
+        const Item* d = world_.get(decoy);
+        if (!self || !d) return false;
+        const int dir = closest_direction_in_range(self->x, self->y, d->x, d->y, 16, 0, 15);
+        if (fire_distance(world_, anims_, npc, decoy, dir) == 0) return false;
+        set_target(k, world_, anims_, npc, decoy);
+        return true;
+    }
+
+    std::uint32_t decoy_time_ = 0;  // +0x48
+};
+
 }  // namespace
+
+// No Regret, activity 0xD (set_activity).
+Pid start_rolling_thunder(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc) {
+    return kernel.add(std::make_unique<RollingThunderProcess>(world, anims, npc));
+}
 
 // @orig 1118:0192
 bool sees_controlled(const World& world, const AnimDat& anims, ObjId npc, bool look_turn) {
@@ -349,8 +505,9 @@ void fidget(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc) {
     do_anim(kernel, world, anims, npc, 0, kDirCurrent, 1, false);
 }
 
+// The activities without a combat process (set_activity, attack.cpp, for
+// the changes of No Regret).
 // @orig 10F8:33B5
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2D02, similarity 0.84)
 Pid start_activity_process(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, std::uint16_t activity) {
     std::unique_ptr<Process> p;
     switch (activity) {

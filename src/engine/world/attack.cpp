@@ -46,16 +46,6 @@ bool weapon_keeps_actions(const World& w, ObjId id) {
     return !weapon || dtable::weapon(weapon->shape).keeps_actions();
 }
 
-// NPC_10f0_1f9a: hit within the last 120 ticks.
-// @orig 10F8:2231
-bool recently_hit(const World& w, ObjId id, std::uint32_t now) {
-    const auto r = w.npc_record(id);
-    if (r.empty()) return false;
-    const std::uint32_t hit = r[npc::kLastHit] | r[npc::kLastHit + 1] << 8 | r[npc::kLastHit + 2] << 16 |
-                              static_cast<std::uint32_t>(r[npc::kLastHit + 3]) << 24;
-    return hit != 0 && now <= hit + 120;
-}
-
 // Directions of the action's animation: 16, or 8 (header byte 3 bit 6).
 int action_directions(const World& w, const AnimDat& anims, ObjId id, std::uint16_t action) {
     const Item* item = w.get(id);
@@ -129,7 +119,6 @@ void clear_in_combat(Kernel& kernel, World& world, const AnimDat& anims, ObjId i
 // NPC in combat whose activity is 0xC may change it; the "weapon drawn" bit
 // is cleared for every new activity before it starts; and activity 0xD is new.
 // @orig 10F8:33B5
-// TODO(regret): activity 0xD starts a process of its own (1118:0EF5, run at 1118:0FD9), not written yet
 void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, std::uint16_t activity) {
     auto r = world.npc_record(id);
     if (r.empty() || world.is_dead(id) || (r[npc::kStance] & 0x01)) return;
@@ -190,7 +179,7 @@ void set_activity(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, 
         }
         r[npc::kCombatFlags] |= 0x08;  // 10F8:3879
         r[npc::kStance] |= 0x02;
-        // The process of activity 0xD (1118:0EF5) is not written yet: the NPC stands.
+        start_rolling_thunder(kernel, world, anims, id);
         break;
     default:
         start_activity_process(kernel, world, anims, id, activity);  // TYPE_1118_*
@@ -265,19 +254,19 @@ Pid turn_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId id, int di
     return last;
 }
 
-// @orig 1140:20CB
-int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId target, int dir, int dx, int dy,
-                  int dz, bool* muzzle_found) {
+namespace {
+
+// Item::I_fireDistance from `from`: an NPC's muzzles come from the firing
+// frames of `action`, anything else (action 0) uses (dx, dy, dz).
+int fire_distance_at(const World& world, const AnimDat& anims, ObjId shooter, ObjId target, int dir,
+                     const World::Point& from, std::uint16_t action, int dx, int dy, int dz, bool* muzzle_found) {
     if (muzzle_found) *muzzle_found = false;
-    const Item* from = world.get(shooter);
-    if (!from) return 0;
+    const Item* shooter_item = world.get(shooter);
+    if (!shooter_item) return 0;
     std::array<World::Point, 2> offsets{World::Point{dx, dy, dz}, {}};
     int tries = 1;
-    if (is_npc_id(shooter)) {
-        std::uint16_t action = 8;
-        if (kneeling(world, shooter)) action = weapon_keeps_actions(world, shooter) ? 0x2A : 0x2B;
-        else if (shooter == 1) action = weapon_keeps_actions(world, shooter) ? 8 : 0xD;
-        const AnimAction* a = anims.action(from->shape, action);
+    if (action != 0) {
+        const AnimAction* a = anims.action(shooter_item->shape, action);
         int found = 0;
         for (std::size_t i = 0; a && i < a->frame_count() && found < 2; ++i) {
             const AnimFrame* f = a->frame(dir & 0xF, i);
@@ -289,7 +278,7 @@ int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId
     }
     if (muzzle_found) *muzzle_found = true;
     for (int i = 0; i < tries; ++i) {
-        const World::Point start{from->x + offsets[i].x, from->y + offsets[i].y, ((from->z & 0xFF) + offsets[i].z) & 0xFF};
+        const World::Point start{from.x + offsets[i].x, from.y + offsets[i].y, ((from.z & 0xFF) + offsets[i].z) & 0xFF};
         const World::Point aim = aim_point(world, shooter, target);
         const auto distance = [&] {
             return std::max(std::abs(static_cast<std::int16_t>(start.x - aim.x)),
@@ -304,6 +293,32 @@ int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId
         if (path.blocker == 0 || path.blocker == target) return distance();
     }
     return 0;
+}
+
+}  // namespace
+
+// @orig 1140:20CB
+int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId target, int dir, int dx, int dy,
+                  int dz, bool* muzzle_found) {
+    const Item* from = world.get(shooter);
+    if (!from) {
+        if (muzzle_found) *muzzle_found = false;
+        return 0;
+    }
+    std::uint16_t action = 0;
+    if (is_npc_id(shooter)) {
+        action = 8;
+        if (kneeling(world, shooter)) action = weapon_keeps_actions(world, shooter) ? 0x2A : 0x2B;
+        else if (shooter == 1) action = weapon_keeps_actions(world, shooter) ? 8 : 0xD;
+    }
+    return fire_distance_at(world, anims, shooter, target, dir, {from->x, from->y, from->z}, action, dx, dy, dz,
+                            muzzle_found);
+}
+
+// @orig 1118:1A2F
+int fire_distance_from(const World& world, const AnimDat& anims, ObjId shooter, ObjId target, int dir,
+                       const World::Point& from) {
+    return fire_distance_at(world, anims, shooter, target, dir, from, 8, 0, 0, 0, nullptr);
 }
 
 // No Regret (1120:0000): the slow weapons fire every 30 ticks for shape
@@ -487,17 +502,27 @@ void AttackProcess::next_burst_shot() {
 }
 
 // @orig 1118:0000
-void AttackProcess::init_remarks(std::uint32_t now) {
-    remark_time_ = rnd(world_, 3) == 0 ? 0 : now;
-    remark_seconds_ = static_cast<std::uint16_t>(crt_rnd(world_, 15) + 10);
+// @orig 1118:0000 (the part of No Regret)
+void RemarkTimer::init(World& world, std::uint32_t now) {
+    time = rnd(world, 3) == 0 ? 0 : now;
+    seconds = static_cast<std::uint16_t>(crt_rnd(world, 15) + 10);
 }
 
 // True the first time (time 0), then once the seconds are over.
 // @orig 1118:011D
-bool AttackProcess::remark_timer(std::uint32_t now) {
-    if (remark_time_ != 0 && now < remark_time_ + remark_seconds_ * 60u) return false;
-    remark_time_ = now;
+bool RemarkTimer::due(std::uint32_t now) {
+    if (time != 0 && now < time + seconds * 60u) return false;
+    time = now;
     return true;
+}
+
+// @orig 10F8:2231
+bool recently_hit(const World& w, ObjId id, std::uint32_t now) {
+    const auto r = w.npc_record(id);
+    if (r.empty()) return false;
+    const std::uint32_t hit = r[npc::kLastHit] | r[npc::kLastHit + 1] << 8 | r[npc::kLastHit + 2] << 16 |
+                              static_cast<std::uint32_t>(r[npc::kLastHit + 3]) << 24;
+    return hit != 0 && now <= hit + 120;
 }
 
 namespace {
@@ -555,15 +580,13 @@ void combat_remark(World& world, ObjId id) {
     }
 }
 
-// The first item of shape 0x584 within 0x190 of the NPC in x and y (the
-// search "@ %0x584 = $" of 1120:1F32).
-ObjId AttackProcess::find_decoy() const {
-    const Item* self = world_.get(owner());
+ObjId find_decoy(const World& world, ObjId npc) {
+    const Item* self = world.get(npc);
     if (!self) return 0;
     for (int cy = 0; cy < World::kGridSize; ++cy) {
         for (int cx = 0; cx < World::kGridSize; ++cx) {
-            for (ObjId id : world_.cell(cx, cy)) {
-                const Item* i = world_.get(id);
+            for (ObjId id : world.cell(cx, cy)) {
+                const Item* i = world.get(id);
                 if (i && i->shape == 0x584 && std::abs(i->x - self->x) <= 0x190 && std::abs(i->y - self->y) <= 0x190) return id;
             }
         }
@@ -692,7 +715,7 @@ void AttackProcess::run_regret() {
                 set_target(k, world_, anims_, id, controlled);
             } else if (!bark_timer(now)) {
                 give_up = true;
-            } else if (const ObjId found = find_decoy(); found == 0) {
+            } else if (const ObjId found = find_decoy(world_, owner()); found == 0) {
                 give_up = true;
             } else {
                 const Item* f = world_.get(found);
@@ -713,7 +736,7 @@ void AttackProcess::run_regret() {
         }
         if (!(r[npc::kStance] & 0x10)) {
             if (rnd(world_, 3) == 0) combat_remark(world_, id);
-        } else if (remark_timer(now)) {
+        } else if (remarks_.due(now)) {
             combat_remark(world_, id);
         }
         if (!weapon_drawn(world_, id)) {

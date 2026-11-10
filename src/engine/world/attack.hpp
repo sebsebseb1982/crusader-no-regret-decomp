@@ -87,6 +87,31 @@ Pid turn_to(Kernel& kernel, World& world, const AnimDat& anims, ObjId npc, int d
 int fire_distance(const World& world, const AnimDat& anims, ObjId shooter, ObjId target, int dir, int dx = 0,
                   int dy = 0, int dz = 0, bool* muzzle_found = nullptr);
 
+// TYPE 1118:1A2F (No Regret): fire_distance for an NPC standing at `from`,
+// with its shot action 8 whatever its stance.
+int fire_distance_from(const World& world, const AnimDat& anims, ObjId shooter, ObjId target, int dir,
+                       const World::Point& from);
+
+// NPC_10f0_1f9a: `npc` was hit within the last 120 ticks.
+bool recently_hit(const World& world, ObjId npc, std::uint32_t now);
+
+// No Regret: the first item of shape 0x584 (a decoy) within 0x190 of the NPC
+// in x and y (the search "@ %0x584 = $" of 1120:1F32 and 1118:154D).
+ObjId find_decoy(const World& world, ObjId npc);
+
+// No Regret, NPC 10F8:2865: an NPC says one of the remarks of its shape (see
+// attack.cpp).
+void combat_remark(World& world, ObjId npc);
+
+// No Regret, every activity process (TYPE 1118:0000): when its next combat
+// remark is due, at once one time in three, then every 10 to 24 seconds.
+struct RemarkTimer {
+    std::uint32_t time = 0;     // +0x44
+    std::uint16_t seconds = 0;  // +0x42
+    void init(World& world, std::uint32_t now);
+    bool due(std::uint32_t now);  // TYPE 1118:011D
+};
+
 // The combat process of an NPC (ATTACK.C, type 0x259), built-in tactic 0.
 class AttackProcess : public Process {
 public:
@@ -102,10 +127,8 @@ public:
     void set_pacing() {
         if (!pace_done_) pacing_ = true;
     }
-    // No Regret, the start of every activity process (TYPE 1118:0000): the
-    // time of the first combat remark (at once, one time in three) and the
-    // seconds between two (10 to 24).
-    void init_remarks(std::uint32_t now);
+    // No Regret, the start of every activity process (TYPE 1118:0000).
+    void init_remarks(std::uint32_t now) { remarks_.init(world_, now); }
     void set_stationary() { stationary_ = true; }        // +0x7B, activities 9 and 11
     void set_cautious() { cautious_ = true; }            // +0x7C, activities 10 and 11
     void set_from_activity_8() { from_activity_8_ = true; }  // +0x97
@@ -118,8 +141,6 @@ protected:
 
 private:
     void run_regret();                                 // ATTACK 1120:1485
-    bool remark_timer(std::uint32_t now);              // TYPE 1118:011D
-    ObjId find_decoy() const;                          // shape 0x584 within 0x190
     bool recently_started(std::uint32_t now);          // ATTACK_1110_03aa
     bool bark_timer(std::uint32_t now);                // ATTACK_1110_0334
     void play_bark(std::int16_t sfx);                  // +0x88 = sfx, I_playSFXCru
@@ -155,8 +176,7 @@ private:
     // No Regret only (offsets of its attack process).
     bool pacing_ = false;            // +0x86
     bool pace_done_ = false;         // +0x87
-    std::uint32_t remark_time_ = 0;  // +0x44
-    std::uint16_t remark_seconds_ = 0;  // +0x42
+    RemarkTimer remarks_;
     bool barked_ = false;            // +0x83
     bool moved_ = false;             // +0x96, came back from moving
     bool from_activity_8_ = false;   // +0x97

@@ -18,9 +18,34 @@ void set_word(std::span<std::uint8_t> r, std::size_t at, std::uint16_t v) {
 
 }  // namespace
 
-// @orig 10B0:3A71
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:3B10, similarity 0.45)
+namespace {
+
+// No Regret's table (10B0:3A71) has other shapes, and 0xF by default.
+int hard_weapon_regret(World& w, std::uint16_t shape) {
+    switch (shape) {
+    case 899: return rnd(w, 3) == 0 ? 10 : 7;
+    case 0x1B4: return rnd(w, 4) == 0 ? 0xD : 9;
+    case 0x2CB: return rnd(w, 2) == 0 ? 3 : 7;
+    case 0x308: return rnd(w, 2) == 0 ? 0xA : 0xB;
+    case 0x30C: return rnd(w, 2) == 0 ? 4 : 0xF;
+    case 0x319: return rnd(w, 2) == 0 ? 8 : 9;
+    case 0x338: return rnd(w, 3) == 0 ? 5 : 7;
+    case 0x371: return rnd(w, 3) == 0 ? 9 : 0xA;
+    case 0x385: return rnd(w, 4) == 0 ? 8 : 9;
+    case 0x4D1: return rnd(w, 2) == 0 ? 4 : 0xB;
+    case 0x4E6: return rnd(w, 3) == 0 ? 5 : 0xB;
+    case 0x528: return rnd(w, 3) == 0 ? 9 : 8;
+    case 0x57A: return rnd(w, 2) == 0 ? 0xD : 0xF;
+    case 0x5E2: return 0xE;
+    default: return 0xF;
+    }
+}
+
+}  // namespace
+
+// @orig 10B0:3A71 (No Remorse 10A8:3B10)
 int hard_weapon(World& w, std::uint16_t shape) {
+    if (!w.remorse()) return hard_weapon_regret(w, shape);
     switch (shape) {
     case 899: return rnd(w, 3) == 0 ? 10 : 7;
     case 0x319: case 0x2FD: return rnd(w, 4) == 0 ? 0xC : 3;
@@ -96,7 +121,6 @@ struct ActorSpec {
 // weapon goes in the first free weapon slot of 1..12, and without a free NPC
 // slot the original stops (No Remorse switched the alert lights again).
 // @orig 10B0:3CD8
-// TODO(regret): the weapon of difficulty 4 (ITEM 10B0:3A71, modified) is still No Remorse's
 ObjId make_actor(Kernel& kernel, World& world, const AnimDat& anims, const dtable::NpcTypes& types,
                  const World::Point& at, const ActorSpec& spec) {
     const std::uint16_t shape = types.word(spec.type, 0x3E);
