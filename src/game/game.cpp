@@ -1223,7 +1223,6 @@ void Game::close_menu() {
 }
 
 // @orig 1350:0046 1320:159A
-// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void Game::show_message(const std::string& text) {
     if (message_ || menu_) return;
     message_ = std::make_unique<MessageGump>(fonts_, text, kScreenWidth, kScreenHeight);
@@ -1401,7 +1400,6 @@ void Game::notify(std::uint16_t shape) {
 }
 
 // @orig 1320:159A
-// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void Game::open_screen(std::unique_ptr<ModalGump> screen, std::function<void(const ModalGump&)> closed) {
     screen_ = std::move(screen);
     screen_closed_ = std::move(closed);
@@ -1414,7 +1412,6 @@ void Game::open_screen(std::unique_ptr<ModalGump> screen, std::function<void(con
 }
 
 // @orig 1320:159A
-// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void Game::close_screen() {
     const std::unique_ptr<ModalGump> screen = std::move(screen_);
     const auto closed = std::move(screen_closed_);
@@ -1607,7 +1604,6 @@ void Game::mouse_button(int button, bool pressed, int x, int y) {
 }
 
 // @orig 1320:0636; the mouse events, then the idle event when there were none
-// TODO(regret): constants in REGRET.EXE (No Remorse 1328:0624, similarity 0.99)
 void Game::dispatch_mouse() {
     bool any = false;
     while (const auto e = mouse_queue_.next()) {

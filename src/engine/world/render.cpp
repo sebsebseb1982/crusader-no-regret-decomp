@@ -46,7 +46,6 @@ struct SortBox {
 };
 
 // @orig 11B0:095D (the box part of the display entry)
-// TODO(regret): constants in REGRET.EXE (No Remorse 11A0:095D, similarity 0.98)
 SortBox sort_box(const DrawItem& d) {
     int dz = d.z_top - d.z;
     if (dz == 0 && !(d.shape_flags & ShapeInfo::kFixed)) dz = 1;
@@ -225,7 +224,6 @@ std::vector<std::size_t> pick(const std::vector<DrawItem>& list, int x, int y) {
 }
 
 // @orig 11B0:02E4 (blitter choice; the walk over the list is not located)
-// TODO(regret): constants in REGRET.EXE (No Remorse 11A0:02E4, similarity 0.98)
 void draw_display_list(Surface8& screen, const std::vector<DrawItem>& list, const XformTable* xform,
                        const std::function<void(Surface8&, const DrawItem&)>& after) {
     for (const DrawItem& d : list) {

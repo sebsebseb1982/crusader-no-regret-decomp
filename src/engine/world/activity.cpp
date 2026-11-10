@@ -61,7 +61,6 @@ protected:
     // sees the controlled NPC takes its default activity 1 (spot_controlled).
     // Event 1 (idle actions 0x33 / 0x34) is sent by nothing in this version.
     // @orig 1118:0CEC
-    // TODO(regret): constants in REGRET.EXE (No Remorse 1108:0D3E, similarity 0.98)
     void tick() override {
         const Item* self = world_.get(owner());
         if (!self || (self->z & 0xFF) == 0xFE || world_.is_dead(owner()) || kernel().failing_all()) return;
@@ -93,7 +92,6 @@ protected:
 
 // Activity 2 (1108:0BFA): `count` walks (0xFFFF: no end).
 // @orig 1118:0BA8
-// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0BFA, similarity 0.95)
 class LoiterProcess : public ActivityProcess {
 public:
     LoiterProcess(World& w, const AnimDat& a, ObjId npc, std::uint16_t count)
@@ -130,8 +128,6 @@ private:
 
 // Activity 3 (1108:0708).
 // @orig 1118:06B6 1118:0641
-// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0708, similarity 0.97)
-// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0693, similarity 0.92)
 class WalkProcess : public ActivityProcess {
 public:
     WalkProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, 0x255) {}
@@ -174,7 +170,6 @@ private:
 // @orig 1118:0453 1118:0576 1118:0502
 // TODO(regret): modified in REGRET.EXE (No Remorse 1108:0383, similarity 0.89)
 // TODO(regret): modified in REGRET.EXE (No Remorse 1108:04AB, similarity 0.49)
-// TODO(regret): constants in REGRET.EXE (No Remorse 1108:0437, similarity 0.92)
 class SurrenderProcess : public ActivityProcess {
 public:
     SurrenderProcess(World& w, const AnimDat& a, ObjId npc) : ActivityProcess(w, a, npc, 0x25F) {}
@@ -264,7 +259,6 @@ protected:
 }  // namespace
 
 // @orig 1118:0192
-// TODO(regret): constants in REGRET.EXE (No Remorse 1108:00C2, similarity 0.99)
 bool sees_controlled(const World& world, const AnimDat& anims, ObjId npc, bool look_turn) {
     const ObjId controlled = world.state.controlled_npc;
     const Item* self = world.get(npc);

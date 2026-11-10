@@ -21,7 +21,6 @@ constexpr std::uint16_t kDatalink = 0x4D4;
 }  // namespace
 
 // @orig 10F8:4056
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId carried(const World& world, std::uint16_t shape) {
     for (int slot = 0; slot < world.equip_slots(); ++slot) {
         const ObjId id = world.npc_equip(kPlayer, slot);
@@ -33,13 +32,11 @@ ObjId carried(const World& world, std::uint16_t shape) {
 
 namespace {
 
-// NPC_10f0_2b03 / 2b2d / 2b62: the first empty slot of first..first+count-1.
+// The first empty slot of a range: weapons (10F8:31C1, slots 1..12),
+// ammunition (10F8:31EA, 13..20) or items (10F8:321A, 21..44).
 // @orig 10F8:31C1 10F8:31EA 10F8:321A
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B03, similarity 0.71)
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B2D, similarity 0.71)
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B62, similarity 0.71)
-int free_slot(const World& world, int first, int count) {
-    for (int slot = first; slot < first + count; ++slot) {
+int free_slot(const World& world, SlotRange range) {
+    for (int slot = range.first; slot <= range.last; ++slot) {
         if (world.npc_equip(kPlayer, slot) == 0) return slot;
     }
     return 0;
@@ -84,11 +81,8 @@ bool add_one(World& world, ObjId item, ObjId carried_id, int limit, bool show) {
 }  // namespace
 
 // @orig 10F8:31C1 10F8:31EA 10F8:321A
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B03, similarity 0.71)
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B2D, similarity 0.71)
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:2B62, similarity 0.71)
-int free_equip_slot(const World& world, int first, int count) {
-    return free_slot(world, first, count);
+int free_equip_slot(const World& world, SlotRange range) {
+    return free_slot(world, range);
 }
 
 // @orig 1008:03AB 10B0:2ABB
@@ -119,7 +113,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
             world.destroy(item_id);
             return true;
         }
-        const int slot = free_slot(world, 11, 15);
+        const int slot = free_slot(world, item_slots(world));
         if (slot == 0) return false;
         world.push(item_id);
         world.pop_to_end(kPlayer);
@@ -133,7 +127,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
     const std::uint8_t fam = world.family_of(shape);
     if (fam == kFamilyWeapon) {
         if (carried(world, shape)) return false;
-        const int slot = free_slot(world, 1, 5);
+        const int slot = free_slot(world, weapon_slots(world));
         if (slot == 0) return false;
         // A full clip of the weapon's ammunition (DTABLE_1120_027e / 020f).
         set_quality_and_combine(world, item_id, dtable::ammo_shape(shape) ? dtable::clip_size(shape) : 0);
@@ -143,7 +137,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
     }
     if (fam == kFamilyAmmo) {
         if (const ObjId c = carried(world, shape)) return add_one(world, item_id, c, 20, show);
-        const int slot = free_slot(world, 6, 5);
+        const int slot = free_slot(world, ammo_slots(world));
         if (slot == 0) return false;
         set_quality_and_combine(world, item_id, 1);
         take(world, item_id, slot);
@@ -187,7 +181,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
         world.destroy(item_id);
         return true;
     }
-    const int slot = free_slot(world, 11, 15);
+    const int slot = free_slot(world, item_slots(world));
     if (slot == 0) return false;
     world.push(item_id);
     world.pop_to_end(kPlayer);
@@ -206,13 +200,13 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
 bool may_add_item(const World& world, std::uint16_t shape) {
     const ObjId c = carried(world, shape);
     const int quality = c ? world.get(c)->quality : 0;
-    if (shape == 0x4ED) return c ? quality < 60000 : free_slot(world, 11, 15) != 0;
+    if (shape == 0x4ED) return c ? quality < 60000 : free_slot(world, item_slots(world)) != 0;
     const std::uint8_t fam = world.family_of(shape);
-    if (fam == kFamilyWeapon) return free_slot(world, 1, 5) != 0;
-    if (fam == kFamilyAmmo) return c ? quality < 20 : free_slot(world, 6, 5) != 0;
+    if (fam == kFamilyWeapon) return free_slot(world, weapon_slots(world)) != 0;
+    if (fam == kFamilyAmmo) return c ? quality < 20 : free_slot(world, ammo_slots(world)) != 0;
     if (fam != 12 && fam != 13) return false;
     if (shape == 0x111 || shape == 0x3A2 || shape == 0x3A3 || shape == 0x3A4) return true;
-    if (!c) return free_slot(world, 11, 15) != 0;
+    if (!c) return free_slot(world, item_slots(world)) != 0;
     if (shape == 0x52E || shape == 0x52F || shape == 0x530) return true;
     return quality < (shape == 0x560 ? 20 : 10);
 }

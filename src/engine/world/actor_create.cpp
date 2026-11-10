@@ -39,11 +39,10 @@ int hard_weapon(World& w, std::uint16_t shape) {
 }
 
 // @orig 10F8:2EB9
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:27FB, similarity 0.99)
 bool set_equip(World& world, ObjId npc, int slot, ObjId item_id) {
     Item* item = world.get(item_id);
     auto r = world.npc_record(npc);
-    if (!item || r.empty() || npc == item_id || slot < 1 || slot >= 30 || world.npc_equip(npc, slot) != 0) return false;
+    if (!item || r.empty() || npc == item_id || slot < 1 || slot >= world.equip_slots() || world.npc_equip(npc, slot) != 0) return false;
     if (world.family_of(item->shape) == 10 && world.active_weapon(npc) == 0) set_word(r, 0x15, static_cast<std::uint16_t>(slot));
     // Families 11 and 13 refresh the status bar (not needed: it is redrawn).
     world.push(item_id);
@@ -57,7 +56,6 @@ bool set_equip(World& world, ObjId npc, int slot, ObjId item_id) {
 }
 
 // @orig 10F8:280E 10F8:2CCE 10F8:029A
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:2610, similarity 0.95)
 ObjId create_plain_actor(World& world, const dtable::NpcTypes& types, std::uint16_t shape, std::uint16_t frame) {
     const ObjId npc = world.create_npc(shape, frame);
     if (npc == 0) return 0;

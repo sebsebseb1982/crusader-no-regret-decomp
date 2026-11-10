@@ -1714,7 +1714,7 @@ void test_cheats(const std::filesystem::path& data) {
     w.set_npc_word(1, npc::kEnergy, 0);
     f10(0);
     for (const int weapon : {0x386, 0x38A, 0x38E, 0x388, 0x334}) {
-        CHECK(carried(w, static_cast<std::uint16_t>(weapon)) != 0 || free_equip_slot(w, 1, 5) == 0);
+        CHECK(carried(w, static_cast<std::uint16_t>(weapon)) != 0 || free_equip_slot(w, weapon_slots(w)) == 0);
     }
     CHECK(w.npc_mana(1) == max_energy(w, 1) && w.npc_mana(1) != 0);
     for (const int shape : {0x560, 0x39A, 0x55F, 0x351, 0x33D, 0x33F, 0x340, 0x341, 0x33E}) {

@@ -207,7 +207,6 @@ void WeaselGump::draw(Surface8& screen) const {
 // The step sent at the opening and after each change (13E0:0E78) comes back
 // at the next pass of the modal loop.
 // @orig 1320:159A
-// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void WeaselGump::update(std::uint32_t) {
     if (closed_ || !step_pending_) return;
     step_pending_ = false;

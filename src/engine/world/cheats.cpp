@@ -75,7 +75,7 @@ void give_ammo(World& world, std::uint16_t shape) {
         set_quality_and_combine(world, carried_id, kFullAmmo);
         return;
     }
-    const int slot = free_equip_slot(world, 6, 5);  // NPC_10f0_2b2d
+    const int slot = free_equip_slot(world, ammo_slots(world));  // 10F8:31EA
     const ObjId id = world.create(shape, 0);
     if (id == 0) return;
     const World::Point at = player_feet(world);
@@ -99,7 +99,7 @@ void give_everything(World& world, std::uint16_t flags) {
     world.set_npc_word(kPlayer, npc::kEnergy, static_cast<std::uint16_t>(max_energy(world, kPlayer)));
     const std::uint16_t* table = (flags & kCtrl) ? kCtrlWeapons.data() : (flags & kAlt) ? kAltWeapons.data() : kWeapons.data();
     for (int i = 0; table[i] != kEndOfTable; ++i) {
-        const int slot = free_equip_slot(world, 1, 5);  // NPC_10f0_2b03
+        const int slot = free_equip_slot(world, weapon_slots(world));  // 10F8:31C1
         if (slot == 0) break;
         if (carried(world, table[i]) != 0) continue;
         const ObjId id = world.create(table[i], 0);

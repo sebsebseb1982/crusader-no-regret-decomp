@@ -277,7 +277,6 @@ void GravityProcess::run() {
 }
 
 // @orig 1048:04C1
-// TODO(regret): constants in REGRET.EXE (No Remorse 1040:04BC, similarity 0.98)
 void GravityProcess::on_terminate() {
     // 1040:04BC: the NPC no longer falls.
     const ObjId id = owner();

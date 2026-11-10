@@ -72,7 +72,7 @@ namespace crusader {
 // The player may act: World_on_key's first test.
 bool player_may_act(const World& world);
 
-void previous_weapon(World& world);
+void previous_weapon(Kernel& kernel, World& world, const AnimDat& anims);
 void next_weapon(Kernel& kernel, World& world, const AnimDat& anims);
 void previous_item(World& world);
 void next_item(World& world);

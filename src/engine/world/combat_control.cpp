@@ -47,7 +47,6 @@ bool on_map_40(const World& w, ObjId npc) {
 
 // NPC_10f0_395e: first item of the player's 30 equipment slots with this shape.
 // @orig 10F8:4056
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId find_equipped(const World& w, std::uint16_t shape) {
     for (int slot = 0; slot < w.equip_slots(); ++slot) {
         const ObjId id = w.npc_equip(1, slot);

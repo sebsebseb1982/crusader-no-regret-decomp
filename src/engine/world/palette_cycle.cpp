@@ -32,7 +32,6 @@ PaletteCycleProcess::PaletteCycleProcess(GameState& state)
 }
 
 // @orig 1410:011B
-// TODO(regret): constants in REGRET.EXE (No Remorse 1438:011B, similarity 0.96)
 void PaletteCycleProcess::tick() {
     if (state_->cycle_paused) return;
     std::array<std::uint8_t, 768> game = state_->game_palette.to_vga();

@@ -6,7 +6,6 @@
 namespace crusader {
 
 // @orig 11E8:0AFF
-// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:0AFF, similarity 0.97)
 Pid Kernel::add(std::unique_ptr<Process> process) {
     assert(process && !process->kernel_);
     std::size_t slot = 1;
@@ -48,7 +47,6 @@ Process* Kernel::find_process(ObjId owner, std::uint16_t type) const {
 }
 
 // @orig 11E8:0D0E
-// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:0D0E, similarity 0.98)
 std::size_t Kernel::fail_processes(ObjId owner, std::uint16_t type, std::uint8_t level) {
     std::size_t failed = 0;
     for (std::size_t pid = 1; pid < table_.size(); ++pid) {
@@ -62,7 +60,6 @@ std::size_t Kernel::fail_processes(ObjId owner, std::uint16_t type, std::uint8_t
 }
 
 // @orig 11E8:11FE
-// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:11FE, similarity 0.99)
 void Kernel::fail_all() {
     failing_all_ = true;
     for (std::size_t pid = 1; pid < table_.size(); ++pid) {
@@ -73,7 +70,6 @@ void Kernel::fail_all() {
 }
 
 // @orig 11E8:2A86
-// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:2A86, similarity 0.96)
 void Kernel::advance_time(std::uint32_t elapsed_us) {
     tick_remainder_ += std::uint64_t{elapsed_us} * kTicksPerSecond;
     ticks_ += static_cast<std::uint32_t>(tick_remainder_ / 1'000'000);
@@ -175,7 +171,6 @@ void Kernel::on_terminated(Process& p) {
 }
 
 // @orig 11E8:1DCC
-// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:1DCC, similarity 0.98)
 void Kernel::reap() {
     for (std::size_t pid = 1; pid < table_.size(); ++pid) {
         if (table_[pid] && table_[pid]->terminated()) {

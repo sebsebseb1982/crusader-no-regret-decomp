@@ -58,7 +58,6 @@ void PickupList::add(const World& world, ObjId item_id) {
 }
 
 // @orig 11A0:0414
-// TODO(regret): constants in REGRET.EXE (No Remorse 1190:0414, similarity 0.77)
 void PickupList::count_second() {
     for (PickupEntry& e : entries_) {
         if (e.name && --e.seconds == 0) e = {};

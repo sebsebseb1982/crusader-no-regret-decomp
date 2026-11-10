@@ -100,7 +100,6 @@ void ComputerGump::run() {
 
 // Gump_run_modal: the gump's run at each pass, here once its wait is over.
 // @orig 1320:159A
-// TODO(regret): constants in REGRET.EXE (No Remorse 1328:1588, similarity 0.99)
 void ComputerGump::update(std::uint32_t ticks) {
     if (closed_ || ticks < next_run_) return;
     next_run_ = ticks;

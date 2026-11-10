@@ -43,7 +43,6 @@ void MouseCursor::set_bottom(int max_y) {
 }
 
 // @orig 13C8:008D
-// TODO(regret): constants in REGRET.EXE (No Remorse 13D8:008D, similarity 0.98)
 int MouseCursor::zone(int x, int y) {
     // First the screen less a 20-pixel border, then the box around the centre;
     // both rectangles inclusive (rect_contains_point_2).

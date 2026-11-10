@@ -136,7 +136,6 @@ void TimedProcess::set_rate(std::uint32_t hz) {
 }
 
 // @orig 11E8:2A86
-// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:2A86, similarity 0.96)
 void TimedProcess::accumulate(std::uint32_t elapsed_us) {
     if (period_us_ == 0) {
         return;

@@ -699,7 +699,6 @@ void World::detach(Item& item) {
 }
 
 // @orig 10B8:1CF7
-// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1C21, similarity 0.96)
 void World::push(ObjId id) {
     // ITEMCACH.C: already out of the world -> nothing. Otherwise the item
     // leaves its container or map cell and goes on top of the stack. An
@@ -718,7 +717,6 @@ void World::push(ObjId id) {
 }
 
 // @orig 10B8:1DFF
-// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1D29, similarity 1.00)
 ObjId World::pop_to_coords(std::int32_t x, std::int32_t y, std::int32_t z) {
     // Not reproduced yet: display list, camera follow when the item is the
     // controlled NPC.
@@ -973,7 +971,6 @@ int closest_direction_in_range(std::int32_t x1, std::int32_t y1, std::int32_t x2
 }
 
 // @orig 10B0:0882
-// TODO(regret): constants in REGRET.EXE (No Remorse 10A8:0810, similarity 0.99)
 void World::set_frame(Item& item, std::uint16_t frame) {
     if (is_npc_id(item.id)) {
         item.frame = frame;
@@ -1234,8 +1231,6 @@ ObjId World::pop_to_container(ObjId container) { return pop_into(container, fals
 ObjId World::pop_to_end(ObjId container) { return pop_into(container, true); }
 
 // @orig 10B8:1CF7 10B8:1DFF
-// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1C21, similarity 0.96)
-// TODO(regret): constants in REGRET.EXE (No Remorse 10B0:1D29, similarity 1.00)
 void World::move_item(ObjId id, std::int32_t x, std::int32_t y, std::int32_t z) {
     // CONVEYOR pushes its passenger before legalMoveToPoint. push is then
     // a no-op, but the successful move must still pop it back onto the map.

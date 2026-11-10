@@ -25,7 +25,6 @@ ObjId equipped(const World& world, std::size_t slot_field) {
 
 // NPC_10f0_395e: first item of the player's 30 equipment slots with this shape.
 // @orig 10F8:4056
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:395E, similarity 0.95)
 ObjId find_equipped_shape(const World& world, std::uint16_t shape) {
     for (int slot = 0; slot < world.equip_slots(); ++slot) {
         const ObjId id = world.npc_equip(kPlayer, slot);

@@ -397,8 +397,6 @@ public:
     // The footpad height of a shape (TYPEFLAG bytes 3-4, bits 7-11), which
     // the player's kneeling changes (10F0:221B / 226D).
     // @orig 10F8:24B9 10F8:250B
-    // TODO(regret): constants in REGRET.EXE (No Remorse 10F0:221B, similarity 0.96)
-    // TODO(regret): constants in REGRET.EXE (No Remorse 10F0:226D, similarity 0.96)
     void set_footpad_z(std::uint16_t shape, std::uint8_t z) {
         if (shape >= typeflags_.size()) return;
         ShapeInfo& info = typeflags_[shape];

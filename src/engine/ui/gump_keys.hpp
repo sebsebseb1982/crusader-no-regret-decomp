@@ -32,7 +32,6 @@ constexpr std::uint16_t kF9 = 0x143;
 
 // 0 when the event gives no code (a release).
 // @orig 1320:0636
-// TODO(regret): constants in REGRET.EXE (No Remorse 1328:0624, similarity 0.99)
 inline std::uint16_t gump_key_code(const GameKeyEvent& e) {
     if (!e.pressed) return 0;
     const std::uint16_t mods = e.flags & 0x0F;

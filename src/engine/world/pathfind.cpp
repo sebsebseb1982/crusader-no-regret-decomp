@@ -174,7 +174,6 @@ void PathfinderProcess::run() {
 }
 
 // @orig 1128:0726
-// TODO(regret): constants in REGRET.EXE (No Remorse 1118:072E, similarity 0.99)
 void PathfinderProcess::on_terminate() {
     // ATTACK_1118_072e.
     const ObjId npc = owner();

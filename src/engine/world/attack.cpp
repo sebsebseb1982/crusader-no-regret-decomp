@@ -115,7 +115,6 @@ void set_controlled_npc(Kernel& kernel, World& world, const AnimDat& anims, ObjI
 }
 
 // @orig 10F8:389F
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:31A9, similarity 0.94)
 void clear_in_combat(Kernel& kernel, World& world, const AnimDat& anims, ObjId id) {
     auto r = world.npc_record(id);
     if (r.empty()) return;
@@ -362,7 +361,6 @@ bool AttackProcess::can_hit(int dir, std::uint32_t now) {
 }
 
 // @orig 1120:1396
-// TODO(regret): constants in REGRET.EXE (No Remorse 1110:141B, similarity 0.89)
 void AttackProcess::approach() {
     // ATTACK_1110_141b: walk towards the target (at most 12 steps, stopping
     // within 0x40), waited for.
@@ -473,7 +471,6 @@ void AttackProcess::next_burst_shot() {
 }
 
 // @orig 1120:0632 1120:1485
-// TODO(regret): constants in REGRET.EXE (No Remorse 1110:06B9, similarity 0.98)
 // TODO(regret): modified in REGRET.EXE (No Remorse 1110:14F6, similarity 0.52)
 void AttackProcess::run() {
     if (listening_ != 0) {

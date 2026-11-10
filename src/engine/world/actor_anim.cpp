@@ -241,7 +241,6 @@ const AnimAction* ActorAnimProcess::start() {
 }
 
 // @orig 11E8:17DB
-// TODO(regret): constants in REGRET.EXE (No Remorse 11D8:17DB, similarity 0.99)
 const ActorAnimProcess* ActorAnimProcess::next_queued() const {
     const ActorAnimProcess* next = nullptr;
     kernel().for_each_process([&](const Process& p) {
@@ -464,7 +463,6 @@ bool ActorAnimProcess::fall_if_unsupported(const World::Point& from, const World
 }
 
 // @orig 1168:336B 1168:0174 1168:1FCD
-// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2B4D, similarity 0.72)
 // TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
 // TODO(regret): modified in REGRET.EXE (No Remorse 1158:1908, similarity 0.76)
 ActionTest test_action(const World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
@@ -537,7 +535,6 @@ ActionTest test_action(const World& world, const AnimDat& anims, ObjId actor, st
 
 // CRUSADER_1138_32a8: shows the first frame of `action` in the NPC's direction.
 // @orig 1148:40DC
-// TODO(regret): constants in REGRET.EXE (No Remorse 1138:32A8, similarity 0.97)
 void set_pose(World& w, const AnimDat& anims, ObjId id, std::uint16_t action) {
     Item* item = w.get(id);
     auto r = w.npc_record(id);
@@ -644,8 +641,6 @@ constexpr std::uint16_t kKneelingActions[] = {0x28, 0x2E, 0x2F, 0x2A, 0x2B, 0x3D
 // (Actor::I_isKneeling) and the footpad height of his shape, 6 kneeling and
 // 10 standing.
 // @orig 10F8:24B9 10F8:250B
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:221B, similarity 0.96)
-// TODO(regret): constants in REGRET.EXE (No Remorse 10F0:226D, similarity 0.96)
 void set_kneeling(World& world, ObjId actor, bool kneel) {
     if (actor != 1) return;
     const Item* item = world.get(actor);
@@ -709,9 +704,6 @@ void ActorAnimProcess::mark_turning() {
 }
 
 // @orig 1168:3684 1168:3527 1168:35E4
-// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2E66, similarity 0.94)
-// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2D09, similarity 0.83)
-// TODO(regret): constants in REGRET.EXE (No Remorse 1158:2DC6, similarity 0.91)
 void ActorAnimProcess::on_terminate() {
     // 2DC6: failed by the kernel's fail_all (new game, map switch), the
     // animation does nothing more.

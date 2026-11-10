@@ -17,7 +17,6 @@ int block_step(int f, int d) { return (f + 1) % d + f - f % d; }
 }  // namespace
 
 // @orig 11A8:1670 11A8:13DD
-// TODO(regret): constants in REGRET.EXE (No Remorse 1198:162B, similarity 1.00)
 void animate_items(World& world, std::uint32_t count, std::uint32_t last, const FrameCount& frames) {
     std::vector<ObjId> due;
     world.for_each([&](const Item& item) {

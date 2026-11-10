@@ -13,11 +13,9 @@ namespace {
 
 constexpr ObjId kPlayer = 1;
 
-constexpr int kFirstWeaponSlot = 1;
-constexpr int kLastWeaponSlot = 5;
-constexpr int kFirstItemSlot = 11;
-constexpr int kLastItemSlotDown = 25;  // 13E8:0D5F wraps to 0x19
-constexpr int kLastItemSlotUp = 24;    // 13E8:0DC0 wraps after 0x18
+// The last item slot going up: No Regret wraps after 0x2C (1008:0EB5), the
+// last one; No Remorse wraps after 0x18, one short of its last slot 0x19.
+int last_item_slot_up(const World& world) { return world.remorse() ? 24 : item_slots(world).last; }
 
 constexpr std::uint16_t kMedikit = 0x351;
 constexpr std::uint16_t kEnergyCube = 0x582;
@@ -34,10 +32,6 @@ constexpr std::uint16_t kActionJump = 0x3A;
 // item, wrapping from `last` to `first` going up and from below `first` to
 // `last` going down; the current slot is tried last. 0 when none.
 // @orig 1008:0C8E 1008:0D71 1008:0E54 1008:0EB5
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C07, similarity 0.48)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C72, similarity 0.68)
-// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0D5F, similarity 0.84)
-// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0DC0, similarity 0.84)
 int find_slot(const World& world, int current, int step, int first, int last) {
     auto wrap = [&](int slot) { return slot > last ? first : slot < first ? last : slot; };
     const int start = wrap(current + step);
@@ -96,45 +90,56 @@ bool player_may_act(const World& world) {
     return !world.state.avatar_in_stasis && !world.is_dead(kPlayer) && world.state.controlled_npc == kPlayer;
 }
 
-// @orig 1008:0C8E
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C07, similarity 0.48)
-void previous_weapon(World& world) {
-    const int current = world.npc_word(kPlayer, npc::kWeapon);
-    if (current == 0) return;
-    if (const int slot = find_slot(world, current, -1, kFirstWeaponSlot, kLastWeaponSlot))
-        world.set_npc_word(kPlayer, npc::kWeapon, static_cast<std::uint16_t>(slot));
-}
+namespace {
 
-// @orig 1008:0D71
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C72, similarity 0.68)
-void next_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
-    const int current = world.npc_word(kPlayer, npc::kWeapon);
-    if (world.state.controlled_npc != kPlayer || current == 0) return;
-    const int slot = find_slot(world, current, +1, kFirstWeaponSlot, kLastWeaponSlot);
-    if (slot == 0) return;
-    world.set_npc_word(kPlayer, npc::kWeapon, static_cast<std::uint16_t>(slot));
-    // The pose of the new weapon (CRUSADER_1138_32a8), 0x40 for none.
+// The pose of a newly chosen weapon (1148:40DC), none when the player stands
+// idle; not while an animation runs.
+void pose_for_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
     std::uint16_t pose = 0x40;
     if (kneeling(world)) pose = weapon_keeps_actions(world) ? 0x2E : 0x2F;
     else if (!idle(world)) pose = weapon_keeps_actions(world) ? 4 : 0x25;
     if (pose != 0x40 && !actor_busy(kernel, kPlayer)) set_pose(world, anims, kPlayer, pose);
 }
 
+}  // namespace
+
+// No Regret: the previous weapon takes its pose, as the next one does. No
+// Remorse (13E8:0C07) only changed the slot.
+// @orig 1008:0C8E
+void previous_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
+    const int current = world.npc_word(kPlayer, npc::kWeapon);
+    if (current == 0) return;
+    const int slot = find_slot(world, current, -1, weapon_slots(world).first, weapon_slots(world).last);
+    if (slot == 0) return;
+    world.set_npc_word(kPlayer, npc::kWeapon, static_cast<std::uint16_t>(slot));
+    if (!world.remorse()) pose_for_weapon(kernel, world, anims);
+}
+
+// No Regret no longer asks that the player be the controlled NPC (No
+// Remorse 13E8:0C72 tested DS:2852).
+// @orig 1008:0D71
+void next_weapon(Kernel& kernel, World& world, const AnimDat& anims) {
+    const int current = world.npc_word(kPlayer, npc::kWeapon);
+    if (current == 0 || (world.remorse() && world.state.controlled_npc != kPlayer)) return;
+    const int slot = find_slot(world, current, +1, weapon_slots(world).first, weapon_slots(world).last);
+    if (slot == 0) return;
+    world.set_npc_word(kPlayer, npc::kWeapon, static_cast<std::uint16_t>(slot));
+    pose_for_weapon(kernel, world, anims);
+}
+
 // @orig 1008:0E54
-// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0D5F, similarity 0.84)
 void previous_item(World& world) {
     const int current = world.npc_word(kPlayer, npc::kActiveItem);
     if (current == 0) return;
-    if (const int slot = find_slot(world, current, -1, kFirstItemSlot, kLastItemSlotDown))
+    if (const int slot = find_slot(world, current, -1, item_slots(world).first, item_slots(world).last))
         world.set_npc_word(kPlayer, npc::kActiveItem, static_cast<std::uint16_t>(slot));
 }
 
 // @orig 1008:0EB5
-// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0DC0, similarity 0.84)
 void next_item(World& world) {
     const int current = world.npc_word(kPlayer, npc::kActiveItem);
     if (current == 0) return;
-    if (const int slot = find_slot(world, current, +1, kFirstItemSlot, kLastItemSlotUp))
+    if (const int slot = find_slot(world, current, +1, item_slots(world).first, last_item_slot_up(world)))
         world.set_npc_word(kPlayer, npc::kActiveItem, static_cast<std::uint16_t>(slot));
 }
 
@@ -227,7 +232,7 @@ bool player_command(Kernel& kernel, World& world, const AnimDat& anims, std::uin
         }
         return true;
     case 'Q': case 'q':
-        if (may_act) previous_weapon(world);
+        if (may_act) previous_weapon(kernel, world, anims);
         return true;
     case 'W': case 'w':
         if (may_act) next_weapon(kernel, world, anims);

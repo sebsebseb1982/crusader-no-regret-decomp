@@ -62,6 +62,9 @@ std::vector<std::uint16_t> register_world_intrinsics(UCMachine& m, World& w, con
 
     // Ultima8Engine::I_getCurrentTimerTick: kernel ticks (60 Hz).
     bind({0x0B4}, [](UCMachine& machine, UCProcess&, Args) { return machine.kernel().ticks(); });
+    // No Regret 0x0B6 (1008:005D): marks the five boxes of the status bar
+    // to be redrawn (11C8:0DC1). Nothing to do: the port redraws it each frame.
+    bind({0x4B6}, [](UCMachine&, UCProcess&, Args) -> std::uint32_t { return 0; });
     // No Regret 0x076, 0x0C2, 0x112 (10B0:2952): returns 0.
     bind({0x476}, [](UCMachine&, UCProcess&, Args) -> std::uint32_t { return 0; });
     // UCMachine::I_rndRange(lo, hi): arguments in reverse push order, signed.
