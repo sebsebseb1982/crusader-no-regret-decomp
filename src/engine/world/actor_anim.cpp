@@ -178,7 +178,6 @@ void ActorAnimProcess::on_added() {
 }
 
 // @orig 1168:3AE0
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:31DA, similarity 0.88)
 void ActorAnimProcess::set_direction(int dir) {
     // ANIMPRIM.C 31DA: the codes 0x10..0x12 start from the actor's direction;
     // 8-direction actions use even directions and turn by 2.

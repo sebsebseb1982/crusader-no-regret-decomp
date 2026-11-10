@@ -66,7 +66,6 @@ std::size_t World::expand_glob_egg(const FlexArchive& globs, ObjId egg_id) {
 }
 
 // @orig 10A8:039C
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A0:039C, similarity 0.99)
 bool World::glob_near_view(std::int32_t base_x, std::int32_t base_y) const {
     // The egg's chunk corner projected without z, widened by 376 / 250 / 255
     // pixels, against the drawn area (768 x 640 for a 640 x 480 view).
@@ -137,7 +136,6 @@ const Item* World::get(ObjId id) const {
 }
 
 // @orig 10B8:2700
-// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:262A, similarity 0.94)
 Item& World::add(Item item) {
     // The head of the free item slots. With none left (viewers expanding a
     // whole map's globs), the port goes on past the table, where the
@@ -672,7 +670,6 @@ ObjId World::create_npc(std::uint16_t shape, std::uint16_t frame) {
 }
 
 // @orig 10B0:1259 10B8:2700
-// TODO(regret): modified in REGRET.EXE (No Remorse 10B0:262A, similarity 0.94)
 ObjId World::create(std::uint16_t shape, std::uint8_t frame) {
     // Item::I_create (ITEM.C). The original reuses a free slot, keeping its
     // stale x/y/z; flags, quality, NPC and map numbers are cleared.

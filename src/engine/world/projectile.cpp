@@ -42,8 +42,9 @@ int crt_rnd(World& w, int n) { return crt_rand_below(w.state.crt_rand_state, n);
 // DeathSilence (CRUSADER_1130_000e, type 0x261): started by the player's
 // death, a 1 Hz timer held back (flag 1) until its third period (1130:00D6),
 // then plays sound 9 and ends (1130:00B1): three seconds after the death.
+// No Regret (1140:02FE) plays sound 0x194 and clears the "cru stasis" as
+// Ultima8Engine::I_clrCruStasis does (the keys held are forgotten).
 // @orig 1140:025B 1140:0329 1140:02FE
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:00B1, similarity 0.90)
 class DeathSilence : public TimedProcess {
 public:
     static constexpr std::uint16_t kType = 0x261;
@@ -57,7 +58,11 @@ protected:
     void tick() override { ++periods_; }
     void run() override {
         if (periods_ < 3) return;
-        if (Audio* audio = world_.audio()) audio->play_sfx(9);
+        if (Audio* audio = world_.audio()) audio->play_sfx(world_.remorse() ? 9 : 0x194);
+        if (!world_.remorse()) {
+            world_.state.cru_stasis = false;
+            if (world_.hooks().flush_keys) world_.hooks().flush_keys();
+        }
         terminate();
     }
 

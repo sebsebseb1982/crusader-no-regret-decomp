@@ -116,10 +116,11 @@ void aim_after_do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId
     }
 }
 
+// In No Regret, not while the player is in stasis and controlled.
 // @orig 1148:02D7
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0299, similarity 0.84)
 void enter_aim_mode(Kernel& kernel, World& world, const AnimDat& anims) {
     GameState::Aim& aim = world.state.aim;
+    if (!world.remorse() && world.state.avatar_in_stasis && world.state.controlled_npc == 1) return;
     const Item* npc = world.get(world.state.controlled_npc);
     if (aim.turns != 0 || !npc || npc->shape == kNoAimShape) return;
     aim.crosshair_dirty = true;
@@ -315,7 +316,6 @@ void check_designation(Kernel& kernel, World& world, const AnimDat& anims) {
 }
 
 // @orig 10B0:1575 1148:04A5
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:1531, similarity 0.99)
 // TODO(regret): modified in REGRET.EXE (No Remorse 1138:0459, similarity 0.65)
 void designated_target_moved(Kernel& kernel, World& world, const AnimDat& anims, ObjId target, std::int32_t x,
                              std::int32_t y, std::int32_t z) {

@@ -39,7 +39,6 @@ private:
 };
 
 // @orig 10A0:011F 10A0:0223
-// TODO(regret): modified in REGRET.EXE (No Remorse 1098:011F, similarity 0.91)
 class TeleportToEgg : public Process {
 public:
     TeleportToEgg(Kernel& kernel, World& world, int map, std::uint16_t egg)

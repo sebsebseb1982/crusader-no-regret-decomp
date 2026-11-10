@@ -343,7 +343,6 @@ int inventory_item_index(std::uint16_t shape) {
 }
 
 // @orig 1130:0075
-// TODO(regret): modified in REGRET.EXE (No Remorse 1120:0075, similarity 0.98)
 NpcTypes NpcTypes::load(const std::filesystem::path& dtable_flx) {
     const FlexArchive flex = FlexArchive::open(dtable_flx);
     const auto entry = flex.entry(0);

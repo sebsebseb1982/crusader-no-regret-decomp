@@ -31,12 +31,16 @@ public:
     static constexpr int kTile = 28;
 
     PickupArea(ShapeCache& gumps, const FontSet& fonts, const XformTable& xform);
+    // No Regret's boxes are one tile wider (11A0:049C adds 3 tiles to the
+    // text's, No Remorse 2).
+    void set_remorse(bool remorse) { extra_tiles_ = remorse ? 2 : 3; }
 
     // Width of the strip of an entry (W above).
     int width(const PickupEntry& entry) const;
     void draw(Surface8& screen, const PickupList& list) const;
 
 private:
+    int extra_tiles_ = 3;
     void draw_gump(Surface8& screen, std::uint16_t shape, std::uint16_t frame, int x, int y,
                    const XformTable* xform) const;
 

@@ -107,7 +107,6 @@ void ComputerGump::update(std::uint32_t ticks) {
 }
 
 // @orig 1390:02DB 1390:0491
-// TODO(regret): modified in REGRET.EXE (No Remorse 13A0:02D1, similarity 0.99)
 void ComputerGump::draw(Surface8& screen) const {
     if (const ShapeFrame* f = gump_frame(*gumps_, 0)) f->draw(screen, x_, y_);
     if (const ShapeFrame* f = gump_frame(*gumps_, 1)) f->draw(screen, x_, y_ + kBottomY);

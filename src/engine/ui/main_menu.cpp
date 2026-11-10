@@ -213,7 +213,6 @@ void MainMenu::mouse_up(int x, int y) {
 }
 
 // @orig 13B8:08A8
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:082E, similarity 0.98)
 void MainMenu::activate(int i) {
     switch (i) {
     case kQuit:
@@ -254,7 +253,8 @@ void MainMenu::update(std::uint32_t ticks) {
 }
 
 // @orig 13B8:08A8
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:082E, similarity 0.98)
+// TODO(regret): 13B8:08A8 read: the only change is sound 0x1A1 (AudioProcess::I_playSFX) played when
+//   the difficulty screen closes, before the menu palette comes back; not played yet.
 void MainMenu::after_sub_screen() {
     if (difficulty_ && difficulty_->result()) {
         if (*difficulty_->result() != 0) {

@@ -20,7 +20,6 @@ struct Description {
 };
 
 // @orig 11A0:070F
-// TODO(regret): modified in REGRET.EXE (No Remorse 1190:070F, similarity 0.99)
 Description describe(const World& world, const Item& item) {
     if (item.shape == kKeycard) return {tr("PASSE", "KEYCARD"), 5, static_cast<std::uint16_t>(item.frame + 13)};
     if (item.shape == credits_shape(world)) return {"CREDITS", 3, 13};
@@ -36,7 +35,6 @@ Description describe(const World& world, const Item& item) {
 }  // namespace
 
 // @orig 11A0:049C
-// TODO(regret): constants in REGRET.EXE (No Remorse 1190:049C, similarity 0.94)
 void PickupList::add(const World& world, ObjId item_id) {
     const Item* item = world.get(item_id);
     if (!item) return;

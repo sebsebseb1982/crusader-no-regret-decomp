@@ -235,6 +235,7 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     data_language_ = info.language;
     regret_ = info.regret;
     dtable::select_game(regret_);
+    pickup_area_.set_remorse(!regret_);
     if (audio_) audio_->sources.set_max_sfx(regret_ ? 0x400 : 0x200);
     if (audio_) audio_->music.set_remorse(!regret_);
     intrinsic_numbering_ = intrinsic_numbering(info);
@@ -1532,7 +1533,6 @@ void Game::leave_menu_mode() {
 
 // @orig 13B8:27F9 13B8:08A8
 // TODO(regret): modified in REGRET.EXE (No Remorse 13D0:25A2, similarity 0.95)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:082E, similarity 0.98)
 void Game::follow_menu_screen() {
     // IRGUMP_13d0_25a2: DIFF.PAL, cursor 0x26 with the mouse at (320, 400);
     // back in the menu (13D0:082E case 0): MISC.PAL and cursor 0x25 again.

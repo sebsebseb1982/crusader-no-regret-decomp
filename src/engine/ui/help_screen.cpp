@@ -120,7 +120,6 @@ void HelpScreen::key(std::uint16_t code) {
 }
 
 // @orig 1008:3CFE
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3D53, similarity 0.95)
 void HelpScreen::mouse_up(int x, int y) {
     if (closed_) return;
     const int id = buttons_.mouse_up(x, y);

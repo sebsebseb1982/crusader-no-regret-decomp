@@ -137,7 +137,7 @@ constexpr std::array<std::uint16_t, 350> kRegretToFrench = {
     0x06D,  // 077 1058:00A1 identical UCMachine::I_true
     0x0B1,  // 078 10B0:2A51 identical Item::I_unequip
     0x01A,  // 079 10B0:25CF identical Item::I_andStatus
-    0x06C,  // 07A 10B0:1575 modified Item::I_move
+    0x06C,  // 07A 10B0:1575 constants Item::I_move
     0x071,  // 07B 1008:0F1C identical Ultima8Engine::I_getCrusaderTeleporting
     0x072,  // 07C 1008:0F20 identical Ultima8Engine::I_setCrusaderTeleporting
     0x075,  // 07D 1008:0F16 identical Ultima8Engine::I_clrCrusaderTeleporting

@@ -34,18 +34,19 @@ bool in(std::uint16_t v, std::initializer_list<std::uint16_t> set) {
 
 }  // namespace
 
+// No Regret adds action 5 to the first set.
 // @orig 1148:00A8
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0070, similarity 0.76)
 bool stance_not_moving(const World& world, ObjId id) {
     const auto r = world.npc_record(id);
     const std::uint16_t last =
         r.empty() ? 0 : static_cast<std::uint16_t>(r[npc::kLastAnim] | r[npc::kLastAnim + 1] << 8);
+    if (!world.remorse() && last == 5) return false;
     return !in(last, {1, 0, 0x3A, 3, 0x30, 0x31, 0xB, 0x10, 0x37}) && !in(last, {0x26, 0x22, 0x23});
 }
 
+// No Regret adds action 5 to the set (`regret`).
 // @orig 1148:1624
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0F8D, similarity 0.74)
-bool action_redirectable(GameState::MouseTurn& mouse, std::uint32_t now, std::uint16_t a) {
+bool action_redirectable(GameState::MouseTurn& mouse, std::uint32_t now, std::uint16_t a, bool regret) {
     // A walk or a run turned by the mouse: at most once every
     // 60 / (speed * 3 + 3) ticks.
     if (mouse.active && in(a, {1, 3, 0x30, 0x31})) {
@@ -53,6 +54,7 @@ bool action_redirectable(GameState::MouseTurn& mouse, std::uint32_t now, std::ui
         mouse.redirected_at = now;
         return true;
     }
+    if (regret && a == 5) return true;
     return in(a, {1, 3, 0x26, 4, 0x25, 0x36, 0x32, 0x2E, 0x2F, 8, 0x2A, 0xD, 0x2B, 10, 0xF, 0x30, 0x31, 0x22,
                   0x23, 0x24, 0x2C, 2, 0x2D, 7, 0xC, 0x27, 0x19});
 }
@@ -326,7 +328,7 @@ bool AvatarMover::handle_key(const GameKeyEvent& e) {
     if (dir == d) return false;
     if (e.count == 1 || (last != 1 && !running && !run_start)) {
         ActorAnimProcess* current = current_anim(kernel_, a_id);
-        if (current && action_redirectable(world_.state.mouse_turn, kernel_.ticks(), current->action())) {
+        if (current && action_redirectable(world_.state.mouse_turn, kernel_.ticks(), current->action(), !world_.remorse())) {
             current->set_direction(d);
             return true;
         }

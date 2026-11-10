@@ -147,7 +147,6 @@ void CombatControl::handle_key(const GameKeyEvent& e) {
 
 // @orig 1008:0D71 1008:0EB5
 // TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0C72, similarity 0.68)
-// TODO(regret): constants in REGRET.EXE (No Remorse 13E8:0DC0, similarity 0.84)
 // TODO(regret): No Remorse 1138:220A has no counterpart in REGRET.EXE
 bool CombatControl::keypad_command(const GameKeyEvent& e) {
     if (e.scancode == 0x0F || e.scancode == 0x24) {  // Tab, J: at every repeat
