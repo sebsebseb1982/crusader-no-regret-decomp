@@ -67,8 +67,8 @@ constexpr std::uint16_t kCrosshairShape = 0x4CC;
 
 // Actor::I_doAnim (NPC.C 10F0:0245): actions that keep / enter the aiming
 // mode, and the turning ones (flag +0x40 of the animation, 1158:2E55).
-bool aim_action(std::uint16_t action);
-bool turn_action(std::uint16_t action);
+bool aim_action(const World& world, std::uint16_t action);
+bool turn_action(const World& world, std::uint16_t action);
 // The end of Actor::I_doAnim for the new animation `pid` of `actor`.
 void aim_after_do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action,
                        Pid pid);

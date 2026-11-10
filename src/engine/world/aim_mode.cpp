@@ -86,26 +86,32 @@ void search_after_turn(Kernel& kernel, World& world, const AnimDat& anims, int d
 
 }  // namespace
 
-bool aim_action(std::uint16_t a) {
-    return in(a, {2, 4, 5, 6, 7, 8, 0xC, 0xD, 0xF, 0x24, 0x25, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x32,
-                  0x36});
+// The actions that keep the aiming mode, and those counted as turns. In No
+// Regret action 5 is a turn instead of an aiming action, and the rolls
+// (0x1B, 0x33, 0x34, 0x35) are turns too.
+bool aim_action(const World& world, std::uint16_t a) {
+    if (a == 5) return world.remorse();
+    return in(a, {2, 4, 6, 7, 8, 0xC, 0xD, 0xF, 0x24, 0x25, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x32, 0x36});
 }
 
-bool turn_action(std::uint16_t a) { return in(a, {0x17, 0x18, 0x19, 0x1C, 0x1D, 0x27, 0x3D, 0x3E}); }
+bool turn_action(const World& world, std::uint16_t a) {
+    if (!world.remorse() && in(a, {5, 0x1B, 0x33, 0x34, 0x35})) return true;
+    return in(a, {0x17, 0x18, 0x19, 0x1C, 0x1D, 0x27, 0x3D, 0x3E});
+}
 
+// For the controlled NPC; in No Remorse also for shape 0x580.
 // @orig 10F8:039A
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:0245, similarity 0.77)
 void aim_after_do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action,
                        Pid pid) {
     const Item* item = world.get(actor);
-    if (actor != world.state.controlled_npc && !(item && item->shape == kAlsoAimShape)) return;
-    if (aim_action(action)) {
+    if (actor != world.state.controlled_npc && !(world.remorse() && item && item->shape == kAlsoAimShape)) return;
+    if (aim_action(world, action)) {
         enter_aim_mode(kernel, world, anims);
     } else {
         leave_aim_mode(kernel, world);
         if (world.hooks().reset_fire) world.hooks().reset_fire();
     }
-    if (turn_action(action)) {
+    if (turn_action(world, action)) {
         if (auto* anim = dynamic_cast<ActorAnimProcess*>(kernel.get(pid))) anim->mark_turning();
     }
 }

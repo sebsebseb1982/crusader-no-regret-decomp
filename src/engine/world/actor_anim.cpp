@@ -605,13 +605,14 @@ std::uint16_t remap_action(const World& world, ObjId actor, std::uint16_t action
 
 namespace {
 
-// Actor::I_doAnim (NPC.C 10F0:0245), for the controlled NPC: moving actions
+// Actor::I_doAnim (NPC.C 10F8:039A), for the controlled NPC: moving actions
 // make NPC shots less accurate for a while (see GameState::player_moved_at).
+// No Regret adds actions 5, 0x30 and 0x31 to those of No Remorse.
 // @orig 10F8:039A
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:0245, similarity 0.77)
 void note_player_movement(World& world, std::uint16_t action, std::uint32_t now) {
     std::uint32_t window = 0;
     std::uint16_t accuracy = 0;
+    if (!world.remorse() && (action == 0x05 || action == 0x30 || action == 0x31)) action = 0x03;  // 0x78, 2
     switch (action) {
     case 0x01: case 0x02: window = 0x78; accuracy = 3; break;
     case 0x1C: case 0x1D: window = 0x3C; accuracy = 3; break;
@@ -633,9 +634,17 @@ void note_player_movement(World& world, std::uint16_t action, std::uint32_t now)
 
 namespace {
 
-// DS:135F: the actions (after the weapon's remapping) that leave the player
-// kneeling; any other stands him up.
-constexpr std::uint16_t kKneelingActions[] = {0x28, 0x2E, 0x2F, 0x2A, 0x2B, 0x3D, 0x3E, 0x17, 0x18, 0x32};
+// DS:16C9: the actions (after the weapon's remapping) that leave the player
+// kneeling; any other stands him up. The last five are No Regret's (the
+// rolls): No Remorse's table (DS:135F) ends at 0x32.
+constexpr std::uint16_t kKneelingActions[] = {0x28, 0x2E, 0x2F, 0x2A, 0x2B, 0x3D, 0x3E, 0x17,
+                                              0x18, 0x32, 0x05, 0x33, 0x34, 0x35, 0x1B};
+constexpr std::size_t kRemorseKneelingActions = 10;
+
+bool kneeling_action(const World& world, std::uint16_t action) {
+    const auto* end = std::begin(kKneelingActions) + (world.remorse() ? kRemorseKneelingActions : std::size(kKneelingActions));
+    return std::find(std::begin(kKneelingActions), end, action) != end;
+}
 
 // NPC_10f0_221b / 226d, for the player only: record +0x13 bit 2
 // (Actor::I_isKneeling) and the footpad height of his shape, 6 kneeling and
@@ -654,7 +663,6 @@ void set_kneeling(World& world, ObjId actor, bool kneel) {
 }  // namespace
 
 // @orig 10F8:039A
-// TODO(regret): modified in REGRET.EXE (No Remorse 10F0:0245, similarity 0.77)
 Pid do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
             std::uint32_t max_queued, bool replace) {
     const Item* item = world.get(actor);
@@ -691,8 +699,7 @@ Pid do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std
         if (action == 7 || action == 0xC) record[npc::kStance] |= 0x02;
         else if (action == 0xB || action == 0x10) record[npc::kStance] &= static_cast<std::uint8_t>(~0x02);
     }
-    set_kneeling(world, actor, std::find(std::begin(kKneelingActions), std::end(kKneelingActions), action) !=
-                                   std::end(kKneelingActions));
+    set_kneeling(world, actor, kneeling_action(world, action));
     const Pid pid = kernel.add(std::make_unique<ActorAnimProcess>(world, anims, actor, action, dir, last));
     aim_after_do_anim(kernel, world, anims, actor, action, pid);
     return pid;

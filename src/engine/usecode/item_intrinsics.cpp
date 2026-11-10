@@ -62,10 +62,17 @@ int total_weight(const World& w, const Item& item) {
     return (info ? info->weight : 0) + contents_weight(w, item);
 }
 
-// Shapes that drop what rests on them when destroyed: crates (MCRATE,
-// DAMNMCR8), luggage (LUGGAGE, DAMNLUGG), steel boxes (SSBOX_EW, SSBOX_NS) and
-// 0x1FD / 0x1FE. Listed in Item::I_destroy (10A8:1365).
-bool drops_what_rests_on_it(std::uint16_t shape) {
+// Shapes that drop what rests on them when destroyed. No Regret reads it in
+// the shape's type flags (ITEM 10B0:06A5: byte 6 bit 6 of its TYPEFLAG.DAT
+// record). No Remorse lists them in Item::I_destroy (10A8:1365): crates
+// (MCRATE, DAMNMCR8), luggage (LUGGAGE, DAMNLUGG), steel boxes (SSBOX_EW,
+// SSBOX_NS) and 0x1FD / 0x1FE.
+// @orig 10B0:06A5
+bool drops_what_rests_on_it(const World& w, std::uint16_t shape) {
+    if (!w.remorse()) {
+        const ShapeInfo* info = w.shape_info(shape);
+        return info && (info->bytes[6] & 0x40);
+    }
     return shape == 0x432 || shape == 0x5A0 || shape == 0x1FD || shape == 0x1FE || shape == 0x08F ||
            shape == 0x59F || shape == 0x2B3 || shape == 0x2CA;
 }
@@ -79,7 +86,6 @@ bool drops_what_rests_on_it(std::uint16_t shape) {
 // before it goes; the fall only starts here and runs once the crate is gone.
 // Not reproduced: shape 0x4FE with a controlled robot (CRUSYS_1060_02da).
 // @orig 10B0:13D7
-// TODO(regret): modified in REGRET.EXE (No Remorse 10A8:1365, similarity 0.82)
 void destroy_item(Kernel& kernel, World& w, ObjId id) {
     const Item* item = w.get(id);
     if (!item) return;
@@ -90,7 +96,7 @@ void destroy_item(Kernel& kernel, World& w, ObjId id) {
     if (is_npc_id(id)) {
         if (auto r = w.npc_record(id); !r.empty()) r[npc::kAnimFlags] &= 0xFE;
     }
-    if (drops_what_rests_on_it(item->shape)) {
+    if (drops_what_rests_on_it(w, item->shape)) {
         static constexpr std::uint8_t kAll[] = {'$'};
         for (ObjId above : w.surface_search(id, 1, kAll)) {
             if (above != id && w.get(above)) fall(kernel, w, above);
