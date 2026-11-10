@@ -16,9 +16,9 @@ constexpr ObjId kPlayer = 1;
 constexpr ObjId kFirstItem = 0x100;
 constexpr ObjId kLastItem = 0x27FF;
 constexpr std::uint16_t kItemFlag1000 = 0x1000;  // meaning unknown (ScummVM: "hanging")
-constexpr std::uint16_t kNotUsable = 0x4ED;
 constexpr int kRange = 0x80;
 constexpr int kNothingSfx = 0xB0;
+constexpr int kRegretNothingSfx = 0x1A7;
 
 // getCX / getCY: the centre of the footprint.
 std::pair<int, int> centre(const World& world, const Item& item) {
@@ -38,7 +38,6 @@ void finish(World& world);
 
 // 13E8:37B4.
 // @orig 1008:37EC
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:37B4, similarity 0.72)
 void next(World& world) {
     auto& sel = world.state.selection;
     if (sel.items.empty()) return;
@@ -56,7 +55,6 @@ void next(World& world) {
 
 // 13E8:388F.
 // @orig 1008:38BA
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:388F, similarity 0.62)
 void previous(World& world) {
     auto& sel = world.state.selection;
     sel.chosen = 0;
@@ -65,8 +63,7 @@ void previous(World& world) {
     if (sel.current < 0) sel.current = static_cast<int>(sel.items.size()) - 1;
 }
 
-// @orig 1008:1565
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:1710, similarity 0.44)
+// @orig 1008:376E
 void finish(World& world) {
     auto& sel = world.state.selection;
     const ObjId chosen = sel.chosen;
@@ -77,7 +74,6 @@ void finish(World& world) {
 
 // Enter, Space, Ins (13E8:1710): a selectable item is used, another chosen.
 // @orig 1008:1565
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:1710, similarity 0.44)
 void take(World& world) {
     auto& sel = world.state.selection;
     const ObjId id = selected_item(world);
@@ -101,13 +97,14 @@ ObjId selected_item(const World& world) {
 }
 
 // @orig 1008:2C27; flag 0x100
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:2B74, similarity 0.75)
 void selection_click(World& world) {
     take(world);
 }
 
+// No Regret (1008:3430): the shape always offered is the credits' (0x112,
+// No Remorse's 0x4ED); with nothing around, sound 0x1A7 (AudioProcess::
+// I_playSFX) unless it plays already.
 // @orig 1008:3430
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:33D9, similarity 0.81)
 void start_selection(World& world, bool pick_all) {
     auto& sel = world.state.selection;
     sel.pick_all = pick_all;
@@ -128,7 +125,7 @@ void start_selection(World& world, bool pick_all) {
         if (!item || item->sprite_only || (item->z & 0xFF) == 254 || (item->flags & kItemContained)) continue;
         const ShapeInfo* info = world.shape_info(item->shape);
         const int family = info ? info->family : 0;
-        if (item->shape != kNotUsable && (family < 10 || family > 13) && !selectable(world, *item)) continue;
+        if (item->shape != credits_shape(world) && (family < 10 || family > 13) && !selectable(world, *item)) continue;
         const auto [cx, cy] = centre(world, *item);
         const int distance = std::max(std::abs(cx - px), std::abs(cy - py));
         const int z = item->z & 0xFF;
@@ -141,7 +138,10 @@ void start_selection(World& world, bool pick_all) {
     if (sel.items.empty()) {
         sel.pick_all = false;
         finish(world);
-        if (Audio* audio = world.audio()) audio->play_sfx(kNothingSfx);
+        if (Audio* audio = world.audio()) {
+            if (world.remorse()) audio->play_sfx(kNothingSfx);
+            else if (!audio->is_sfx_playing(kRegretNothingSfx)) audio->play_sfx(kRegretNothingSfx);
+        }
         return;
     }
     sel.current = 0;
@@ -157,7 +157,6 @@ void cancel_selection(World& world) {
 }
 
 // @orig 1008:1565
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:14B4, similarity 0.44)
 void selection_key(World& world, std::uint16_t code) {
     auto& sel = world.state.selection;
     switch (code) {

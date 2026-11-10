@@ -34,9 +34,6 @@ bool WorldMouse::player_held() const {
 }
 
 // @orig 1008:2C27 1008:2E46
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:2B74, similarity 0.75)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:2DAD, similarity 0.78)
-// TODO(regret): No Remorse 13E8:2A13 has no counterpart in REGRET.EXE
 bool WorldMouse::event(const MouseInput& e) {
     switch (e.kind()) {
     case MouseInput::kMotionKind: return motion(e);
@@ -46,8 +43,7 @@ bool WorldMouse::event(const MouseInput& e) {
     }
 }
 
-// @orig ?: No Remorse 13E8:2A13, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig 1008:2AD3 (outside the Ghidra function list; the same as No Remorse 13E8:2A13)
 bool WorldMouse::motion(const MouseInput& e) {
     // The mouse goes back to the centre, out of the item selection.
     const bool warp = !world_.state.selection.active;
@@ -67,7 +63,6 @@ bool WorldMouse::motion(const MouseInput& e) {
 }
 
 // @orig 1008:2C27
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:2B74, similarity 0.75)
 void WorldMouse::left(const MouseInput& e) {
     if (world_.state.selection.active) {
         if (e.type == MouseInput::kPress) selection_click(world_);
@@ -84,7 +79,6 @@ void WorldMouse::left(const MouseInput& e) {
 }
 
 // @orig 1008:2E46
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:2DAD, similarity 0.78)
 void WorldMouse::right(const MouseInput& e) {
     if (world_.state.selection.active) return;  // view flags 0x180
     const ObjId npc = world_.state.controlled_npc;
@@ -117,7 +111,6 @@ void WorldMouse::right(const MouseInput& e) {
 }
 
 // @orig 1008:30FA
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:307F, similarity 0.83)
 void WorldMouse::idle() {
     if (player_held()) return;
     // The item selection's part of this method is selection_tick.
@@ -132,9 +125,6 @@ void WorldMouse::idle() {
 
 // The key events built by the view: E0 arrows, count 1, time 0.
 // @orig 1008:2E46 1008:30FA; the key events they build
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:2DAD, similarity 0.78)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:307F, similarity 0.83)
-// TODO(regret): No Remorse 13E8:2A13 has no counterpart in REGRET.EXE
 void WorldMouse::send_arrow(std::uint8_t scancode, bool pressed, std::uint16_t flags) {
     GameKeyEvent k;
     k.scancode = scancode;
