@@ -62,7 +62,11 @@ XanMovie XanMovie::load(const std::filesystem::path& path) {
 // @orig 1470:02C9 1470:0E92
 // The MOVE list's "_PC_", "SHOT" and "INDX" are read by the header parser
 // (jump table 1470:0D89); "PAL8" and "BEST" are looked up when the player
-// asks for them (vtable +0x0C, +0x10). A movie without "_PC_" keeps the
+// asks for them (vtable +0x0C, +0x10), always the first ones (index 0). A
+// movie with a second pair (ANIM01, ABPMCMVA: "_PC_" 4, 2) has "SHOT" give
+// the frame from which it applies; 1470:136A finds the pair of each frame
+// read and 1468:04C8 keeps it (player +0x22), but nothing reads it: the
+// first pair stays for the whole movie. A movie without "_PC_" keeps the
 // streamer's version 0, like the version 3 movies.
 XanMovie XanMovie::parse(std::vector<std::uint8_t> bytes) {
     XanMovie m;
@@ -72,7 +76,7 @@ XanMovie XanMovie::parse(std::vector<std::uint8_t> bytes) {
     if (d.size() < 12 || read_u32(d, 0) != id("RIFF") || read_u32(d, 8) != id("AVI ")) {
         throw std::runtime_error("not an AVI file");
     }
-    bool video = false, best = false;
+    bool video = false, best = false, palette = false;
     for (const RiffChunk& top : riff_chunks(d, 12, d.size())) {
         if (is_list(d, top, id("hdrl"))) {
             for (const RiffChunk& c : riff_chunks(d, top.data + 4, top.data + top.size)) {
@@ -94,7 +98,8 @@ XanMovie XanMovie::parse(std::vector<std::uint8_t> bytes) {
                         for (const RiffChunk& v : riff_chunks(d, s.data + 4, s.data + s.size)) {
                             if (v.id == id("_PC_")) {
                                 m.version_ = read_i32(d, v.data);
-                            } else if (v.id == id("PAL8")) {
+                            } else if (v.id == id("PAL8") && !palette) {
+                                palette = true;
                                 check_range(d, v.data, std::min<std::size_t>(v.size, 768));
                                 std::copy_n(d.begin() + static_cast<std::ptrdiff_t>(v.data),
                                             std::min<std::size_t>(v.size, 768), m.palette_.begin());

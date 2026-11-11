@@ -167,6 +167,10 @@ void test_regret_movie() {
     put_chunk(move, "_PC_", u32s({4, 1}));
     put_chunk(move, "PAL8", pal);
     put_chunk(move, "BEST", {0xE0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC});
+    // A second pair (from frame 1 on, "SHOT"): never used.
+    put_chunk(move, "PAL8", std::vector<std::uint8_t>(768, 0x80));
+    put_chunk(move, "BEST", {0xE0, 0x01, 0x01, 0x01, 0x01, 0xFC});
+    put_chunk(move, "SHOT", u32s({0, 0, 1, 1}));
     std::vector<std::uint8_t> strh = {'v', 'i', 'd', 's', 'X', 'x', 'a', 'n'};
     strh.resize(56);
     put_chunk(strl, "strh", strh);

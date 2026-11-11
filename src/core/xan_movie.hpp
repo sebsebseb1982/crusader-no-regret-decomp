@@ -10,6 +10,8 @@
 //   "_PC_"  u32 version (3 or 4), u32 (1 or 2)   -> streamer +0x4A, +0x56
 //   "PAL8"  256 RGB triples                       (vtable +0x0C)
 //   "BEST"  the colour table, packed              (vtable +0x10, 1470:0E92)
+//   "SHOT"  (u32 frame, u32 pair) entries, when the list has a second
+//           PAL8 / BEST pair (unused: the first pair is kept, see parse)
 // and the audio "strl" (format 0x594A, Xan DPCM: 22050 Hz, mono or stereo,
 // 16-bit; WEAVED.AVI has none). "movi" holds "00db" frames and "01wb" audio
 // chunks, one each per frame at 15 frames a second.

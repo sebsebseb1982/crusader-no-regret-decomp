@@ -1833,7 +1833,9 @@ void Game::render(Surface8& screen, RenderStats* stats) {
         if (!large) {
             screen = picture;
         } else {
-            screen.clear(0);
+            // Port: around No Regret's movie, the colour its screen is filled
+            // with (colour 0 may be anything in the movie's palette).
+            screen.clear(xan_movie_ ? xan_movie_->darkest() : 0);
             copy_block(picture, 0, 0, screen, ui_x_, ui_y_, kScreenWidth, kScreenHeight);
         }
         return;
