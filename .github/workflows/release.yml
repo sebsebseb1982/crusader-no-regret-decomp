@@ -9,9 +9,11 @@ name: Release
 # PortMaster (aarch64 handhelds) binary is cross-built, and all of them are
 # attached to the GitHub release created for the new vX.Y.Z tag.
 
-# No Regret: the game is not playable yet, so nothing is released on a push.
-# Releases are started by hand until then (put the push trigger back after).
+# The first release is v0.1.0: the v0.0.0 tag on the first commit keeps
+# semantic-release from starting at 1.0.0 while the game is not finished.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

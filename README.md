@@ -53,16 +53,15 @@ Everything the No Remorse port adds is in the code and is brought back as the ga
 - Finish the No Regret menus and screens (options, help).
 - Compare the port with the original under DOSBox: movies, status bar, saved games.
 - Check each enhancement inherited from No Remorse on No Regret.
-- Publish releases for Windows, Linux and PortMaster once the game is playable.
 - Have an idea? Let me know what you'd like to see!
 
 Further improvements will come when my Claude subscription renews. If you'd like to help speed things up, feel free to leave a small tip (see [SPONSORING.md](SPONSORING.md)).
 
 ## Running the game
 
-### 1. Build
+### 1. Get the game
 
-There is no release yet: build the game from source (see [Building from source](#building-from-source)).
+Download the archive for your system (Windows, Linux or PortMaster) from the [latest release](https://github.com/sebsebseb1982/crusader-no-regret-decomp/releases/latest), or build the game from source (see [Building from source](#building-from-source)).
 
 ### 2. Provide the game data
 
@@ -116,7 +115,7 @@ In addition to `crusader`, the build produces several tools: `shapeview` (shape 
 
 ## Versioning
 
-Versions follow [SemVer](https://semver.org) and are calculated automatically from [Conventional Commits](https://www.conventionalcommits.org): `fix:` increments the patch version, `feat:` increments the minor version, and `BREAKING CHANGE` increments the major version (or the minor version before `1.0`). Until the game is playable, releases are started by hand rather than on every push. See [`docs/RELEASING.md`](docs/RELEASING.md) for details.
+Versions follow [SemVer](https://semver.org) and are calculated automatically from [Conventional Commits](https://www.conventionalcommits.org): `fix:` increments the patch version, `feat:` increments the minor version, and `BREAKING CHANGE` increments the major version (or the minor version before `1.0`). A release is published on every push to `main` that contains a `fix:` or `feat:` commit. See [`docs/RELEASING.md`](docs/RELEASING.md) for details.
 
 ## Contribution
 
