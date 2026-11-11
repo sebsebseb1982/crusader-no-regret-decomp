@@ -13,7 +13,7 @@ constexpr ObjId kPlayer = 1;               // DS:7E0E
 constexpr int kBarLength = 66;
 constexpr std::uint8_t kHealthColour = 0x41;
 constexpr std::uint8_t kEnergyColour = 0xF5;
-constexpr int kAmmoFont = 15;
+constexpr int kAmmoFont = 8;    // 11C8:0A3B (No Remorse: 15)
 constexpr int kItemFont = 12;
 
 // Equipment slot `slot_field` of the player's record (NPC_10f0_33b8 / 3420):
@@ -120,9 +120,9 @@ void StatusBar::draw(Surface8& screen, const World& world) const {
         case 1:
             if (const Item* w = c.weapon && c.ammo_shape ? world.get(c.weapon) : nullptr) {
                 TextWriter t(*fonts_, kAmmoFont);
-                t.print(screen, r.x0 + 30, r.y0 + 11, std::to_string(signed_quality(*w)));
+                t.print(screen, r.x0 + 38, r.y0 + 8, std::to_string(signed_quality(*w)));  // 11C8:0A5C
                 const Item* ammo = c.ammo ? world.get(c.ammo) : nullptr;
-                t.print(screen, r.x0 + 75, r.y0 + 11, ammo ? std::to_string(signed_quality(*ammo)) : "0");
+                t.print(screen, r.x0 + 90, r.y0 + 8, ammo ? std::to_string(signed_quality(*ammo)) : "0");  // 11C8:0AB0
             }
             break;
         case 2:

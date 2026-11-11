@@ -15,9 +15,10 @@
 //   ammunition), boxes 2 and 4 while the player is controlled, box 3 always;
 // - nothing more unless the player is controlled, except for box 3;
 // - box 0: the weapon icon (GUMPS.FLX shape 3) at the centre of the box;
-// - box 1 (font 15): the weapon's quality (rounds loaded) at (+30, +11), and
-//   at (+75, +11) the quality of the first item of the player's equipment
-//   that is that ammunition, or "0";
+// - box 1 (font 8; No Remorse: font 15, (+30, +11) and (+75, +11)): the
+//   weapon's quality (rounds loaded) at (+38, +8), and at (+90, +8) the
+//   quality of the first item of the player's equipment that is that
+//   ammunition (NPC_10f8_40b9), or "0";
 // - box 2: the item icon at the centre (shape 3 frame 13 for the credits 0x4ED,
 //   shape 4 for family 12, shape 5 otherwise; icons 3, 5 and 7 of shape 5
 //   become 18, 17 and 19 when the item's frame is not 0), and its quality at
