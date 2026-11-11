@@ -2,8 +2,7 @@
 
 namespace crusader {
 
-// @orig ?: No Remorse 11D8:3574, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig 11E8:359E (the int 9 handler, outside the Ghidra list; No Remorse 11D8:3574), the same
 void Keyboard::key(std::uint8_t scancode, bool extended, bool pressed, std::uint16_t flags, std::uint8_t ascii,
                    std::uint32_t now) {
     scancode &= 0x7F;

@@ -1,6 +1,7 @@
 #pragma once
 // SOUND/SOUND.FLX: the sound effects, opened by dsfx_init (DSFXMAN.C) as a
-// "LockTagFlex" (TAGFLEX.C) and read through the sound cache (SNDCACHE.C).
+// "LockTagFlex" (TAGFLEX.C; No Regret, 12D8:0386: a plain flex, the tags
+// unread) and read through the sound cache (SNDCACHE.C).
 //
 // Entry 0 is the tag table: one record per entry 1..n, a u32 (a DOS date and
 // time) then the zero-terminated name ("FOOT1", "ALARM1B"...). Sound effect

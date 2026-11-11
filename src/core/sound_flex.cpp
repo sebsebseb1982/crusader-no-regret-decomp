@@ -7,8 +7,9 @@
 
 namespace crusader {
 
-// @orig ?: No Remorse 1258:0000 1258:026C, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig none: No Remorse's TagFlex_ctor / TagFlex_read_names (1258:0000, 026C). No
+// Regret's dsfx_init (12D8:0386) opens SOUND.FLX as a plain flex and never reads
+// the tag table, which the file still has; the port keeps the names for its tools.
 SoundFlex SoundFlex::open(const std::filesystem::path& path) {
     SoundFlex s;
     s.flex_ = FlexArchive::open(path);

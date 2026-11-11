@@ -1,4 +1,7 @@
 #pragma once
+// No Remorse only: REGRET.EXE has no WEZZY module, no shop strings, and its
+// usecode has no intrinsic 0x12D, so No Regret never opens the shop.
+//
 // Weasel's shop between two missions (WEZZY.C, segment 13E0; WeaselGump in
 // ScummVM), opened by the intrinsic WeaselGump::I_showWeaselGump(level)
 // (0x12D, 13E0:0000): the gump (13E0:005C) run by Gump_run_modal, then the

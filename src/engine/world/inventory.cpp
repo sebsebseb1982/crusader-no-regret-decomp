@@ -195,8 +195,7 @@ bool add_item_cru(World& world, ObjId item_id, bool show) {
 
 // The original reads the quality of the item it is given for the credits;
 // Weasel's shop gives a new one, whose quality is 0.
-// @orig ?: No Remorse 13E8:00C8, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig none: No Remorse 13E8:00C8 (Weasel's shop: No Remorse only, REGRET.EXE has none)
 bool may_add_item(const World& world, std::uint16_t shape) {
     const ObjId c = carried(world, shape);
     const int quality = c ? world.get(c)->quality : 0;

@@ -1132,14 +1132,23 @@ void Game::save_config() {
     }
 }
 
+// No Regret's Credits_done (13D0:0290) pauses the credits' music before
+// playing the previous track again (it stays paused when there is none), and
+// has no end movie (No Remorse's movie of DS:62F7, not reproduced anyway).
+// Not reproduced: the screen sprites marked for redrawing (SPMGR_11B8_100F).
 // @orig 13D0:03AB 13D0:0290
-// TODO(regret): modified in REGRET.EXE (No Remorse 13F0:0290, similarity 0.85)
 void Game::run_credits(std::uint32_t ticks_before) {
+    const auto credits_done_music = [this] {
+        if (credits_music_ && audio_) {
+            if (regret_) audio_->music.pause();  // MusicProcess_I_pauseMusic
+            audio_->music.pop();
+        }
+        credits_music_ = false;
+    };
     Credits* c = menu_->credits();
     if (!c) {
         // Stopped by a key: Credits_done all the same.
-        if (credits_music_ && audio_) audio_->music.pop();
-        credits_music_ = false;
+        credits_done_music();
         return;
     }
     // One pass of the credits loop per retrace, i.e. per 60 Hz tick. The
@@ -1154,8 +1163,7 @@ void Game::run_credits(std::uint32_t ticks_before) {
     world_->state.screen_palette = c->palette();
     if (c->finished()) {
         menu_->end_credits();
-        if (credits_music_ && audio_) audio_->music.pop();
-        credits_music_ = false;
+        credits_done_music();
         world_->state.screen_palette = menu_palette_;
         keyboard_.reset();
         cursor_.show();
@@ -1661,8 +1669,7 @@ void Game::show_keypad(std::int16_t code, Pid pid) {
     });
 }
 
-// @orig ?: No Remorse 13E0:0000 13E0:0435, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig none: No Remorse 13E0:0000 13E0:0435 (Weasel's shop: No Remorse only, REGRET.EXE has none)
 void Game::show_weasel(int level) {
     if (modal() || in_movie()) return;
     std::vector<std::uint8_t> stuff;
@@ -1687,8 +1694,7 @@ void Game::show_weasel(int level) {
 
 // The cursor hidden, the movie played over the view and the shop (a
 // cutscene); the palette and the colour cycling come back in end_movie.
-// @orig ?: No Remorse 13E0:0CD8, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig none: No Remorse 13E0:0CD8 (Weasel's shop: No Remorse only, REGRET.EXE has none)
 void Game::play_weasel_movie(const std::string& name) {
     if (in_movie()) return;
     Surface8 screen(kScreenWidth, kScreenHeight);
