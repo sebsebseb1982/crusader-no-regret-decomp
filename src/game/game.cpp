@@ -1079,7 +1079,9 @@ void Game::end_regret_movie() {
     // A fade of 0: PaletteFaderProcess::I_jumpToAllBlack; otherwise the game
     // palette written back. The cycling resumes either way.
     world_->state.screen_palette = xan_movie_->fade() ? world_->state.game_palette : Palette::filled(0, 0, 0);
-    world_->state.cycle_paused = false;
+    // Not under the start-up menu (open while the movies play): the cycling
+    // would write the game's colours 1..14 over the menu palette.
+    if (!menu_) world_->state.cycle_paused = false;
     xan_movie_.reset();
     if (!menu_ && !end_credits_ && !end_credits_pending_) request_autosave();
     next_start_up_movie();
@@ -1099,6 +1101,9 @@ void Game::next_start_up_movie() {
     }
     if (!in_movie() && end_credits_) {
         end_credits_ = false;
+        // IRGUMP_13d0_0000 opening now: the menu palette is written (No
+        // Regret's movies leave the screen black, 1448:0B5A).
+        if (menu_) world_->state.screen_palette = menu_palette_;
         if (audio_) audio_->music.push(Music::kMenu);
     }
 }

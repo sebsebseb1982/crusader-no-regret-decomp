@@ -193,6 +193,24 @@ void test_new_game(const std::filesystem::path& data) {
     CHECK(!unknown_unbound);
 }
 
+// Game_start (1030:032D): ORIGIN and ANIM01, then the menu with its palette
+// (MISC.PAL), not the black the movies leave nor the game's cycling colours.
+void test_start_up(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.start_up();
+    CHECK(game.menu() != nullptr && game.in_movie());
+    for (int m = 0; game.in_movie() && m < 4; ++m) {
+        game.key(0x01, false, true, 0, 0x1B);
+        for (int i = 0; game.in_movie() && i < 200; ++i) game.update(kFrameUs);
+        game.key(0x01, false, false, 0);
+    }
+    CHECK(!game.in_movie());
+    for (int i = 0; i < 120; ++i) game.update(kFrameUs);
+    shot(game, "start_up_menu.png");
+    CHECK(game.menu() != nullptr);
+    CHECK(game.palette() == Palette::load(data / "STATIC/MISC.PAL"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -209,6 +227,7 @@ int main(int argc, char** argv) {
         test_shapes(data);
         test_tables(data);
         test_new_game(data);
+        test_start_up(data);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "FAIL: exception: %s\n", e.what());
         ++failures;
