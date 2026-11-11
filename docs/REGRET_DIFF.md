@@ -14,22 +14,20 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 140 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 111 lines are left:
 
 | File | Lines |
 |---|---:|
-| `src/game/game.cpp` | 28 |
 | `src/engine/ui/weasel_gump.cpp` | 19 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
 | `src/engine/world/actor_anim.cpp` | 10 |
 | `src/engine/ui/load_screen.cpp` | 9 |
+| `src/game/game.cpp` | 9 |
 | `src/engine/ui/movie_player.cpp` | 8 |
 | `src/engine/ui/options_screen.cpp` | 8 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
 | `src/engine/ui/help_screen.cpp` | 5 |
 | `src/core/game_config.cpp` | 4 |
-| `src/engine/ui/difficulty_screen.cpp` | 4 |
-| `src/engine/ui/main_menu.cpp` | 4 |
 | `src/core/avi_movie.cpp` | 3 |
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
@@ -41,8 +39,6 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/core/sound_flex.cpp` | 1 |
 | `src/engine/audio/asylum_voice.hpp` | 1 |
 | `src/engine/input/keyboard.cpp` | 1 |
-| `src/engine/ui/computer_gump.cpp` | 1 |
-| `src/engine/ui/keypad_gump.cpp` | 1 |
 | `src/engine/world/inventory.cpp` | 1 |
 | `src/engine/world/sprite_process.cpp` | 1 |
 
@@ -55,9 +51,6 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | No Regret | Routine | Status | Port number | Calls | ScummVM name | Port |
 |---|---|---|---|---:|---|---|
 | 0x06D | 1448:0B5A | new | 0x46D | 169 | `MovieGump::I_playMovieCutsceneRegret` |  |
-| 0x0C0 | 1390:0005 | modified | 0x0FE | 25 | `ComputerGump::I_readComputer` |  |
-| 0x145 | 1008:009C | modified | 0x095 | 6 | `Game::I_playCredits` |  |
-| 0x0BE | 13B0:00FE | modified | 0x0C5 | 3 | `KeypadGump::I_showKeypad` |  |
 | 0x001 | 10B0:0826 | constants | 0x001 | 566 | `Item::I_getFrame` | NPC record layout, data addresses or assert line only |
 | 0x0A3 | 10B0:0882 | constants | 0x002 | 462 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
 | 0x05D | 10B0:0882 | constants | 0x002 | 261 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
@@ -77,6 +70,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x066 | 1048:13EB | modified | 0x040 | 32 | `Item::I_fall` | weightless items with flag 0x66 fall |
 | 0x02F | 10F8:39EA | constants | 0x07D | 29 | `Actor::I_getHp` | NPC record layout, data addresses or assert line only |
 | 0x08D | 1198:0CE8 | modified | 0x042 | 29 | `CameraProcess::I_moveTo` | read; one per-item word (DS:3638) not identified |
+| 0x0C0 | 1390:0005 | modified | 0x0FE | 25 | `ComputerGump::I_readComputer` | same (menu mode 1) |
 | 0x0BB | 10F8:2278 | constants | 0x03C | 23 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
 | 0x052 | 10F8:32D7 | constants | 0x056 | 21 | `Actor::I_setDefaultActivity2` | NPC record layout, data addresses or assert line only |
 | 0x030 | 10F8:3B4A | constants | 0x083 | 18 | `MainActor::I_getMana` | NPC record layout, data addresses or assert line only |
@@ -102,6 +96,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x07A | 10B0:1575 | constants | 0x06C | 7 | `Item::I_move` | assert line only |
 | 0x06E | 1210:02C1 | identical, not an intrinsic in No Remorse | 0x46E | 6 | `MusicProcess::I_unpauseMusic` | new intrinsic: bound |
 | 0x08E | 10F8:2403 | constants | 0x086 | 6 | `Actor::I_setImmortal` | NPC record layout, data addresses or assert line only |
+| 0x145 | 1008:009C | modified | 0x095 | 6 | `Game::I_playCredits` | playCredits process run 1008:0000: no credits, Game_start |
 | 0x157 | 10F8:3E0C | constants | 0x01C | 6 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
 | 0x04E | 10F8:2278 | constants | 0x03C | 5 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
 | 0x072 | 1418:0923 | modified, not an intrinsic in No Remorse | 0x472 | 5 | `PaletteFaderProcess::I_jumpToAllGivenColor` | new: jump to a colour |
@@ -116,6 +111,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x076 | 10B0:2952 | new | 0x476 | 3 | `UCMachine::I_false` | new: returns 0 |
 | 0x089 | 10F8:33B5 | modified | 0x057 | 3 | `Actor::I_setActivity` | activity 0xC in combat, weapon-drawn bit; activity 0xD process still to write |
 | 0x0AB | 10F8:2278 | constants | 0x03C | 3 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
+| 0x0BE | 13B0:00FE | modified | 0x0C5 | 3 | `KeypadGump::I_showKeypad` | same (menu mode 1) |
 | 0x0CC | 10F8:30B8 | modified | 0x065 | 3 | `Actor::I_teleport` | the tracker is no longer emptied |
 | 0x0D2 | 10F8:3C8C | constants | 0x0DE | 3 | `Actor::I_setCombatTactic` | NPC record layout, data addresses or assert line only |
 | 0x0D5 | 10F8:2E86 | constants | 0x0DF | 3 | `Actor::I_getEquip` | NPC record layout, data addresses or assert line only |
