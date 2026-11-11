@@ -392,7 +392,8 @@ bool AvatarMover::handle_key(const GameKeyEvent& e) {
 //   running animation is turned when it allows it (action 5 too);
 // - otherwise, busy, an animation that may be cut (interruptible_action) is
 //   cut when the new action differs or is one of 0x3D, 0x3E, 0x17, 0x18, 5;
-//   the action then plays (at once when nothing is left).
+//   the action then plays, unless an animation is left (doAnim with no
+//   queue: a held key, which repeats, does not stack animations).
 bool AvatarMover::dispatch_regret(const GameKeyEvent& e, int action, int d, int second, bool stance_turn, bool busy) {
     const ObjId a_id = actor();
     const std::uint16_t last = last_anim();
@@ -412,7 +413,7 @@ bool AvatarMover::dispatch_regret(const GameKeyEvent& e, int action, int d, int 
                 auto* anim = dynamic_cast<ActorAnimProcess*>(kernel_.find_process(controlled, ActorAnimProcess::kType));
                 if (!anim || anim->action() == 5) return false;
                 anim->fail();
-                do_anim(kernel_, world_, anims_, a_id, static_cast<std::uint16_t>(action), d);
+                do_anim(kernel_, world_, anims_, a_id, 5, kDirCurrent, 0);
                 return true;
             }
         } else if (e.count == 1 || (last != 1 && !running && !run_start)) {
@@ -426,12 +427,14 @@ bool AvatarMover::dispatch_regret(const GameKeyEvent& e, int action, int d, int 
         if (cut != kNone && (cut != action || in(cut, {0x3D, 0x3E, 0x17, 0x18, 5})))
             kernel_.fail_processes(a_id, ActorAnimProcess::kType, 1);
     }
-    const Pid pid = do_anim(kernel_, world_, anims_, a_id, static_cast<std::uint16_t>(action), d);
+    // 1148:2719: doAnim(action, dir, 0, 0), refused while an animation is
+    // left; the second action may wait behind one (1148:2768).
+    const Pid pid = do_anim(kernel_, world_, anims_, a_id, static_cast<std::uint16_t>(action), d, 0);
     if (stance_turn && pid != 0) {
         leave_aim_mode(kernel_, world_);
         if (auto* anim = dynamic_cast<ActorAnimProcess*>(kernel_.get(pid))) anim->mark_turning();
     }
-    if (second != kNone) do_anim(kernel_, world_, anims_, a_id, static_cast<std::uint16_t>(second), d);
+    if (second != kNone) do_anim(kernel_, world_, anims_, a_id, static_cast<std::uint16_t>(second), d, 1);
     return true;
 }
 
