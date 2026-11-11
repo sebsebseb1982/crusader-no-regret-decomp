@@ -26,21 +26,28 @@ bool action_fits(const World& world, const AnimDat& anims, std::uint16_t action,
     return t.ok;
 }
 
-bool is_roll(std::uint16_t action) { return action == 0x17 || action == 0x18 || action == 0x3D || action == 0x3E; }
+// The actions tried from places ahead and behind when they do not fit (016F);
+// No Regret adds the kneeling roll 0x35 and the steps aside 0x1B..0x1D.
+bool is_roll(const World& world, std::uint16_t action) {
+    if (action == 0x17 || action == 0x18 || action == 0x3D || action == 0x3E) return true;
+    return !world.remorse() && (action == 0x35 || (action >= 0x1B && action <= 0x1D));
+}
 
 bool skips_frames(const World& world, ObjId actor, const Item& item) {
     if (actor == world.state.controlled_npc) return world.state.frameskip == 3;
     return world.state.frameskip >= 2 || !world.is_partly_on_screen(item);
 }
 
-// The actions that the controlled NPC tests before playing them (016F).
+// The actions that the controlled NPC tests before playing them (016F); No
+// Regret adds 5, 0x1B..0x1D and 0x33..0x35.
 // @orig 1168:0174
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
-bool tested_at_start(std::uint16_t action) {
+bool tested_at_start(const World& world, std::uint16_t action) {
     switch (action) {
     case 1: case 2: case 3: case 0x17: case 0x18: case 0x22: case 0x23: case 0x24: case 0x26: case 0x2C:
     case 0x2D: case 0x30: case 0x31: case 0x3D: case 0x3E:
         return true;
+    case 5: case 0x1B: case 0x1C: case 0x1D: case 0x33: case 0x34: case 0x35:
+        return !world.remorse();
     default:
         return false;
     }
@@ -49,21 +56,27 @@ bool tested_at_start(std::uint16_t action) {
 }  // namespace
 
 // ANIMPRIM.C 016F, for the controlled NPC: the action is tried from where it
-// stands. A roll that does not fit is tried from 16, 32 and 48 units ahead
-// and behind (in that order, where a walking move gets there); the actor
-// moves to the first place it fits from, else to the first from which it
-// would roll more than 48 units, else the action becomes 0x2E. A walk or run
-// is tried from 16 to 80 units to either side (left first, DS:2A42); without
-// a place, the action becomes 0x40 (nothing, shape 1398), 0x2E (kneeling),
-// 4 with the aim mode (after an action other than standing, walking, 0x3A,
-// 0xB, 0x10) or 0, remapped for the weapon.
+// stands. A roll (is_roll) that does not fit is tried from 16, 32 and 48
+// units ahead and behind (in that order, where a walking move gets there);
+// the actor moves to the first place it fits from. Else the first of those
+// places from which it would roll more than 48 units is taken (the reach is
+// measured from that place, 10E0:0098), else the action becomes 0x2E. A walk
+// or run is tried from 16 to 80 units to either side (left first, DS:2A42);
+// without a place, the action becomes 0x40 (nothing, shape 1398), 0x2E
+// (kneeling), 4 with the aim mode (after an action other than standing,
+// walking, 0x3A, 0xB, 0x10) or 0, remapped for the weapon.
+// No Regret (1168:0174): the place a roll would go far enough from is
+// reached at once (10B0:1989: out of the world and back at it, with no
+// contact events), and with none the action becomes 0x2F kneeling, else 0x25
+// (not remapped); a walk also takes the first side place from which it would
+// go more than 48 units, the same way, before falling back.
 // @orig 1168:0174
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
 std::uint16_t fit_start(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action,
                         int dir) {
     const Item* item = world.get(actor);
     const AnimAction* a = item ? anims.action(item->shape, action) : nullptr;
     if (!a) return action;
+    const bool regret = !world.remorse();
     const World::Point start{item->x, item->y, item->z};
     const auto offset = [&](int d, int distance) {
         return World::Point{start.x + kDirectionDx[d] * distance, start.y + kDirectionDy[d] * distance, start.z};
@@ -72,10 +85,22 @@ std::uint16_t fit_start(Kernel& kernel, World& world, const AnimDat& anims, ObjI
         leave_surface(kernel, world, actor);
         finish_move(world, actor, r);
     };
+    const auto teleport = [&](const World::Point& p) {  // 10B0:1989
+        world.push(actor);
+        world.pop_to_coords(p.x, p.y, p.z);
+    };
+    const auto reach_from = [](const World::Point& from, const World::Point& to) {  // 10E0:0098
+        return std::max(std::abs(from.x - to.x), std::abs(from.y - to.y));
+    };
+    const auto kneeling = [&] {
+        const auto record = world.npc_record(actor);
+        return !record.empty() && (record[npc::kFlags13] & 0x04);
+    };
     World::Point at = start;
     if (action_fits(world, anims, action, actor, dir, at)) return action;
-    if (is_roll(action)) {
+    if (is_roll(world, action)) {
         int reach[7] = {};
+        World::Point places[7] = {};
         for (int i = 1; i < 7; ++i) {
             const int d = (i & 1) ? dir : (dir + 8) & 0xF;
             const World::Point there = offset(d, ((i + 1) / 2) << 4);
@@ -86,31 +111,48 @@ std::uint16_t fit_start(Kernel& kernel, World& world, const AnimDat& anims, ObjI
                 move(r);
                 return action;
             }
-            reach[i] = std::max(std::abs(start.x - at.x), std::abs(start.y - at.y));
+            reach[i] = reach_from(there, at);
+            places[i] = there;
         }
         for (int i = 1; i < 7; ++i) {
             if (reach[i] <= 48) continue;
-            const int d = (i & 1) ? dir : (dir + 8) & 0xF;
-            move(try_move(world, actor, start, offset(d, ((i + 1) / 2) << 4), kSweepSupportOnly));
+            if (regret) {
+                teleport(places[i]);
+            } else {
+                const int d = (i & 1) ? dir : (dir + 8) & 0xF;
+                move(try_move(world, actor, start, offset(d, ((i + 1) / 2) << 4), kSweepSupportOnly));
+            }
             return action;
         }
+        if (regret) return kneeling() ? 0x2F : 0x25;
         return 0x2E;
     }
-    // DS:2A42: 16, 16, 32, 32, 48, 48, 64, 64, 80, 80.
+    // DS:2A42 (No Regret DS:3314): 16, 16, 32, 32, 48, 48, 64, 64, 80, 80.
+    int reach[10] = {};
+    World::Point places[10] = {};
     for (int j = 0; j < 10; ++j) {
         const int side = (dir + ((j & 1) ? 4 : 12)) & 0xF;
         const World::Point there = offset(side, (j / 2 + 1) * 16);
         const SweepResult r = try_move(world, actor, start, there, kSweepSupportOnly);
         if (!r.ok) continue;
         at = there;
-        if (!action_fits(world, anims, action, actor, dir, at)) continue;
-        move(r);
-        return action;
+        if (action_fits(world, anims, action, actor, dir, at)) {
+            move(r);
+            return action;
+        }
+        reach[j] = reach_from(there, at);
+        places[j] = there;
     }
     if (item->shape == 1398) return 0x40;
-    const auto record = world.npc_record(actor);
+    if (regret) {
+        for (int j = 0; j < 10; ++j) {
+            if (reach[j] <= 48) continue;
+            teleport(places[j]);
+            return action;
+        }
+    }
     std::uint16_t fallback = 0;
-    if (!record.empty() && (record[npc::kFlags13] & 0x04)) {
+    if (kneeling()) {
         fallback = 0x2E;
     } else if (in_combat_stance(world, actor)) {
         enter_aim_mode(kernel, world, anims);
@@ -311,13 +353,12 @@ void ActorAnimProcess::set_direction(int dir) {
 }
 
 // @orig 1168:0174
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
 const AnimAction* ActorAnimProcess::start() {
     // ANIMPRIM.C 016F / 17B2.
     set_direction(dir_);
     auto record = world_.npc_record(owner());
     if (record.empty()) return nullptr;
-    if (owner() == world_.state.controlled_npc && tested_at_start(action_) && !(record[npc::kCombatFlags] & 0x20)) {
+    if (owner() == world_.state.controlled_npc && tested_at_start(world_, action_) && !(record[npc::kCombatFlags] & 0x20)) {
         action_ = fit_start(kernel(), world_, anims_, owner(), action_, dir_);
         if (action_ >= 0x40) return nullptr;
     }
@@ -592,7 +633,6 @@ bool ActorAnimProcess::fall_if_unsupported(const World::Point& from, const World
 }
 
 // @orig 1168:336B 1168:0174 1168:1FCD
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
 ActionTest test_action(const World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
                        World::Point pos, ObjId goal) {
     ActionTest out;
