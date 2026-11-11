@@ -12,6 +12,19 @@ namespace {
 
 constexpr std::uint32_t kFramePeriodUs = 1'000'000 / XanMovie::kFrameRate;
 
+// 1448:06F4: the decoder's create call with "moviehicolor=true" (mode 2).
+constexpr std::uint32_t kRedMask = 0xF800, kGreenMask = 0x7E0, kBlueMask = 0x1F;
+constexpr std::uint8_t kHicolorScale = 0xFF;
+constexpr std::uint16_t kHicolorWhite = 0xFFFF, kHicolorBlack = 0;
+
+XanDecoder make_decoder(const XanMovie& movie, bool hicolor) {
+    if (hicolor) {
+        return XanDecoder(movie.width(), movie.height(), movie.version(),
+                          xan_rgb16_table(kRedMask, kGreenMask, kBlueMask, kHicolorScale));
+    }
+    return XanDecoder(movie.width(), movie.height(), movie.version(), movie.colour_table());
+}
+
 }  // namespace
 
 // @orig 1448:0B5A
@@ -22,20 +35,27 @@ std::string regret_movie_base_name(std::string_view name) {
 }
 
 // @orig 1448:06F4
-XanPlayer::XanPlayer(XanMovie movie, std::vector<RegretSubtitle> subtitles, bool big, bool low_res, bool fade,
-                     const FontSet& fonts)
+XanPlayer::XanPlayer(XanMovie movie, std::vector<RegretSubtitle> subtitles, bool big, bool low_res, bool hicolor,
+                     bool fade, const FontSet& fonts)
     : movie_(std::move(movie)),
-      decoder_(movie_.width(), movie_.height(), movie_.version(), movie_.colour_table()),
+      decoder_(make_decoder(movie_, hicolor)),
       subtitles_(std::move(subtitles)),
       doubled_(big),
       low_res_(low_res),
+      hicolor_(hicolor),
       fade_(fade),
       fonts_(&fonts),
       screen_(kScreenWidth, kScreenHeight) {
     const int scale = doubled_ ? 2 : 1;
     x_ = (kScreenWidth - movie_.width() * scale) / 2;
     y_ = (kScreenHeight - movie_.height() * scale) / 2;
-    set_palette();
+    if (hicolor_) {
+        // 1448:0B5A: VESA mode 0x111, its screen black; no palette.
+        screen16_ = Surface16(kScreenWidth, kScreenHeight, kHicolorBlack);
+        palette_ = Palette::filled(0, 0, 0);
+    } else {
+        set_palette();
+    }
     screen_.clear(darkest_);
     for (const XanMovie::Chunk& c : movie_.chunks()) {
         if (c.id != XanMovie::kAudioChunk) continue;
@@ -108,7 +128,10 @@ void XanPlayer::next_frame(bool late) {
     } catch (const std::out_of_range&) {
         // A broken frame: the original would draw whatever its buffers hold.
     }
-    if (!late) decoder_.draw(screen_, x_, y_, doubled_);
+    if (!late) {
+        if (hicolor_) decoder_.draw(screen16_, x_, y_, doubled_);
+        else decoder_.draw(screen_, x_, y_, doubled_);
+    }
     // 1440:0732: entries before this frame are passed.
     while (subtitle_ < subtitles_.size() && subtitles_[subtitle_].frame < frame_) ++subtitle_;
     if (subtitle_ < subtitles_.size() && subtitles_[subtitle_].frame == frame_) show_subtitle(subtitles_[subtitle_].text);
@@ -121,6 +144,14 @@ void XanPlayer::show_subtitle(const std::string& text) {
     TextWriter writer(*fonts_, kSubtitleFont);
     const int width = writer.measure(text).width;
     writer.print(strip, (kScreenWidth - width) / 2, kSubtitleTextY, text);
+    if (hicolor_) {
+        for (int y = 0; y < kSubtitleHeight; ++y) {
+            const std::uint8_t* src = strip.row(y);
+            std::uint16_t* dst = screen16_.row(kSubtitleY + y);
+            for (int x = 0; x < kScreenWidth; ++x) dst[x] = src[x] == 0 ? kHicolorWhite : kHicolorBlack;
+        }
+        return;
+    }
     for (std::uint8_t& p : strip.pixels) p = p == 0 ? kWhite : darkest_;
     for (int y = 0; y < kSubtitleHeight; ++y) std::copy_n(strip.row(y), kScreenWidth, screen_.row(kSubtitleY + y));
 }

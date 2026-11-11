@@ -185,6 +185,7 @@ int main(int argc, char** argv) {
         else game.load_save(save);
         if (!movie.empty()) game.play_movie(movie, movie_kind);
         Surface8 screen(png_width, png_height);
+        Surface16 screen16;  // No Regret's movies with "moviehicolor=true" (render_hicolor)
         RenderStats stats;
 
         if (!png.empty()) {
@@ -234,8 +235,13 @@ int main(int argc, char** argv) {
                 game.key(0x1C, false, true, 0, 0x0D);
                 game.key(0x1C, false, false, 0);
             }
-            game.render(screen, &stats);
-            write_png(png, screen, game.palette());
+            // No Regret's movie with "moviehicolor=true": its 16-bit screen.
+            if (Surface16 hicolor(png_width, png_height); game.render_hicolor(hicolor)) {
+                write_png(png, hicolor);
+            } else {
+                game.render(screen, &stats);
+                write_png(png, screen, game.palette());
+            }
             std::printf("%s\n", diagnostics(game, stats, 0).c_str());
             for (const auto& [n, calls] : game.machine().unbound_intrinsic_calls()) {
                 std::printf("  missing intrinsic 0x%03X: %u calls\n", n, calls);
@@ -353,7 +359,12 @@ int main(int argc, char** argv) {
                 if (!relative_mouse) presenter.warp_mouse(game.cursor().x() + game.ui_x(), game.cursor().y() + game.ui_y());
             }
             fit_screen();
-            game.render(screen, &stats);
+            // No Regret's movie with "moviehicolor=true": its 16-bit screen.
+            if (screen16.width != screen.width || screen16.height != screen.height) {
+                screen16 = Surface16(screen.width, screen.height);
+            }
+            const bool hicolor = game.render_hicolor(screen16);
+            if (!hicolor) game.render(screen, &stats);
             if (debug_title) {
                 int ow = 0, oh = 0;
                 presenter.output_size(&ow, &oh);
@@ -361,7 +372,8 @@ int main(int argc, char** argv) {
                 std::snprintf(size, sizeof size, "  view %dx%d in %dx%d", screen.width, screen.height, ow, oh);
                 presenter.set_title(diagnostics(game, stats, fps) + size);
             }
-            presenter.present(screen, game.palette());
+            if (hicolor) presenter.present(screen16);
+            else presenter.present(screen, game.palette());
         }
         print_faults(game);
         SDL_Quit();

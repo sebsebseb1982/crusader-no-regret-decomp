@@ -28,6 +28,9 @@ public:
     // Brightens (> 1) or darkens (< 1) the picture; 1 is the original palette.
     void set_gamma(double gamma);
     void present(const Surface8& frame, const Palette& palette);
+    // An RGB565 frame (No Regret's movies with "moviehicolor=true"), with
+    // the same gamma.
+    void present(const Surface16& frame);
     void maximize();
     // Desktop fullscreen on / off (Alt+Enter).
     void toggle_fullscreen();

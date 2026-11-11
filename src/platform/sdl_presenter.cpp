@@ -114,4 +114,26 @@ void SdlPresenter::present(const Surface8& frame, const Palette& palette) {
     SDL_RenderPresent(renderer_);
 }
 
+void SdlPresenter::present(const Surface16& frame) {
+    void* pixels = nullptr;
+    int pitch = 0;
+    if (SDL_LockTexture(texture_, nullptr, &pixels, &pitch) != 0) {
+        return;
+    }
+    for (int y = 0; y < height_ && y < frame.height; ++y) {
+        auto* dst = reinterpret_cast<Uint32*>(static_cast<Uint8*>(pixels) + y * pitch);
+        const std::uint16_t* src = frame.row(y);
+        for (int x = 0; x < width_ && x < frame.width; ++x) {
+            std::uint8_t r = 0, g = 0, b = 0;
+            rgb565_to_rgb8(src[x], r, g, b);
+            dst[x] = 0xFF000000u | Uint32{gamma_table_[r]} << 16 | Uint32{gamma_table_[g]} << 8 | gamma_table_[b];
+        }
+    }
+    SDL_UnlockTexture(texture_);
+
+    SDL_RenderClear(renderer_);
+    SDL_RenderCopy(renderer_, texture_, nullptr, nullptr);
+    SDL_RenderPresent(renderer_);
+}
+
 }  // namespace crusader

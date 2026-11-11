@@ -34,6 +34,10 @@ public:
     // No Regret: "lowresmovies" (DS:75A6), the movies decoded without their
     // luma corrections. Kept as read (the port does not write it).
     bool low_res_movies = false;
+    // No Regret: "moviehicolor" (DS:0309; "true", "1" or "yes"), the movies
+    // played in 16-bit colour (VESA mode 0x111) instead of through their
+    // 256-colour palette.
+    bool movie_hicolor = false;
     bool no_weasel = false;    // "noweasel" (DS:0178): no movies in Weasel's shop
     // Port addition, written only when set: "followplayer", the camera keeps
     // the controlled NPC at the centre of the screen.

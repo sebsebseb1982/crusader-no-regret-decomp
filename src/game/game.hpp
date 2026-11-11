@@ -143,6 +143,10 @@ public:
     // shows more around the camera, and the menus, screens, films and cursor
     // stay 640 x 480 in the middle (see ui_x / ui_y for the mouse).
     void render(Surface8& screen, RenderStats* stats = nullptr);
+    // No Regret's movie with "moviehicolor=true": its 16-bit screen, in the
+    // middle of `screen` (black around it, `screen` resized as render does);
+    // false, `screen` untouched, otherwise (render draws the frame then).
+    bool render_hicolor(Surface16& screen);
     // Where the 640 x 480 area starts in the last rendered screen; the mouse
     // coordinates the game takes are relative to it.
     int ui_x() const { return ui_x_; }

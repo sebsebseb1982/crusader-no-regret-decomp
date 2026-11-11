@@ -42,8 +42,16 @@ void check_config() {
     e.big_video = false;
     e.frameskip = 3;
     check(e.text() == "irq=7\r\nmusicvolume=40\r\nfilter=false\r\nlimitblasts=true\r\nsoundvolume=64\r\n"
-                      "mousespeed=2\r\nanimation=0\r\nframeskip=3\r\n",
+                      "mousespeed=2\r\nanimation=0\r\nframeskip=3\r\nmoviehicolor=false\r\n",
           "config written over its lines, other keys kept");
+
+    // No Regret's "moviehicolor": "true", "1" or "yes"; written either way.
+    check(GameConfig::parse("moviehicolor=true\r\n").movie_hicolor && GameConfig::parse("moviehicolor=1\r\n").movie_hicolor &&
+              GameConfig::parse("moviehicolor=yes\r\n").movie_hicolor &&
+              !GameConfig::parse("moviehicolor=on\r\n").movie_hicolor && !GameConfig::parse("irq=7\r\n").movie_hicolor,
+          "config moviehicolor");
+    check(GameConfig::parse("moviehicolor=yes\r\n").text().find("moviehicolor=true\r\n") != std::string::npos,
+          "config moviehicolor written");
 
     // "noweasel": read, and written only when set (1020:0C7F).
     GameConfig w = GameConfig::parse("irq=7\r\nnoweasel=true\r\n");
@@ -264,6 +272,14 @@ void check_xan() {
     const Bytes stereo = {0x00, 0x10, 0x00, 0x20, 0x00, 0x40};
     const std::vector<std::int8_t> s = xan_audio_samples(stereo, 2);
     check(s == std::vector<std::int8_t>({0x18, 0x1A}), "xan stereo samples");
+
+    // The 16-bit table (XANDRV32 0x985, RGB565, scale 0xFF): neutral chroma
+    // (16, 16) at luma 32 is grey 128 (+ rounding); chroma (0, 31) at luma 63
+    // clamps blue and green.
+    const std::vector<std::uint16_t> rgb = xan_rgb16_table(0xF800, 0x7E0, 0x1F, 0xFF);
+    check(rgb.size() == 0x10000 && rgb[0x8420] == 0x8410, "xan 16-bit table, grey");
+    check(rgb[0x07FF] == 0x87FF, "xan 16-bit table, clamped");
+    check(rgb[0] == 0x02E0, "xan 16-bit table, chroma 0");
 
     // "FREN" first, then "ENGL": entries frame, length, text with its NUL.
     Bytes iff = {'F', 'O', 'R', 'M', 0, 0, 0, 0, 'L', 'A', 'N', 'G', 'F', 'R', 'E', 'N', 0, 0, 0, 7,

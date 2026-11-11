@@ -189,7 +189,8 @@ void test_regret_movie() {
     XanMovie movie = XanMovie::parse(riff);
     CHECK(movie.width() == 4 && movie.height() == 4 && movie.version() == 4 && movie.chunks().size() == 1);
     FontSet fonts;
-    XanPlayer player(std::move(movie), {}, false, false, true, fonts);
+    XanMovie movie16 = movie;
+    XanPlayer player(std::move(movie), {}, false, false, false, true, fonts);
     CHECK(player.darkest() == 0);
     CHECK(player.screen().row(0)[0] == 0);
     const std::array<std::uint8_t, 768> vga = player.palette().to_vga();
@@ -199,6 +200,15 @@ void test_regret_movie() {
     CHECK(player.screen().row(238)[318] == 7 && player.screen().row(241)[321] == 7);
     player.advance(1'000'000 / 15, false);
     CHECK(player.finished());
+
+    // "moviehicolor=true": the 16-bit screen, black, the palette black (PAL8
+    // and BEST unused); chroma word 0 at luma 0 is (0, 92, 0), 0x02E0.
+    XanPlayer hicolor(std::move(movie16), {}, false, false, true, true, fonts);
+    CHECK(hicolor.hicolor() && hicolor.screen16().width == 640 && hicolor.screen16().row(0)[0] == 0);
+    CHECK(hicolor.palette().to_vga()[3 * 255] == 0);
+    hicolor.advance(0, false);
+    CHECK(hicolor.screen16().row(238)[318] == 0x02E0 && hicolor.screen16().row(241)[321] == 0x02E0);
+    CHECK(hicolor.screen16().row(237)[318] == 0);
 }
 
 }  // namespace

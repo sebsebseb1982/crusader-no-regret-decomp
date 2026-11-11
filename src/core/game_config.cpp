@@ -75,6 +75,7 @@ GameConfig GameConfig::parse(std::string_view text) {
         else if (key == "mousespeed") c.mouse_speed = number(value);
         else if (key == "bigvideo") c.big_video = value == "true";
         else if (key == "lowresmovies") c.low_res_movies = value == "true";
+        else if (key == "moviehicolor") c.movie_hicolor = value == "true" || value == "1" || value == "yes";
         else if (key == "subtitles") c.subtitles = value == "true";
         else if (key == "noweasel") c.no_weasel = value == "true";
         else if (key == "followplayer") c.follow_player = value == "true";
@@ -116,6 +117,8 @@ std::string GameConfig::text() const {
     // Written only when set (DS:68CE == 0x80013).
     if (big_video) out.set("bigvideo", "true");
     else out.erase("bigvideo");
+    // No Regret writes it either way (1020:0DB7).
+    out.set("moviehicolor", movie_hicolor ? "true" : "false");
     // Written only when set (DS:0179 != 0).
     if (subtitles) out.set("subtitles", "true");
     else out.erase("subtitles");

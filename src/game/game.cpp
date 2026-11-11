@@ -1051,7 +1051,7 @@ void Game::play_regret_movie(const std::string& name, bool fade) {
     for (char& c : upper) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     const bool big = config_.big_video && upper != "ORIGIN";
     xan_movie_ = std::make_unique<XanPlayer>(std::move(*movie), std::move(subtitles), big, config_.low_res_movies,
-                                             fade, fonts_);
+                                             config_.movie_hicolor, fade, fonts_);
     world_->state.cycle_paused = true;
     world_->state.screen_palette = xan_movie_->palette();
     keyboard_.reset();  // 11E8:33E3
@@ -1815,6 +1815,26 @@ void Game::draw_window(Surface8& screen, int x0, int y0, Draw&& draw) {
     copy_block(screen, x0, y0, window_, 0, 0, kScreenWidth, kScreenHeight);
     draw(window_);
     copy_block(window_, 0, 0, screen, x0, y0, kScreenWidth, kScreenHeight);
+}
+
+// @orig none: No Regret's 16-bit movie screen (VESA mode 0x111, 1448:0B5A),
+// centred in a larger screen like render's movies
+bool Game::render_hicolor(Surface16& screen) {
+    if (!xan_movie_ || !xan_movie_->hicolor()) return false;
+    const bool large = screen.width >= kScreenWidth && screen.height >= kScreenHeight &&
+                       (screen.width != kScreenWidth || screen.height != kScreenHeight);
+    ui_x_ = large ? (screen.width - kScreenWidth) / 2 : 0;
+    ui_y_ = large ? (screen.height - kScreenHeight) / 2 : 0;
+    const Surface16& picture = xan_movie_->screen16();
+    if (!large) {
+        screen = picture;
+        return true;
+    }
+    screen.clear(0);
+    for (int y = 0; y < kScreenHeight; ++y) {
+        std::copy_n(picture.row(y), kScreenWidth, screen.row(ui_y_ + y) + ui_x_);
+    }
+    return true;
 }
 
 // @orig 1198:1A02

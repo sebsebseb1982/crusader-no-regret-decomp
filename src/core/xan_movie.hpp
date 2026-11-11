@@ -20,7 +20,9 @@
 // draw 0x25F2...) keeps a luma plane (one byte a pixel, 0..63) and a chroma
 // plane (one word per 2 x 2 pixels). The 8-bit output (mode 3) looks a pixel
 // up in the 64 KB colour table at (chroma word | luma): the chroma word is
-// u << 11 | v << 6, two signed 5-bit components.
+// u << 11 | v << 6, two 5-bit components (16 is neutral). The 16-bit output
+// (mode 2, "moviehicolor=true") looks it up the same way in a table of 64 K
+// words that the decoder computes (xan_rgb16_table): u is R - Y, v is B - Y.
 //
 // A frame ("00db"):
 //   u32 type (0: whole picture, 1: changes to the previous one)
@@ -97,10 +99,22 @@ std::vector<std::uint8_t> xan_unpack(std::span<const std::uint8_t> src, std::siz
 // nodes x 2 bytes of tree, then the bits, most significant first).
 std::vector<std::uint8_t> xan_huffman(std::span<const std::uint8_t> src, std::size_t pos, std::size_t limit);
 
+// XANDRV32 0x985: the colour table of mode 2 (16-bit), built from the masks
+// of the screen's components rather than read from the movie. Entry
+// (k << 11 | j << 6 | l) is the pixel of luma Y = 4 l and of colour
+// differences R - Y = (k - 16) s / 32, B - Y = (j - 16) s / 32 (s = scale + 1,
+// truncated), G = Y - 130 (R - Y) / 256 - 50 (B - Y) / 256; each component is
+// rounded and clamped to 0..255, then cut to its mask. REGRET.EXE passes
+// RGB565 (0xF800, 0x7E0, 0x1F) and a scale of 0xFF, and no luma table.
+std::vector<std::uint16_t> xan_rgb16_table(std::uint32_t red_mask, std::uint32_t green_mask, std::uint32_t blue_mask,
+                                           std::uint8_t scale);
+
 class XanDecoder {
 public:
     // XANDRV32 0x4AA (create, mode 3: 8-bit through `table`).
     XanDecoder(int width, int height, int version, std::vector<std::uint8_t> table);
+    // XANDRV32 0x4AA (create, mode 2: 16-bit through `table`, xan_rgb16_table).
+    XanDecoder(int width, int height, int version, std::vector<std::uint16_t> table);
 
     // XANDRV32 0x256B. `skip_corrections`: "lowresmovies=true" (DS:75A6),
     // or a frame decoded late, which is not drawn either.
@@ -109,6 +123,9 @@ public:
     // XANDRV32 0x25F2 in mode 3: 0xFFA, or 0x1A4F when `doubled` (each pixel
     // twice, one screen row in two: the rows between are left as they are).
     void draw(Surface8& screen, int x, int y, bool doubled) const;
+    // XANDRV32 0x25F2 in mode 2: 0x1338, or 0x1D9E when `doubled` (the same
+    // look-up, a word a pixel).
+    void draw(Surface16& screen, int x, int y, bool doubled) const;
 
     std::vector<std::uint8_t>& colour_table() { return table_; }
     const std::vector<std::uint8_t>& luma() const { return luma_; }
@@ -119,7 +136,8 @@ private:
     void apply_corrections(std::span<const std::uint8_t> corrections);
 
     int width_, height_, version_;
-    std::vector<std::uint8_t> table_;
+    std::vector<std::uint8_t> table_;     // mode 3
+    std::vector<std::uint16_t> table16_;  // mode 2
     std::vector<std::uint8_t> luma_;     // ctx +0x2C
     std::vector<std::uint16_t> chroma_;  // ctx +0x30, width / 2 words a row
 };

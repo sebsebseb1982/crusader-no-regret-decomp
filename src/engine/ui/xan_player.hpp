@@ -12,8 +12,10 @@
 //     subtitles (movie_subtitles.hpp);
 //   - "bigvideo=true" (DS:75A2) doubles the movie, except ORIGIN;
 //   - the colour cycling is paused (DS:73E0 +0x40), the cursor hidden
-//     (WORLD_1008_0F68(0)), the screen cleared; then 1448:06F4 plays it;
-//   - at the end: the screen cleared; a fade argument of 0 jumps to an all
+//     (WORLD_1008_0F68(0)), the screen cleared, or with "moviehicolor=true"
+//     (DS:0309) VESA mode 0x111 set (640 x 480, RGB565, black); then
+//     1448:06F4 plays it;
+//   - at the end: the screen cleared (or mode 0x101 set back); a fade argument of 0 jumps to an all
 //     black palette (PaletteFaderProcess::I_jumpToAllBlack), another one
 //     writes the game palette back; the cycling resumes in both cases.
 //
@@ -22,8 +24,11 @@
 // shifted down to 6 bits (version 4) or masked to them (version 3); the
 // table's 0xFF entries become the colour nearest to colour 255, which turns
 // white (63, 63, 63, DS:75A8, for the subtitles); the darkest colour
-// (DS:75A9) fills the screen. The movie is centred, doubled or not. The
-// keyboard is flushed (11E8:33E3) before and after.
+// (DS:75A9) fills the screen. With "moviehicolor=true", PAL8 and BEST are not
+// read: the decoder is created in mode 2 with the masks 0xF800, 0x7E0, 0x1F
+// and a scale of 0xFF, and computes its own table (xan_rgb16_table). The
+// movie is centred, doubled or not. The keyboard is flushed (11E8:33E3)
+// before and after.
 //
 // Each frame (1448:01BA, called by the audio-clocked loop 1468:04C8): the
 // frame is decoded and drawn; a frame that is late is decoded without its
@@ -31,12 +36,12 @@
 // them). Then the subtitle of this frame, if any (1440:0732: entries by frame
 // number, from 0), is drawn (1440:036C): a 640 x 15 strip filled with colour
 // 1, the text in font 3 centred at y 10, then each pixel 0 white and the
-// others the darkest colour, copied to y 420 (1440:0570). A key pressed (the
+// others the darkest colour (in 16 bits: 0xFFFF and 0), copied to y 420
+// (1440:0570). A key pressed (the
 // keyboard buffer not empty) stops the movie after the frame.
 //
 // Not reproduced: the disk streaming (the whole file is read at once); the
-// 16-bit colour mode ("moviehicolor=true", DS:0309, XANDRV32 modes 2 and 4);
-// the loop waiting for running fades before the movie starts; the text drawn
+// loop waiting for running fades before the movie starts; the text drawn
 // then erased by 1448:0000 (it caches the font's glyphs). The sound is one
 // buffer of every audio chunk, the frames follow real time at 15 a second
 // (the original follows the sound card).
@@ -66,18 +71,22 @@ public:
     static constexpr std::uint8_t kSubtitleBackground = 1;
     static constexpr std::uint8_t kWhite = 0xFF;
 
-    // `big`: "bigvideo=true" and not ORIGIN. `fade`: the intrinsic's second
-    // argument.
-    XanPlayer(XanMovie movie, std::vector<RegretSubtitle> subtitles, bool big, bool low_res, bool fade,
-              const FontSet& fonts);
+    // `big`: "bigvideo=true" and not ORIGIN. `hicolor`: "moviehicolor=true".
+    // `fade`: the intrinsic's second argument.
+    XanPlayer(XanMovie movie, std::vector<RegretSubtitle> subtitles, bool big, bool low_res, bool hicolor,
+              bool fade, const FontSet& fonts);
 
     // Real time; `key_pressed`: a key went down since the last call.
     void advance(std::uint32_t elapsed_us, bool key_pressed);
 
     bool finished() const { return finished_; }
     bool fade() const { return fade_; }
+    // The 8-bit screen and its palette (hicolor: unused, the palette black).
     const Surface8& screen() const { return screen_; }
     const Palette& palette() const { return palette_; }
+    // "moviehicolor=true": the movie is drawn on the 16-bit screen instead.
+    bool hicolor() const { return hicolor_; }
+    const Surface16& screen16() const { return screen16_; }
     // Frames decoded so far.
     int frame() const { return frame_; }
     // The darkest colour (DS:75A9).
@@ -98,9 +107,11 @@ private:
     std::vector<RegretSubtitle> subtitles_;
     bool doubled_;
     bool low_res_;
+    bool hicolor_;
     bool fade_;
     const FontSet* fonts_;
     Surface8 screen_;
+    Surface16 screen16_;
     Palette palette_;
     std::uint8_t darkest_ = 0;
     int x_ = 0, y_ = 0;

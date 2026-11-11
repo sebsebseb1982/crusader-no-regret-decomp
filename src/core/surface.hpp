@@ -23,6 +23,32 @@ struct Surface8 {
     void clear(std::uint8_t color) { std::fill(pixels.begin(), pixels.end(), color); }
 };
 
+// 16-bit RGB565 pixel buffer: the screen of No Regret's movies with
+// "moviehicolor=true" (VESA mode 0x111, 640 x 480, 65536 colours).
+struct Surface16 {
+    int width = 0;
+    int height = 0;
+    std::vector<std::uint16_t> pixels;
+
+    Surface16() = default;
+    Surface16(int w, int h, std::uint16_t fill = 0)
+        : width(w), height(h), pixels(static_cast<std::size_t>(w) * h, fill) {}
+
+    std::uint16_t* row(int y) { return pixels.data() + static_cast<std::size_t>(y) * width; }
+    const std::uint16_t* row(int y) const { return pixels.data() + static_cast<std::size_t>(y) * width; }
+
+    void clear(std::uint16_t color) { std::fill(pixels.begin(), pixels.end(), color); }
+};
+
+// An RGB565 pixel's components on 8 bits (the top bits repeated below).
+// @orig none: format conversion
+inline void rgb565_to_rgb8(std::uint16_t p, std::uint8_t& r, std::uint8_t& g, std::uint8_t& b) {
+    const unsigned r5 = p >> 11, g6 = (p >> 5) & 0x3F, b5 = p & 0x1F;
+    r = static_cast<std::uint8_t>(r5 << 3 | r5 >> 2);
+    g = static_cast<std::uint8_t>(g6 << 2 | g6 >> 4);
+    b = static_cast<std::uint8_t>(b5 << 3 | b5 >> 2);
+}
+
 // One-pixel outline of the rectangle (x0, y0)-(x1, y1), corners included,
 // clipped to the surface (vport_draw_rect, 1280:06D9).
 // @orig 1288:06D9

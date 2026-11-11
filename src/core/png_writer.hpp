@@ -14,6 +14,8 @@ namespace crusader {
 // index as fully transparent (tRNS chunk).
 void write_png(const std::filesystem::path& path, const Surface8& surface, const Palette& palette,
                std::optional<std::uint8_t> transparent = std::nullopt);
+// Writes an RGB565 `surface` as an 8-bit RGB PNG.
+void write_png(const std::filesystem::path& path, const Surface16& surface);
 
 }  // namespace crusader
 

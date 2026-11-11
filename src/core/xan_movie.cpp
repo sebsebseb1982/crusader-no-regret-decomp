@@ -204,6 +204,76 @@ XanDecoder::XanDecoder(int width, int height, int version, std::vector<std::uint
     table_.resize(0x10000);
 }
 
+// @orig XANDRV32.DLL 0x4AA
+XanDecoder::XanDecoder(int width, int height, int version, std::vector<std::uint16_t> table)
+    : width_(width),
+      height_(height),
+      version_(version),
+      table16_(std::move(table)),
+      luma_(static_cast<std::size_t>(width) * height),
+      chroma_(static_cast<std::size_t>(width / 2) * ((height + 1) / 2)) {
+    table16_.resize(0x10000);
+}
+
+namespace {
+
+// A component's mask to its right shift (from 8 bits) and its left shift:
+// 0x66F counts the zero bits below the mask, then its one bits; a mask wider
+// than 8 bits is shifted further left instead.
+struct MaskShifts {
+    int right, left;
+    std::int32_t round;
+};
+
+MaskShifts mask_shifts(std::uint32_t mask) {
+    int shift = 0, end = 0;
+    while (!(mask & 1) && shift < 32) {
+        mask >>= 1;
+        ++shift;
+    }
+    end = shift;
+    while ((mask & 1) && end < 32) {
+        mask >>= 1;
+        ++end;
+    }
+    const int width = end - shift;
+    MaskShifts m{8 - width, shift, 0};
+    if (m.right < 0) {
+        m.left -= m.right;
+        m.right = 0;
+    }
+    if (m.right > 0) m.round = std::int32_t{1} << (m.right - 1);
+    return m;
+}
+
+}  // namespace
+
+// @orig XANDRV32.DLL 0x985 0x66F
+std::vector<std::uint16_t> xan_rgb16_table(std::uint32_t red_mask, std::uint32_t green_mask, std::uint32_t blue_mask,
+                                           std::uint8_t scale) {
+    const MaskShifts r = mask_shifts(red_mask), g = mask_shifts(green_mask), b = mask_shifts(blue_mask);
+    const std::int32_t s = std::int32_t{scale} + 1;
+    auto clamp = [](std::int32_t v) { return v <= 0 ? 0 : v >= 0xFF ? 0xFF : v; };
+    std::vector<std::uint16_t> table;
+    table.reserve(0x10000);
+    for (std::int32_t k = 0; k < 32; ++k) {
+        for (std::int32_t j = 0; j < 32; ++j) {
+            // Divisions truncated toward zero, as the original's.
+            const std::int32_t ry = (-128 * s + 8 * s * k) / 256;
+            const std::int32_t by = (-128 * s + 8 * s * j) / 256;
+            const std::int32_t gy = -(130 * ry) / 256 - (50 * by) / 256;
+            for (std::int32_t y = 0; y < 256; y += 4) {
+                const std::int32_t red = clamp(r.round + ry + y);
+                const std::int32_t green = clamp(g.round + gy + y);
+                const std::int32_t blue = clamp(b.round + by + y);
+                table.push_back(static_cast<std::uint16_t>((blue >> b.right) << b.left | (green >> g.right) << g.left |
+                                                           (red >> r.right) << r.left));
+            }
+        }
+    }
+    return table;
+}
+
 // @orig XANDRV32.DLL 0x30 0x24DB
 void XanDecoder::decode_chroma(std::vector<std::uint8_t>& f, std::size_t src) {
     if (version_ >= 4) {
@@ -358,24 +428,41 @@ void XanDecoder::decode(std::span<const std::uint8_t> frame, bool skip_correctio
     apply_corrections(c);
 }
 
-// @orig XANDRV32.DLL 0x25F2 0xFFA 0x1A4F
-void XanDecoder::draw(Surface8& screen, int x0, int y0, bool doubled) const {
-    const std::size_t row = static_cast<std::size_t>(width_ / 2);
+namespace {
+
+// Each pixel's colour at (chroma word | luma); doubled: twice, one screen row
+// in two (the rows between are left as they are).
+template <typename Surface, typename Table>
+void draw_frame(Surface& screen, int x0, int y0, bool doubled, int width, int height,
+                const std::vector<std::uint8_t>& luma, const std::vector<std::uint16_t>& chroma, const Table& table) {
+    const std::size_t row = static_cast<std::size_t>(width / 2);
     const int scale = doubled ? 2 : 1;
-    for (int y = 0; y < height_; ++y) {
+    for (int y = 0; y < height; ++y) {
         const int sy = y0 + y * scale;
         if (sy < 0 || sy >= screen.height) continue;
-        std::uint8_t* dst = screen.row(sy);
-        const std::uint8_t* l = luma_.data() + static_cast<std::size_t>(y) * width_;
-        const std::uint16_t* c = chroma_.data() + static_cast<std::size_t>(y / 2) * row;
-        for (int x = 0; x < width_; ++x) {
-            const std::uint8_t colour = table_[(c[x / 2] | l[x]) & 0xFFFF];
+        auto* dst = screen.row(sy);
+        const std::uint8_t* l = luma.data() + static_cast<std::size_t>(y) * width;
+        const std::uint16_t* c = chroma.data() + static_cast<std::size_t>(y / 2) * row;
+        for (int x = 0; x < width; ++x) {
+            const auto colour = table[(c[x / 2] | l[x]) & 0xFFFF];
             for (int k = 0; k < scale; ++k) {
                 const int sx = x0 + x * scale + k;
                 if (sx >= 0 && sx < screen.width) dst[sx] = colour;
             }
         }
     }
+}
+
+}  // namespace
+
+// @orig XANDRV32.DLL 0x25F2 0xFFA 0x1A4F
+void XanDecoder::draw(Surface8& screen, int x0, int y0, bool doubled) const {
+    draw_frame(screen, x0, y0, doubled, width_, height_, luma_, chroma_, table_);
+}
+
+// @orig XANDRV32.DLL 0x25F2 0x1338 0x1D9E
+void XanDecoder::draw(Surface16& screen, int x0, int y0, bool doubled) const {
+    draw_frame(screen, x0, y0, doubled, width_, height_, luma_, chroma_, table16_);
 }
 
 namespace {
