@@ -775,8 +775,10 @@ void Game::set_globals(std::span<const std::uint8_t> bytes) {
     std::copy_n(bytes.begin(), std::min(bytes.size(), globals.size()), globals.begin());
 }
 
+// No Regret (1030:032D) also sets "Crusader teleporting" (13E8:0E2B), then
+// (after its loading picture, not drawn) teleports the player at once
+// (CDLOAD_1030_0000) and jumps to black.
 // @orig 1030:032D
-// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::new_game(int difficulty) {
     reset_world();
     // FLAG_1410_0051(0): the globals' initial values.
@@ -816,7 +818,17 @@ void Game::new_game(int difficulty) {
 
     // CameraProcess::I_setCenterOn(1), then the first mission.
     s.camera_target = 1;
-    start_teleport_to_egg(*kernel_, *world_, start_map_, start_egg_, true, true);
+    if (regret_) {
+        s.crusader_teleporting = true;
+        if (audio_) {
+            audio_->sources.clear();
+            audio_->stop_all();
+        }
+        teleport_to_egg_at_once(*kernel_, *world_, start_map_, start_egg_);
+        s.screen_palette = Palette::filled(0, 0, 0);
+    } else {
+        start_teleport_to_egg(*kernel_, *world_, start_map_, start_egg_, true, true);
+    }
     s.status_bar_visible = true;
     apply_status_bar_mouse_range();
 }

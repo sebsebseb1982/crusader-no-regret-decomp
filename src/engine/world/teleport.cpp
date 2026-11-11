@@ -207,6 +207,10 @@ private:
 
 }  // namespace
 
+void teleport_to_egg_at_once(Kernel& kernel, World& world, int map, std::uint16_t egg) {
+    teleport_to_egg_now(kernel, world, map, egg);
+}
+
 // @orig 10A0:0223
 ObjId find_teleport_egg(const World& world, std::uint16_t egg) {
     const std::array<std::uint8_t, 18> script = {

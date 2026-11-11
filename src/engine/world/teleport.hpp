@@ -51,5 +51,8 @@ Pid start_egg_hatcher(Kernel& kernel, World& world, ObjId egg);
 
 // The egg the teleport goes to (0 if none), in the search order.
 ObjId find_teleport_egg(const World& world, std::uint16_t egg);
+// No Regret's CDLOAD_1030_0000: the player to egg `egg` of `map` at once,
+// without a process (see TeleportToEgg in teleport.cpp).
+void teleport_to_egg_at_once(Kernel& kernel, World& world, int map, std::uint16_t egg);
 
 }  // namespace crusader
