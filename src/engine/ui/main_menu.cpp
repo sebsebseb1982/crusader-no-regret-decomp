@@ -22,11 +22,12 @@ constexpr std::array<Point, MainMenu::kButtons> kButtonCornersUs = {{
 constexpr int kVersionFont = 7, kVersionColour = 0x75;
 constexpr int kVersionY0 = 438, kVersionLineHeight = 16;
 constexpr std::array<Point, 4> kBackgroundCorners = {{{1, 120}, {320, 120}, {1, 240}, {320, 240}}};
+// No Regret (13B8:04F9): the top row is higher, its shapes taller.
+constexpr std::array<Point, 4> kBackgroundCornersRegret = {{{1, 75}, {320, 75}, {1, 240}, {320, 240}}};
 
 }  // namespace
 
-// @orig 13B8:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0000, similarity 0.96)
+// @orig 13B8:0000 (the same in No Regret but for the vtable)
 MainMenu::MainMenu(const Resources& res, Shared& shared, bool no_game)
     : res_(res),
       gumps_(res.gumps),
@@ -66,7 +67,8 @@ void MainMenu::draw_version(Surface8& screen, int y, const std::string& text) co
 }
 
 // @orig 13B8:04F9 13B8:2EB9
-// TODO(regret): constants in REGRET.EXE (No Remorse 13D0:04EE, similarity 0.98)
+// No Regret (13B8:04F9): the background's top row at y 75 (the shapes are
+// 330 rows high in all instead of 240).
 void MainMenu::draw(Surface8& screen) const {
     if (credits_) {
         screen.pixels = credits_->screen().pixels;
@@ -87,7 +89,8 @@ void MainMenu::draw(Surface8& screen) const {
     screen.clear(0);
     for (int q = 0; q < 4; ++q) {
         if (const Shape* s = gumps_->get(static_cast<std::uint16_t>(kFirstBackground + q)); s && !s->frames().empty()) {
-            s->frames()[0].draw(screen, kBackgroundCorners[q].x, kBackgroundCorners[q].y);
+            const Point at = (regret_data() ? kBackgroundCornersRegret : kBackgroundCorners)[q];
+            s->frames()[0].draw(screen, at.x, at.y);
         }
     }
     for (int i = 0; i < kButtons; ++i) {
@@ -99,8 +102,8 @@ void MainMenu::draw(Surface8& screen) const {
     draw_version(screen, kVersionY0 + kVersionLineHeight, res_.data_version);
 }
 
+// No Regret (13B8:06D8): the same keys, and Alt+X quits.
 // @orig 13B8:06D8
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:06CD, similarity 0.67)
 void MainMenu::key(std::uint16_t code) {
     if (result_) return;
     if (credits_) {  // any key stops them (DS:322A)
@@ -145,6 +148,10 @@ void MainMenu::key(std::uint16_t code) {
         break;
     case gump_key::kEscape:
         activate(kBack);
+        break;
+    case gump_key::kAltX:
+        // No Regret: the screen goes black and the menu closes with "quit".
+        if (regret_data()) result_ = kQuit;
         break;
     default:
         break;
@@ -237,7 +244,7 @@ void MainMenu::activate(int i) {
         options_ = std::make_unique<OptionsScreen>(*gumps_, *res_.config, res_.audio, shared_->options_focus, res_.fonts);
         break;
     case kNewGame:
-        difficulty_ = std::make_unique<DifficultyScreen>(*gumps_, shared_->difficulty);
+        difficulty_ = std::make_unique<DifficultyScreen>(*gumps_, shared_->difficulty, res_.audio);
         break;
     default:
         break;
@@ -252,11 +259,11 @@ void MainMenu::update(std::uint32_t ticks) {
     if (options_) options_->update(ticks);
 }
 
+// No Regret (13B8:08A8) plays sound 0x1A1 when the difficulty screen closes.
 // @orig 13B8:08A8
-// TODO(regret): 13B8:08A8 read: the only change is sound 0x1A1 (AudioProcess::I_playSFX) played when
-//   the difficulty screen closes, before the menu palette comes back; not played yet.
 void MainMenu::after_sub_screen() {
     if (difficulty_ && difficulty_->result()) {
+        if (regret_data() && res_.audio) res_.audio->play_sfx(DifficultyScreen::kRegretCloseSound);
         if (*difficulty_->result() != 0) {
             new_game_difficulty_ = *difficulty_->result();
             result_ = kNewGame;

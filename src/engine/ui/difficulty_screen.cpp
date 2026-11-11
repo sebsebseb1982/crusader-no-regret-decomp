@@ -14,9 +14,8 @@ constexpr int kSecondHalf = 170;                       // frame 1 to the right o
 }  // namespace
 
 // @orig 13B8:27F9 13B8:2FAC
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:25A2, similarity 0.95)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:2D5E, similarity 0.93)
-DifficultyScreen::DifficultyScreen(ShapeCache& gumps, int& selected) : gumps_(&gumps), selected_(&selected) {
+DifficultyScreen::DifficultyScreen(ShapeCache& gumps, int& selected, Audio* audio)
+    : gumps_(&gumps), selected_(&selected), audio_(audio) {
     for (int level = 1; level <= kLevels; ++level) {
         const Shape* s = gumps_->get(static_cast<std::uint16_t>(kBackground + level));
         const int h = s && !s->frames().empty() ? s->frames()[0].height : 1;
@@ -31,11 +30,10 @@ void DifficultyScreen::draw_shape(Surface8& screen, std::uint16_t shape, int fra
 }
 
 // @orig 13B8:2D79 13B8:3080
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:2B16, similarity 0.76)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:2E2B, similarity 0.86)
 void DifficultyScreen::draw(Surface8& screen) const {
     screen.clear(0);
-    if (us_version()) {
+    const bool regret = regret_data();
+    if (us_version() || regret) {
         // The US shape has one frame, centred (13D0:2B16 of the US executable).
         const Shape* s = gumps_->get(kBackground);
         const int w = s && !s->frames().empty() ? s->frames()[0].width : 0;
@@ -49,8 +47,16 @@ void DifficultyScreen::draw(Surface8& screen) const {
         const auto shape = static_cast<std::uint16_t>(kBackground + level);
         draw_shape(screen, shape, 0, r.x0, r.y0);
         draw_shape(screen, shape, 1, r.x0 + kSecondHalf, r.y0);
-        if (level == *selected_) outline(screen, r.x0, r.y0, r.x1, r.y1, kOutlineColour);
+        if (regret) outline(screen, r.x0, r.y0, r.x1, r.y1, level == *selected_ ? kRegretSelectedColour : kRegretColour);
+        else if (level == *selected_) outline(screen, r.x0, r.y0, r.x1, r.y1, kOutlineColour);
     }
+}
+
+void DifficultyScreen::select(int level) {
+    *selected_ = level;
+    if (!regret_data() || !audio_) return;
+    audio_->stop_all();
+    audio_->play_sfx(kRegretFirstSound + level - 1);
 }
 
 // @orig 13B8:2C16
@@ -60,11 +66,11 @@ void DifficultyScreen::key(std::uint16_t code) {
     switch (code) {
     case gump_key::kUp:
     case '8':
-        if (sel > 1) --sel;
+        if (sel > 1) select(sel - 1);
         break;
     case gump_key::kDown:
     case '2':
-        if (sel < kLevels) ++sel;
+        if (sel < kLevels) select(sel + 1);
         break;
     case gump_key::kEnter:
         result_ = sel;
@@ -83,7 +89,7 @@ void DifficultyScreen::mouse_down(int x, int y) {
     for (int level = 1; level <= kLevels; ++level) {
         if (buttons_[level - 1].contains(x, y)) {
             captured_ = level;
-            *selected_ = level;
+            select(level);
             return;
         }
     }

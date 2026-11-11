@@ -19,8 +19,15 @@
 //
 // Choosing sets the difficulty (DS:7E19) and DS:2172 = (difficulty != 1),
 // whose reader is not identified; the screen closes with the level, or 0.
+//
+// No Regret (13B8:27F9 .. 3080): the background is one frame, centred
+// (13B8:2D79); every button is outlined, in colour 0xF1 when selected and
+// 0xEE otherwise; a button selected (by a key or the mouse, 13B8:315F)
+// stops the sounds and plays its own, 0x19D + level - 1. The main menu
+// plays 0x1A1 when the screen closes (13B8:08A8).
 
 #include "core/surface.hpp"
+#include "engine/audio/audio.hpp"
 #include "engine/world/render.hpp"
 
 #include <array>
@@ -42,8 +49,12 @@ public:
         bool contains(int x, int y) const { return x >= x0 && x <= x1 && y >= y0 && y <= y1; }
     };
 
-    // `selected` is DS:5BEC (1..4).
-    DifficultyScreen(ShapeCache& gumps, int& selected);
+    static constexpr std::uint8_t kRegretSelectedColour = 0xF1, kRegretColour = 0xEE;
+    static constexpr int kRegretFirstSound = 0x19D;
+    static constexpr int kRegretCloseSound = 0x1A1;
+
+    // `selected` is DS:5BEC (1..4). `audio` plays No Regret's button sounds.
+    DifficultyScreen(ShapeCache& gumps, int& selected, Audio* audio = nullptr);
 
     void draw(Surface8& screen) const;
     // Gump key code (see gump_keys.hpp).
@@ -59,7 +70,9 @@ public:
 
 private:
     void draw_shape(Surface8& screen, std::uint16_t shape, int frame, int x, int y) const;
+    void select(int level);  // 13B8:315F in No Regret
 
+    Audio* audio_ = nullptr;
     ShapeCache* gumps_;
     int* selected_;
     std::array<Rect, kLevels> buttons_{};

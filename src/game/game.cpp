@@ -1234,15 +1234,14 @@ void Game::on_key(const GameKeyEvent& e) {
     if (code) player_command(*kernel_, *world_, anims_, code);
 }
 
+// No Regret's menu (1008:11A9): a new game chosen there also clears "cru
+// stasis" and teleports at once (new_game); otherwise the same.
 // @orig 1008:11A9 1008:0F68
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:10C3, similarity 0.76)
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0E7D, similarity 0.68)
 void Game::open_menu() {
     open_menu(false);
 }
 
-// @orig 13B8:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0000, similarity 0.96)
+// @orig 13B8:0000 (the same in No Regret but for the vtable)
 void Game::open_menu(bool no_game) {
     if (menu_) return;
     // WORLD_13e8_0e7d and 10c3: the status bar goes, the cursor shows.
@@ -1278,7 +1277,6 @@ void Game::open_menu(bool no_game) {
 }
 
 // @orig 13B8:0400 1008:0FF1
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0EF9, similarity 0.70)
 void Game::close_menu() {
     const int result = *menu_->result();
     const int load_slot = menu_->load_slot();
@@ -1605,8 +1603,9 @@ void Game::play_weasel_movie(const std::string& name) {
     weasel_movie_ = movie_ != nullptr;
 }
 
+// No Regret (1008:0F68) takes an argument: 0 (the movies) only hides the
+// cursor; the port's callers all pass 1, the No Remorse behaviour.
 // @orig 1008:0F68
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0E7D, similarity 0.68)
 void Game::enter_menu_mode() {
     // 13E8:0E7D: the sounds stop, the screen sprites and the status bar go,
     // cursor 0x24 shown.
@@ -1618,8 +1617,9 @@ void Game::enter_menu_mode() {
     cursor_.reset(MouseCursor::kArrow);
 }
 
+// No Regret (1008:0FF1) marks the screen sprites for redrawing first (the
+// port redraws them anyway) and keeps the "Crusader teleporting" flag.
 // @orig 1008:0FF1
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:0EF9, similarity 0.70)
 void Game::leave_menu_mode() {
     // 13E8:0EF9: the screen sprites and the status bar back, the cursor
     // popped and hidden, the keys and clicks forgotten (Input_I_flush), the
@@ -1630,11 +1630,10 @@ void Game::leave_menu_mode() {
     cursor_.pop();
     cursor_.hide();
     keyboard_.reset();
-    world_->state.crusader_teleporting = false;
+    if (!regret_) world_->state.crusader_teleporting = false;
 }
 
-// @orig 13B8:27F9 13B8:08A8
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:25A2, similarity 0.95)
+// @orig 13B8:27F9 13B8:08A8 (No Regret: see difficulty_screen.hpp)
 void Game::follow_menu_screen() {
     // IRGUMP_13d0_25a2: DIFF.PAL, cursor 0x26 with the mouse at (320, 400);
     // back in the menu (13D0:082E case 0): MISC.PAL and cursor 0x25 again.
