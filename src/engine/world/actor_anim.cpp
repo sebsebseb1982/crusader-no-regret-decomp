@@ -33,8 +33,12 @@ bool is_roll(const World& world, std::uint16_t action) {
     return !world.remorse() && (action == 0x35 || (action >= 0x1B && action <= 0x1D));
 }
 
+// No Regret (1168:21B8, 23D3, 1E63): the controlled NPC skips frames at frame
+// skip 3 only. No Remorse (1158:1A3B) also applies the rule of any NPC to it.
 bool skips_frames(const World& world, ObjId actor, const Item& item) {
-    if (actor == world.state.controlled_npc) return world.state.frameskip == 3;
+    if (actor == world.state.controlled_npc && (world.state.frameskip == 3 || !world.remorse())) {
+        return world.state.frameskip == 3;
+    }
     return world.state.frameskip >= 2 || !world.is_partly_on_screen(item);
 }
 
