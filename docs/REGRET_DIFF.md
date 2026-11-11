@@ -14,16 +14,15 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 170 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 140 lines are left:
 
 | File | Lines |
 |---|---:|
-| `src/game/game.cpp` | 29 |
+| `src/game/game.cpp` | 28 |
 | `src/engine/ui/weasel_gump.cpp` | 19 |
 | `src/engine/audio/asylum_music.cpp` | 11 |
 | `src/engine/world/actor_anim.cpp` | 10 |
 | `src/engine/ui/load_screen.cpp` | 9 |
-| `src/engine/world/world.cpp` | 9 |
 | `src/engine/ui/movie_player.cpp` | 8 |
 | `src/engine/ui/options_screen.cpp` | 8 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
@@ -31,18 +30,12 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/core/game_config.cpp` | 4 |
 | `src/engine/ui/difficulty_screen.cpp` | 4 |
 | `src/engine/ui/main_menu.cpp` | 4 |
-| `src/engine/world/activity.cpp` | 4 |
-| `src/engine/world/aim_mode.cpp` | 4 |
 | `src/core/avi_movie.cpp` | 3 |
 | `src/core/movie_subtitles.cpp` | 3 |
 | `src/core/weapon_overlay.cpp` | 3 |
 | `src/engine/ui/status_bar.cpp` | 3 |
-| `src/engine/world/gravity.cpp` | 3 |
 | `src/engine/palette_fader.cpp` | 2 |
-| `src/engine/world/actor_create.cpp` | 2 |
-| `src/engine/world/map_change.cpp` | 2 |
-| `src/engine/world/pathfind.cpp` | 2 |
-| `src/engine/world/teleport.cpp` | 2 |
+| `src/engine/world/world.cpp` | 2 |
 | `src/core/dtable.cpp` | 1 |
 | `src/core/shape.cpp` | 1 |
 | `src/core/sound_flex.cpp` | 1 |
@@ -50,10 +43,7 @@ A function whose original routine is not identical carries a `TODO(regret)` line
 | `src/engine/input/keyboard.cpp` | 1 |
 | `src/engine/ui/computer_gump.cpp` | 1 |
 | `src/engine/ui/keypad_gump.cpp` | 1 |
-| `src/engine/world/attack.cpp` | 1 |
-| `src/engine/world/avatar_mover.cpp` | 1 |
 | `src/engine/world/inventory.cpp` | 1 |
-| `src/engine/world/item_damage.cpp` | 1 |
 | `src/engine/world/sprite_process.cpp` | 1 |
 
 ## Intrinsics
@@ -71,7 +61,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x001 | 10B0:0826 | constants | 0x001 | 566 | `Item::I_getFrame` | NPC record layout, data addresses or assert line only |
 | 0x0A3 | 10B0:0882 | constants | 0x002 | 462 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
 | 0x05D | 10B0:0882 | constants | 0x002 | 261 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
-| 0x00C | 10B0:13D7 | modified | 0x00A | 252 | `Item::I_destroy` | type flag 0x66 instead of a shape list |
+| 0x00C | 10B0:13D7 | modified | 0x00A | 252 | `Item::I_destroy` | typeflag bit instead of the shape list (already ported) |
 | 0x062 | 10F8:039A | modified | 0x039 | 163 | `Actor::I_doAnim` | case by case: rolls, aim and turn sets, movement window |
 | 0x017 | 10F8:3E0C | constants | 0x01C | 120 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
 | 0x019 | 1140:1A86 | modified | 0x01E | 93 | `Item::I_fireWeapon` | frames of fire types 0x10..0x16, NPC damage floor, NPC target |
@@ -105,7 +95,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x0B6 | 1008:005D | new | 0x4B6 | 9 | `UCMachine::I_true` | status bar redraw flags: nothing to do |
 | 0x113 | 10F8:2278 | constants | 0x03C | 9 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
 | 0x152 | 10B0:0882 | constants | 0x002 | 9 | `Item::I_setFrame` | NPC record layout, data addresses or assert line only |
-| 0x095 | 10B0:2B34 | modified | 0x08C | 8 | `Item::I_enterFastArea` | a dead NPC is left as it is |
+| 0x095 | 10B0:2B34 | modified | 0x08C | 8 | `Item::I_enterFastArea` | a dead NPC entering the fast area keeps its activity |
 | 0x133 | 1048:134F | modified | 0x028 | 8 | `Item::I_hurl` | no delay for the controlled NPC |
 | 0x143 | 10F8:2278 | constants | 0x03C | 8 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
 | 0x06C | 1210:02A3 | identical, not an intrinsic in No Remorse | 0x46C | 7 | `MusicProcess::I_pauseMusic` | new intrinsic: bound |
