@@ -13,14 +13,11 @@ namespace {
 constexpr std::uint16_t kKeycard = 0x111;
 constexpr std::uint32_t kTicksPerSecond = 60;
 
-struct Description {
-    const char* name = nullptr;
-    std::uint16_t shape = 0;
-    std::uint16_t frame = 0;
-};
+}  // namespace
 
 // @orig 11A0:070F
-Description describe(const World& world, const Item& item) {
+// @orig 11C8:000C
+ItemLabel item_label(const World& world, const Item& item) {
     if (item.shape == kKeycard) return {tr("PASSE", "KEYCARD"), 5, static_cast<std::uint16_t>(item.frame + 13)};
     if (item.shape == credits_shape(world)) return {"CREDITS", 3, 13};
     switch (world.family_of(item.shape)) {
@@ -28,17 +25,15 @@ Description describe(const World& world, const Item& item) {
     case 11: return {dtable::ammo_name(item.shape), 5, dtable::ammo_icon(item.shape)};
     case 12: return {dtable::family12_name(item.shape), 4, dtable::item_icon_family12(item.shape)};
     case 13: return {dtable::item_name(item.shape), 5, dtable::item_icon(item.shape)};
-    default: return {};  // fatal assertion in the original
+    default: return {};  // 11A0:070F: fatal assertion; 11C8:000C: nothing
     }
 }
-
-}  // namespace
 
 // @orig 11A0:049C
 void PickupList::add(const World& world, ObjId item_id) {
     const Item* item = world.get(item_id);
     if (!item) return;
-    const Description d = describe(world, *item);
+    const ItemLabel d = item_label(world, *item);
     if (!d.name) return;
     for (PickupEntry& e : entries_) {
         if (!e.name || e.icon_shape != d.shape || e.icon_frame != d.frame) continue;

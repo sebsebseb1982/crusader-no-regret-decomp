@@ -42,6 +42,17 @@ struct PickupEntry {
     int seconds = 0;
 };
 
+// Name and icon of an item (DISPLAY_1190_070f above): nullptr name for an
+// item of no known family. The status bar uses a copy of the routine
+// (11C8:000C) that returns nothing instead of stopping.
+struct Item;
+struct ItemLabel {
+    const char* name = nullptr;
+    std::uint16_t shape = 0;
+    std::uint16_t frame = 0;
+};
+ItemLabel item_label(const World& world, const Item& item);
+
 class PickupList {
 public:
     static constexpr int kEntries = 8;

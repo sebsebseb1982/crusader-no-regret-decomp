@@ -246,19 +246,21 @@ void test_status_bar(const std::filesystem::path& data) {
                 ammo ? ammo->quality : 0, item ? item->shape : 0, item ? item->quality : 0, w.npc_hp(1),
                 c.health_width, w.npc_mana(1));
     CHECK(weapon && ammo && ammo->shape == c.ammo_shape && item && item->quality == 16);
-    CHECK(c.health_width == static_cast<std::uint16_t>(w.npc_hp(1) * 66) / 150 && c.energy_width == w.npc_mana(1) * 66 / 10000);
+    // No Regret's bars (11C8:0B50, 0BF8): 64 pixels at most.
+    CHECK(c.health_width == static_cast<std::uint16_t>(w.npc_hp(1) << 6) / 150 &&
+          c.energy_width == (w.npc_mana(1) << 6) / 10000);
 
     Surface8 screen(Game::kScreenWidth, Game::kScreenHeight);
     game.render(screen);
     const auto& health = bar.box(3);
-    CHECK(screen.row(health.y0 + 7)[health.x0 + 34] == 0x41);
-    CHECK(screen.row(health.y0 + 20)[health.x0 + 34 + c.health_width] == 0x41);
-    CHECK(screen.row(health.y0 + 7)[health.x0 + 35 + c.health_width] != 0x41);
+    CHECK(screen.row(health.y0 + 8)[health.x0 + 35] == 0x41);
+    CHECK(screen.row(health.y0 + 19)[health.x0 + 35 + c.health_width] == 0x41);
+    CHECK(screen.row(health.y0 + 8)[health.x0 + 36 + c.health_width] != 0x41);
 
     game.world().state.status_bar_visible = false;  // CruStatusGump::I_hideStatusGump
     Surface8 bare(Game::kScreenWidth, Game::kScreenHeight);
     game.render(bare);
-    CHECK(bare.row(health.y0 + 7)[health.x0 + 34] != 0x41);
+    CHECK(bare.row(health.y0 + 8)[health.x0 + 35] != 0x41);
 }
 
 // Milestone 3: key codes, cursor and the in-game menu.
