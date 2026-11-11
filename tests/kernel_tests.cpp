@@ -242,27 +242,32 @@ void test_regret_second_fade() {
     Kernel k;
     Palette screen = Palette::filled(63, 63, 63);
     bool paused = false;
-    auto& first = k.spawn<PaletteFaderProcess>(screen, Palette::filled(0, 0, 0), 60, 0, 1, &paused, false);
+    // Pids, not references: the kernel frees a process once it has ended (reap).
+    const auto ended = [](const Kernel& kernel, Pid pid) {
+        const Process* p = kernel.get(pid);
+        return !p || p->terminated();
+    };
+    const Pid first = k.spawn<PaletteFaderProcess>(screen, Palette::filled(0, 0, 0), 60, 0, 1, &paused, false).pid();
     CHECK(paused);
     paused = false;  // as if something resumed it meanwhile
-    auto& second = k.spawn<PaletteFaderProcess>(screen, Palette::filled(63, 0, 0), 60, 0, 1, &paused, true);
+    const Pid second = k.spawn<PaletteFaderProcess>(screen, Palette::filled(63, 0, 0), 60, 0, 1, &paused, true).pid();
     CHECK(!paused);
     for (int i = 0; i < 120; ++i) {
         k.advance_time(kFrameUs);
         k.run_slice();
     }
-    CHECK(first.terminated() && !second.terminated());
+    CHECK(ended(k, first) && !ended(k, second));
     CHECK(screen == Palette::filled(0, 0, 0));
     set_regret_data(false);
     Kernel r;
     Palette remorse = Palette::filled(63, 63, 63);
     r.spawn<PaletteFaderProcess>(remorse, Palette::filled(0, 0, 0), 60, 0, 1, nullptr, false);
-    auto& both = r.spawn<PaletteFaderProcess>(remorse, Palette::filled(0, 0, 0), 60, 0, 1, nullptr, false);
+    const Pid both = r.spawn<PaletteFaderProcess>(remorse, Palette::filled(0, 0, 0), 60, 0, 1, nullptr, false).pid();
     for (int i = 0; i < 120; ++i) {
         r.advance_time(kFrameUs);
         r.run_slice();
     }
-    CHECK(both.terminated());
+    CHECK(ended(r, both));
 }
 
 int main() {
