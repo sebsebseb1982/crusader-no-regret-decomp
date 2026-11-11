@@ -56,6 +56,8 @@ ObjId find_equipped(const World& w, std::uint16_t shape) {
     return 0;
 }
 
+}  // namespace
+
 // NPC_10f8_011a (No Regret): the action of the NPC's animation when a shot
 // may cut it short: one of a list (standing, kneeling, turning, aiming,
 // shooting...), once 70% of its frames have played (30% for 0x28 and 0x29),
@@ -82,6 +84,8 @@ std::uint16_t interruptible_action(const Kernel& kernel, const World& w, const A
     if (needed == 700 || needed <= static_cast<std::uint32_t>(record[npc::kAnimFrame]) * 1000) return action;
     return 0x40;
 }
+
+namespace {
 
 }  // namespace
 

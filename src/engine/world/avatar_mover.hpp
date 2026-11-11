@@ -48,11 +48,17 @@ private:
     const AnimDat& anims_;
     const Keyboard& keyboard_;
     bool drawn_before_run_ = false;  // the weapon was out when the run began
+    bool dispatch_regret(const GameKeyEvent& e, int action, int d, int second, bool stance_turn, bool busy);
 };
 
 // CRUSADER.C 0F8D: actions whose direction may change while they run; a
-// walk turned by the mouse is rate-limited (and the time noted).
-bool action_redirectable(GameState::MouseTurn& mouse, std::uint32_t now, std::uint16_t action);
+// walk turned by the mouse is rate-limited (and the time noted). No Regret
+// (`regret`) adds action 5.
+bool action_redirectable(GameState::MouseTurn& mouse, std::uint32_t now, std::uint16_t action, bool regret);
+
+// NPC_10f8_011a (No Regret, combat_control.cpp): the action of the NPC's
+// animation when it may be cut short, else 0x40.
+std::uint16_t interruptible_action(const Kernel& kernel, const World& w, const AnimDat& anims, ObjId npc);
 
 // CRUSADER.C 0070: the last animation of `id` is none of standing, walking,
 // running (and starting to run), the jumps 0x3A and 0x37, or 0xB / 0x10
