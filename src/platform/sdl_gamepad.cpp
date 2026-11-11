@@ -25,6 +25,9 @@ bool debug_enabled() {
 
 constexpr std::uint8_t kArrows[4] = {0x48, 0x50, 0x4B, 0x4D};  // up, down, left, right (E0)
 
+// "Menu" in No Regret's play: F1, the key that opens its menu (Escape does not).
+constexpr PadAction kPadMenuF1 = {"MENU", "MENU", 0x3B, false, 0};
+
 // Keypad keys (not extended), by 45 degree sector counter-clockwise from east:
 // right, up-right (PgUp), up, up-left (Home), left, down-left (End), down,
 // down-right (PgDn). AvatarMover::handle_key reads them as screen directions.
@@ -344,7 +347,7 @@ void Gamepad::press_slot(int slot, bool pressed) {
         // Run is Shift held with the move key (stick or d-pad), never Shift + up: that Up would be
         // released with the stick and stop the run while the button is still held.
         if (action == kPadRun) action = kPadShift;
-        const PadAction& a = kPadActions[action];
+        const PadAction& a = action == kPadMenu && !menu_ && menu_f1_ ? kPadMenuF1 : kPadActions[action];
         if (a.scancode == 0) return;
         sent_[slot] = &a;
         if (a.modifier) press_key(a.modifier, false, true);

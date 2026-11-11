@@ -335,6 +335,7 @@ int main(int argc, char** argv) {
             // The controller: A/B confirm/cancel in menus, its stick moves the mouse.
             gamepad.set_menu(!game.mouse_in_play());
             gamepad.set_capture(game.waiting_for_pad());
+            gamepad.set_menu_sends_f1(game.menu_key_is_f1());
             gamepad.set_directional(game.config().directional_move);
             gamepad.set_directional_aim(game.config().directional_aim);
             gamepad.set_weapon_out(game.weapon_out());

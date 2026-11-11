@@ -69,6 +69,10 @@ public:
 
     // True in menus, message boxes and screens: A confirms, B cancels.
     void set_menu(bool menu);
+    // True when the "menu" action must send F1 instead of Escape in play: No
+    // Regret opens its menu with F1 only, Escape there just ends the item
+    // selection (and takes the control back from a robot, so it stays Escape then).
+    void set_menu_sends_f1(bool on) { menu_f1_ = on; }
 
     // Directional movement (the enhancements window's option): in play, the
     // left stick sends the keypad's screen directions (8 ways, the original's
@@ -126,6 +130,7 @@ private:
     _SDL_GameController* controller_ = nullptr;
     int instance_ = -1;
     bool menu_ = false;
+    bool menu_f1_ = false;
     bool capture_ = false;
     std::vector<int> captured_;
     bool active_[kPadButtonCount] = {};  // direction inputs past their threshold

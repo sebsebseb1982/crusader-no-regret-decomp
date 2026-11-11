@@ -372,6 +372,27 @@ void test_gamepad() {
     CHECK(captured.size() == 3 && captured[0] == kPadLeftBumper && captured[1] == kPadLeftTrigger && captured[2] == kPadStart);
     CHECK(pad.take_captured().empty());
 
+    // "Menu" (Start): Escape, or F1 in No Regret's play; Escape in the menus whatever.
+    {
+        auto start_key = [&] {
+            pad.feed(button(SDL_CONTROLLERBUTTONDOWN, SDL_CONTROLLER_BUTTON_START));
+            pad.feed(button(SDL_CONTROLLERBUTTONUP, SDL_CONTROLLER_BUTTON_START));
+            const auto k = pad.take_keys();
+            CHECK(k.size() == 2 && k[0].pressed && !k[1].pressed && k[0].scancode == k[1].scancode);
+            return k.empty() ? KeyEvent{} : k[0];
+        };
+        KeyEvent k = start_key();
+        CHECK(k.scancode == 0x01 && k.ascii == 27);
+        pad.set_menu_sends_f1(true);
+        k = start_key();
+        CHECK(k.scancode == 0x3B && k.ascii == 0 && !k.extended);
+        pad.set_menu(true);
+        k = start_key();
+        CHECK(k.scancode == 0x01 && k.ascii == 27);
+        pad.set_menu(false);
+        pad.set_menu_sends_f1(false);
+    }
+
     // Right stick: dead zone, then motion proportional to time.
     pad.feed(axis(SDL_CONTROLLER_AXIS_RIGHTX, 3000));
     pad.mouse_motion(1.0, &dx, &dy);
