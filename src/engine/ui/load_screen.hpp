@@ -38,8 +38,18 @@
 // (FUN_1008_0000; not in the US one) because its BIOS gave QWERTY codes; the
 // port's codes already follow the player's layout, so it does not.
 // Not reproduced: the mouse cursor hidden while a name is edited.
+//
+// No Regret (13C0:000E, 13C0:0C02): the background is the 640 x 480 BMP
+// STATIC/SAVE.BMP (save) or STATIC/LOAD.BMP (load), drawn at (0, 0) with its
+// own palette, entries 0 and 255 black (instead of the GUMPS shapes over
+// MISC.PAL). The eleven slots are at (164, 110 + 27 i), the size of shape 68
+// frame 0 (not drawn: the slot bands are in the picture); each gets an
+// outline, colour 0x6F for the selected one and 0xFD for the others; the
+// name is written as in No Remorse. The autosave row (port addition) follows
+// at y = 407.
 
 #include "core/font.hpp"
+#include "core/palette.hpp"
 #include "core/surface.hpp"
 #include "engine/world/render.hpp"
 
@@ -60,7 +70,21 @@ public:
     static constexpr std::uint8_t kSelectedColour = 0xFD;
     static constexpr int kFont = 14;
 
+    static constexpr std::uint8_t kRegretSelectedColour = 0x6F;
+    static constexpr std::uint8_t kRegretSlotColour = 0xFD;
+
     using Names = std::array<std::string, kNames>;
+
+    // No Regret's backgrounds, indexed by Mode (SAVE.BMP, LOAD.BMP); a
+    // missing or unreadable file leaves the screen black.
+    struct Page {
+        Surface8 picture;
+        Palette palette;  // entries 0 and 255 black
+    };
+    struct Pictures {
+        std::array<std::optional<Page>, 2> pages;
+        static Pictures load(const std::filesystem::path& static_dir);
+    };
 
     struct Rect {
         int x0 = 0, y0 = 0, x1 = 0, y1 = 0;  // inclusive
@@ -73,10 +97,14 @@ public:
     enum class Mode { kSave = 0, kLoad = 1 };
     static constexpr std::size_t kMaxNameLength = 25;
 
-    // `selected` is DS:0098, kept by the caller.
-    LoadScreen(ShapeCache& gumps, const FontSet& fonts, const Names& names, int& selected, Mode mode = Mode::kLoad);
+    // `selected` is DS:0098, kept by the caller. `pictures` (No Regret's
+    // backgrounds) is used when the data is No Regret's (regret_data()).
+    LoadScreen(ShapeCache& gumps, const FontSet& fonts, const Names& names, int& selected, Mode mode = Mode::kLoad,
+               const Pictures* pictures = nullptr);
 
     void draw(Surface8& screen) const;
+    // No Regret: the background's palette; null for No Remorse (MISC.PAL).
+    const Palette* palette() const;
     void key(std::uint16_t code);
     void mouse_down(int x, int y);
 
@@ -96,6 +124,8 @@ private:
 
     ShapeCache* gumps_;
     const FontSet* fonts_;
+    const Page* page_ = nullptr;  // No Regret's background
+    bool regret_ = false;
     const Names* names_;
     int* selected_;
     std::array<Rect, kSlots> slots_{};

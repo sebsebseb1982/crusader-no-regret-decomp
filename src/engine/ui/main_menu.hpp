@@ -90,6 +90,7 @@ public:
         // detected); an empty line is not drawn.
         std::string port_version;
         std::string data_version;
+        const LoadScreen::Pictures* load_pictures = nullptr;  // No Regret's backgrounds
     };
     MainMenu(const Resources& res, Shared& shared, bool no_game);
 

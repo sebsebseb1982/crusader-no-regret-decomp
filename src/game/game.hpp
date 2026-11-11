@@ -189,6 +189,9 @@ public:
     // True in play while the controlled NPC has its weapon out. The controller
     // then strafes with the left stick while the right stick aims.
     bool weapon_out() const;
+    // True in No Regret's play while the player is the controlled NPC: its
+    // menu opens with F1 (1008:1664), so the controller's "menu" sends F1.
+    bool menu_key_is_f1() const;
     const WorldMouse& world_mouse() const { return *world_mouse_; }
 
     // In-game menu (Escape, WORLD_13e8_10c3). Closing it with "quit" sets
@@ -432,6 +435,7 @@ private:
     LoadScreen::Names save_names_;     // DS:7964
     CreditsData credits_data_;
     HelpScreen::Pictures help_pictures_;
+    LoadScreen::Pictures load_pictures_;  // No Regret's load / save backgrounds
     bool autosave_pending_ = false;    // request_autosave, until the player may act
     std::uint32_t autosave_due_ = 0;   // the kernel tick from which it can run
     bool run_toggled_ = false;         // GameConfig::toggle_run: running is switched on
@@ -450,6 +454,7 @@ private:
     std::uint16_t pending_notice_ = 0;    // notice to show after the pending load
     bool sprites_suspended_ = false;      // DS:2D8F: the screen sprites are not drawn
     bool difficulty_shown_ = false;    // the menu shows the difficulty screen
+    bool load_shown_ = false;          // the menu shows No Regret's load / save screen
     bool quit_ = false;
     bool status_bar_shown_ = false;    // last state seen, for the mouse range
 };

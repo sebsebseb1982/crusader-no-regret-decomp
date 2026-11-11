@@ -229,12 +229,13 @@ void MainMenu::activate(int i) {
         if (!no_game_) result_ = i;
         break;
     case kLoad:
-        load_ = std::make_unique<LoadScreen>(*gumps_, *res_.fonts, *res_.save_names, shared_->selected_slot);
+        load_ = std::make_unique<LoadScreen>(*gumps_, *res_.fonts, *res_.save_names, shared_->selected_slot,
+                                             LoadScreen::Mode::kLoad, res_.load_pictures);
         break;
     case kSave:
         if (!no_game_) {
             load_ = std::make_unique<LoadScreen>(*gumps_, *res_.fonts, *res_.save_names, shared_->selected_slot,
-                                                 LoadScreen::Mode::kSave);
+                                                 LoadScreen::Mode::kSave, res_.load_pictures);
         }
         break;
     case kCredits:

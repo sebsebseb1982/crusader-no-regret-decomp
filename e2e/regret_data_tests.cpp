@@ -8,10 +8,12 @@
 #include "core/dtable.hpp"
 #include "core/flex.hpp"
 #include "core/font.hpp"
+#include "core/language.hpp"
 #include "core/png_writer.hpp"
 #include "core/shape.hpp"
 #include "core/typeflags.hpp"
 #include "engine/audio/audio.hpp"
+#include "engine/ui/load_screen.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
 #include "game/game.hpp"
 
@@ -44,6 +46,10 @@ void shot(Game& game, const char* name) {
     Surface8 screen(Game::kScreenWidth, Game::kScreenHeight);
     game.render(screen);
     write_png(g_png_dir / name, screen, game.palette());
+}
+
+void shot_surface(const Surface8& screen, const Palette& palette, const char* name) {
+    if (!g_png_dir.empty()) write_png(g_png_dir / name, screen, palette);
 }
 
 // The game writes nothing in the data folder: the tests only start new games.
@@ -211,6 +217,33 @@ void test_start_up(const std::filesystem::path& data) {
     CHECK(game.palette() == Palette::load(data / "STATIC/MISC.PAL"));
 }
 
+// The load / save screen (13C0:000E, 13C0:0C02): LOAD.BMP / SAVE.BMP with
+// their palette (entries 0 and 255 black), slots at (164, 110 + 27 i), the
+// selected one outlined in 0x6F, the others in 0xFD.
+void test_load_screen(const std::filesystem::path& data) {
+    set_regret_data(true);
+    const auto flex = FlexArchive::open(data / "STATIC/GUMPS.FLX");
+    ShapeCache gumps(flex, ShapeLayout::Flat2D);
+    const auto fonts = FontSet::load(data / "STATIC/FONTS.FLX");
+    const auto pictures = LoadScreen::Pictures::load(data / "STATIC");
+    CHECK(pictures.pages[0] && pictures.pages[1]);
+    LoadScreen::Names names{};
+    names[1] = "TEST";
+    int selected = 1;
+    LoadScreen load(gumps, fonts, names, selected, LoadScreen::Mode::kLoad, &pictures);
+    const Palette* p = load.palette();
+    CHECK(p != nullptr && p == &pictures.pages[1]->palette);
+    CHECK(p->colors[0].r == 0 && p->colors[0].b == 0 && p->colors[255].g == 0);
+    CHECK(load.slot_rect(0).x0 == 164 && load.slot_rect(0).y0 == 110 && load.slot_rect(2).y0 == 164);
+    Surface8 screen(640, 480);
+    load.draw(screen);
+    shot_surface(screen, *p, "load_screen.png");
+    CHECK(screen.row(110)[164] == LoadScreen::kRegretSlotColour);
+    CHECK(screen.row(137)[164] == LoadScreen::kRegretSelectedColour);
+    LoadScreen save(gumps, fonts, names, selected, LoadScreen::Mode::kSave, &pictures);
+    CHECK(save.palette() == &pictures.pages[0]->palette);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -228,6 +261,7 @@ int main(int argc, char** argv) {
         test_tables(data);
         test_new_game(data);
         test_start_up(data);
+        test_load_screen(data);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "FAIL: exception: %s\n", e.what());
         ++failures;

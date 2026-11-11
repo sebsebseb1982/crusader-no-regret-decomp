@@ -2,6 +2,7 @@
 
 #include "core/flex.hpp"
 #include "core/language.hpp"
+#include "engine/ui/credits.hpp"
 #include "engine/ui/gump_keys.hpp"
 
 #include <algorithm>
@@ -15,6 +16,8 @@ namespace {
 constexpr int kLeft = 111, kTop = 66;
 constexpr int kQuarterW = 208, kQuarterH = 174;
 constexpr int kSlotX = 183, kSlotY = 109, kSlotStep = 27;
+// No Regret (13C0:01E1): ((640 - 0x1A1) >> 1) + 0x35, ((480 - 0x15C) >> 1) + 0x2C.
+constexpr int kRegretSlotX = 164, kRegretSlotY = 110;
 constexpr std::size_t kNameEntry = 9;
 constexpr std::size_t kNameSize = 32;
 
@@ -41,17 +44,49 @@ LoadScreen::Names LoadScreen::read_names(const std::filesystem::path& savegame_d
 }
 
 // @orig 13C0:000E
+LoadScreen::Pictures LoadScreen::Pictures::load(const std::filesystem::path& static_dir) {
+    Pictures p;
+    const char* const files[] = {"SAVE.BMP", "LOAD.BMP"};
+    for (int i = 0; i < 2; ++i) {
+        try {
+            const auto file = read_file(static_dir / files[i]);
+            Page page{read_bmp8(file), read_bmp_palette(file)};
+            // 13C0:024E: entries 0 and 255 black before palette_write_hw.
+            page.palette.colors[0] = Rgb{0, 0, 0};
+            page.palette.colors[255] = Rgb{0, 0, 0};
+            p.pages[i] = std::move(page);
+        } catch (const std::exception&) {
+            // missing or unreadable: the screen stays black
+        }
+    }
+    return p;
+}
+
+// @orig 13C0:000E 13C0:067B
 // TODO(regret): modified in REGRET.EXE (No Remorse 1008:0088, similarity 0.54)
-LoadScreen::LoadScreen(ShapeCache& gumps, const FontSet& fonts, const Names& names, int& selected, Mode mode)
-    : gumps_(&gumps), fonts_(&fonts), names_(&names), selected_(&selected), mode_(mode) {
+LoadScreen::LoadScreen(ShapeCache& gumps, const FontSet& fonts, const Names& names, int& selected, Mode mode,
+                       const Pictures* pictures)
+    : gumps_(&gumps), fonts_(&fonts), regret_(regret_data()), names_(&names), selected_(&selected), mode_(mode) {
+    if (regret_ && pictures) {
+        const auto& page = pictures->pages[static_cast<int>(mode_)];
+        if (page) page_ = &*page;
+    }
     *selected_ = std::clamp(*selected_, 0, visible_slots() - 1);
     const Shape* s = gumps_->get(kSlotShape);
     const int w = s && !s->frames().empty() ? s->frames()[0].width : 1;
     const int h = s && !s->frames().empty() ? s->frames()[0].height : 1;
+    const int x = regret_ ? kRegretSlotX : kSlotX;
     for (int i = 0; i < kSlots; ++i) {
-        const int y = kSlotY + kSlotStep * i;
-        slots_[i] = {kSlotX, y, kSlotX + w - 1, y + h - 1};
+        const int y = (regret_ ? kRegretSlotY : kSlotY) + kSlotStep * i;
+        slots_[i] = {x, y, x + w - 1, y + h - 1};
     }
+}
+
+// @orig 13C0:024E
+const Palette* LoadScreen::palette() const {
+    if (!regret_) return nullptr;
+    static const Palette black{};
+    return page_ ? &page_->palette : &black;
 }
 
 // @orig 13C0:0C02
@@ -59,6 +94,20 @@ LoadScreen::LoadScreen(ShapeCache& gumps, const FontSet& fonts, const Names& nam
 // TODO(regret): No Remorse 1008:05A6 has no counterpart in REGRET.EXE
 void LoadScreen::draw(Surface8& screen) const {
     screen.clear(0);
+    if (regret_) {
+        if (page_) {
+            const Surface8& pic = page_->picture;
+            const int w = std::min(pic.width, screen.width);
+            for (int y = 0; y < pic.height && y < screen.height; ++y) std::copy_n(pic.row(y), w, screen.row(y));
+        }
+        for (int i = 0; i < visible_slots(); ++i) {
+            const Rect& r = slots_[i];
+            outline(screen, r.x0, r.y0, r.x1, r.y1, i == *selected_ ? kRegretSelectedColour : kRegretSlotColour);
+            const bool edited = editing_ && i == *selected_;
+            TextWriter(*fonts_, kFont).print(screen, r.x0 + 4, r.y0 + 12, edited ? name_ + '_' : (*names_)[i]);
+        }
+        return;
+    }
     for (int q = 0; q < 4; ++q) {
         const auto shape = static_cast<std::uint16_t>(64 + 5 * static_cast<int>(mode_) + q);
         if (const Shape* s = gumps_->get(shape); s && !s->frames().empty()) {

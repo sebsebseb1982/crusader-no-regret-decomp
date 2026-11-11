@@ -148,9 +148,10 @@ private:
 class LoadGump : public ModalGump {
 public:
     LoadGump(ShapeCache& gumps, const FontSet& fonts, const LoadScreen::Names& names, int& selected,
-             LoadScreen::Mode mode = LoadScreen::Mode::kLoad)
-        : s_(gumps, fonts, names, selected, mode) {}
+             LoadScreen::Mode mode = LoadScreen::Mode::kLoad, const LoadScreen::Pictures* pictures = nullptr)
+        : s_(gumps, fonts, names, selected, mode, pictures) {}
     void draw(Surface8& screen) const override { s_.draw(screen); }
+    const Palette* palette() const override { return s_.palette(); }
     void key(std::uint16_t code) override { s_.key(code); }
     void mouse_down(int x, int y) override { s_.mouse_down(x, y); }
     bool closed() const override { return s_.result().has_value(); }
@@ -217,7 +218,8 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
       config_(GameConfig::load(data / "CRUSADER.CFG")),
       save_names_(LoadScreen::read_names(save_dir_)),
       credits_data_(CreditsData::load(data / "STATIC")),
-      help_pictures_(HelpScreen::Pictures::load(data / "STATIC")) {
+      help_pictures_(HelpScreen::Pictures::load(data / "STATIC")),
+      load_pictures_(LoadScreen::Pictures::load(data / "STATIC")) {
     // The US data has no CRUSADER.CFG (the installer writes it): without one,
     // take the installer's choices, the doubled videos and the subtitles.
     if (!std::filesystem::exists(data / "CRUSADER.CFG")) config_.big_video = config_.subtitles = true;
@@ -505,6 +507,11 @@ bool Game::weapon_out() const {
     if (!mouse_in_play() || !world_) return false;
     const ObjId npc = world_->state.controlled_npc;
     return npc != 0 && weapon_drawn(*world_, npc);
+}
+
+// @orig none: the controller's "menu" key
+bool Game::menu_key_is_f1() const {
+    return mouse_in_play() && world_ && !world_->remorse() && world_->state.controlled_npc == 1;
 }
 
 // @orig none: the slot's file in the save directory
@@ -1343,7 +1350,8 @@ void Game::open_menu(bool no_game) {
                             port_version.empty() ? std::string() : tr("PORTAGE V", "PORT V") + port_version,
                             tr("DONNEES DU JEU ", "GAME DATA ") +
                                 (data_version_.empty() ? std::string(tr("INCONNUES", "UNKNOWN")) : "V" + data_version_) + " " +
-                                (data_language_.empty() ? std::string(tr("LANGUE INCONNUE", "UNKNOWN LANGUAGE")) : data_language_)},
+                                (data_language_.empty() ? std::string(tr("LANGUE INCONNUE", "UNKNOWN LANGUAGE")) : data_language_),
+                            &load_pictures_},
         menu_shared_, no_game);
     auto p = std::make_unique<ModalProcess>();
     menu_process_ = p.get();
@@ -1361,6 +1369,7 @@ void Game::close_menu() {
     const int new_game_difficulty = menu_->new_game_difficulty();
     menu_.reset();
     difficulty_shown_ = false;
+    load_shown_ = false;
     // IRGUMP_13d0_03f5: the game's music again.
     if (audio_) audio_->music.pop();
     cursor_.hide();
@@ -1522,7 +1531,10 @@ bool Game::function_key(std::uint16_t code) {
         world_->state.screen_palette = menu_palette_;
         cursor_.push(MouseCursor::kMenuArrow);
         cursor_.show();
-        auto load = std::make_unique<LoadGump>(gumps_, fonts_, save_names_, menu_shared_.selected_slot);
+        auto load = std::make_unique<LoadGump>(gumps_, fonts_, save_names_, menu_shared_.selected_slot,
+                                               LoadScreen::Mode::kLoad, &load_pictures_);
+        // No Regret (13C0:000E): LOAD.BMP's palette instead.
+        if (const Palette* p = load->palette()) world_->state.screen_palette = *p;
         open_screen(std::move(load), [this](const ModalGump& screen) {
             if (screen.result()) pending_load_ = static_cast<const LoadGump&>(screen).slot() + 1;
             cursor_.reset(MouseCursor::kArrow);
@@ -1543,7 +1555,8 @@ bool Game::function_key(std::uint16_t code) {
         cursor_.push(MouseCursor::kMenuArrow);
         cursor_.show();
         auto save = std::make_unique<LoadGump>(gumps_, fonts_, save_names_, menu_shared_.selected_slot,
-                                               LoadScreen::Mode::kSave);
+                                               LoadScreen::Mode::kSave, &load_pictures_);
+        if (const Palette* p = save->palette()) world_->state.screen_palette = *p;
         open_screen(std::move(save), [this](const ModalGump& screen) {
             cursor_.reset(MouseCursor::kArrow);
             cursor_.hide();
@@ -1712,6 +1725,14 @@ void Game::leave_menu_mode() {
 void Game::follow_menu_screen() {
     // IRGUMP_13d0_25a2: DIFF.PAL, cursor 0x26 with the mouse at (320, 400);
     // back in the menu (13D0:082E case 0): MISC.PAL and cursor 0x25 again.
+    // No Regret's load / save screen (13C0:000E): its BMP's palette, MISC.PAL
+    // again once closed.
+    const LoadScreen* load = menu_ ? menu_->load_screen() : nullptr;
+    const Palette* load_palette = load ? load->palette() : nullptr;
+    if ((load_palette != nullptr) != load_shown_) {
+        load_shown_ = load_palette != nullptr;
+        world_->state.screen_palette = load_shown_ ? *load_palette : menu_palette_;
+    }
     const bool shown = menu_ && menu_->difficulty_screen();
     if (shown == difficulty_shown_) return;
     difficulty_shown_ = shown;
