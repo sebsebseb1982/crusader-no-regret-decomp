@@ -73,7 +73,6 @@ void ComputerGump::layout() {
 }
 
 // @orig 1390:08DC
-// TODO(regret): modified in REGRET.EXE (No Remorse 13A0:08D2, similarity 0.95)
 void ComputerGump::run() {
     if (ended()) {
         layout();  // a redraw: the last character in place of the cursor
@@ -91,19 +90,25 @@ void ComputerGump::run() {
     }
     const char c = at(shown_ - 1);
     if (c == '*') {
-        next_run_ += kStarPause;
+        next_run_ += regret_data() ? kRegretStarPause : kStarPause;
         return;
     }
     if (c != '\n' && play_sfx_) play_sfx_(kSound);
-    next_run_ += 1;
+    next_run_ += regret_data() ? kRegretCharPause : kCharPause;
 }
 
 // Gump_run_modal: the gump's run at each pass, here once its wait is over.
 // @orig 1320:159A
 void ComputerGump::update(std::uint32_t ticks) {
-    if (closed_ || ticks < next_run_) return;
-    next_run_ = ticks;
-    run();
+    const std::uint64_t now = std::uint64_t{ticks} * 1000;
+    if (closed_ || now < next_run_) return;
+    // A late pass does not run the characters it missed.
+    if (next_run_ + 1000 < now) next_run_ = now;
+    while (!closed_ && now >= next_run_) {
+        const std::uint64_t before = next_run_;
+        run();
+        if (next_run_ == before) break;
+    }
 }
 
 // @orig 1390:02DB 1390:0491

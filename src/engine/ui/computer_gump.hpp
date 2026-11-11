@@ -46,6 +46,10 @@
 // counts, so the pause lasts about 4800 * 9943 / 65536 = 728 ms. The port
 // waits 44 ticks.
 //
+// No Regret (1390:08DC) waits delay(30) after a character instead of a tick,
+// and delay(1800) after a '*': with the same timing, 0.273 and 16.39 ticks.
+// The port counts in thousandths of a tick, several characters a frame.
+//
 // Not reproduced:
 //   - the partial redraws: the original draws only the new character, on a
 //     cell first filled with colour 0 (the cursor's size at a '^'), and the
@@ -84,7 +88,9 @@ public:
     static constexpr int kRows = 13;
     static constexpr unsigned char kCursor = 0x5B;
     static constexpr int kSound = 0x33;
-    static constexpr std::uint32_t kStarPause = 44;  // ticks, see above
+    static constexpr std::uint32_t kStarPause = 44000;  // thousandths of a tick, see above
+    static constexpr std::uint32_t kCharPause = 1000;
+    static constexpr std::uint32_t kRegretStarPause = 16390, kRegretCharPause = 273;
     static const char* more() { return tr("-SUITE-", "<MORE>"); }  // DS:55AB (US: DS:557F)
 
     // `play_sfx` restarts a sound (dsfx_stop_if, then AudioProcess_I_playSFX).
@@ -128,7 +134,7 @@ private:
     bool skip_ = false;
     bool cursor_ = false;  // drawn by the last layout, at (column_, row_)
     bool closed_ = false;
-    std::uint32_t next_run_ = 0;
+    std::uint64_t next_run_ = 0;  // thousandths of a tick
 };
 
 }  // namespace crusader

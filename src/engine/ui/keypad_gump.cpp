@@ -115,8 +115,7 @@ void KeypadGump::finish(int result) {
     closed_ = true;
 }
 
-// @orig ?: No Remorse 13C8:0646, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig 13B0:0650 (outside the Ghidra list; the same as No Remorse 13C8:0646)
 void KeypadGump::key(std::uint16_t code) {
     // The shifted digits of a US keyboard.
     switch (code) {

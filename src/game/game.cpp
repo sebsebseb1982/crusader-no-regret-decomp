@@ -1526,8 +1526,7 @@ void Game::close_screen() {
     if (closed) closed(*screen);
 }
 
-// @orig 1390:0005 1390:021C
-// TODO(regret): modified in REGRET.EXE (No Remorse 13A0:0005, similarity 0.91)
+// @orig 1390:0005 1390:021C (No Regret: the same, menu mode with 1)
 void Game::read_computer(const std::string& text) {
     if (modal() || movie_) return;
     enter_menu_mode();
@@ -1545,8 +1544,7 @@ void Game::read_computer(const std::string& text) {
     });
 }
 
-// @orig 13B0:00FE 13B0:04F8
-// TODO(regret): modified in REGRET.EXE (No Remorse 13C8:00FE, similarity 0.92)
+// @orig 13B0:00FE 13B0:04F8 (No Regret: the same, menu mode with 1)
 void Game::show_keypad(std::int16_t code, Pid pid) {
     if (modal() || movie_) return;
     enter_menu_mode();
