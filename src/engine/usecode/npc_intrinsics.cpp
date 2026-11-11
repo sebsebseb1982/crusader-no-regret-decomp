@@ -100,10 +100,25 @@ std::vector<std::uint16_t> register_npc_intrinsics(UCMachine& m, World& w, const
         return 0;
     });
     // SpriteProcess::I_createSprite(shape, first, last, delay, x, y, z) (1140:00DE).
+    // No Regret (1150:00DE): a sprite of shape 0x352, 0x609, 0x1F2, 0x3D5 or
+    // 0x62B made exactly where the player (DS:898C) stands becomes the sprite
+    // that moves with him (DS:2F9C, GameState::shield_sprite) when there is
+    // none yet; the Controller listens for its end (1148:2B16 clears it).
     m.set_intrinsic(0x0C7, [&w](UCMachine& machine, UCProcess&, Args a) -> std::uint32_t {
-        return create_sprite(machine.kernel(), w, arg16(a, 0), static_cast<std::int16_t>(arg16(a, 2)),
-                             static_cast<std::int16_t>(arg16(a, 4)), arg16(a, 6),
-                             World::Point{arg16(a, 8), arg16(a, 10), arg16(a, 12) & 0xFF});
+        const std::uint16_t shape = arg16(a, 0);
+        const World::Point at{arg16(a, 8), arg16(a, 10), arg16(a, 12) & 0xFF};
+        const Item* player = w.get(1);
+        const bool on_player = player && player->x == at.x && player->y == at.y && (player->z & 0xFF) == at.z;
+        const Pid pid = create_sprite(machine.kernel(), w, shape, static_cast<std::int16_t>(arg16(a, 2)),
+                                      static_cast<std::int16_t>(arg16(a, 4)), arg16(a, 6), at);
+        const bool follows = shape == 0x352 || shape == 0x609 || shape == 0x1F2 || shape == 0x3D5 || shape == 0x62B;
+        if (!w.remorse() && on_player && follows && w.state.shield_sprite == 0) {
+            if (auto* sprite = dynamic_cast<SpriteProcess*>(machine.kernel().get(pid))) {
+                w.state.shield_sprite = pid;
+                w.state.shield_sprite_item = sprite->sprite();
+            }
+        }
+        return pid;
     });
     bound.push_back(0x0C7);
     // MainActor::I_getMaxEnergy (10F0:348B).

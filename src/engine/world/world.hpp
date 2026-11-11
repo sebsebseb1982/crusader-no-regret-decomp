@@ -170,7 +170,9 @@ struct GameState {
     bool fire_held = false;
     bool auto_firing = false;
     // The large shield's sprite (0x52B), which follows the player (FR DS:2875,
-    // US g_281d; cleared at its end through the avatar mover, event 1), and its item.
+    // US g_281d, No Regret DS:2F9C; cleared at its end through the avatar mover,
+    // event 1), and its item. No Regret also gives it the createSprite sprites
+    // made on the player (1150:00DE).
     Pid shield_sprite = 0;
     ObjId shield_sprite_item = 0;
     // DS:7E10 (Ultima8Engine::I_setAvatarInStasis / I_getAvatarInStasis):

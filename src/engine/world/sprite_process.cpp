@@ -44,10 +44,8 @@ SpriteProcess::SpriteProcess(World& world, std::uint16_t shape, int first, int l
     set_type(kType);
 }
 
-// @orig 1150:0343 1150:00DE
-// TODO(regret): 1150:00DE read: a sprite of shape 0x352, 0x609, 0x1F2, 0x3D5 or 0x62B made exactly at the
-//   player's position becomes the one the control process (DS:2F5A) waits for (its pid in DS:2F9C, when
-//   none is waited for yet). Not written: it needs the No Regret control process (segment 1148).
+// @orig 1150:0343 1150:00DE (No Regret's sprites that follow the player: in the
+// createSprite intrinsic, npc_intrinsics.cpp)
 void SpriteProcess::on_added() {
     if (shape_ == kTargetMarker) {
         GameState::Aim& aim = world_.state.aim;
