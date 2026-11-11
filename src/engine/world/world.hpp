@@ -208,6 +208,9 @@ struct GameState {
         int angle = 1000;              // DS:285E, degrees; above 360: taken from the direction
         int crosshair = -1;            // DS:2860, screen sprite slot of the crosshair
         int turns = 0;                 // DS:288A, turning animations under way
+        // No Regret DS:2FEB: when the arrows last turned the running
+        // animation of a busy controlled NPC (turn_crosshair).
+        std::uint32_t busy_turn_time = 0;
         ObjId target = 0;              // DS:289B, the designated target
         int marker = -1;               // DS:288C, screen sprite slot of its marker
         Pid marker_pid = 0;            // DS:288E, the marker's SpriteProcess

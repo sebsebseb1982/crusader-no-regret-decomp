@@ -44,7 +44,7 @@ ObjId target_in(const World& world, int dir) { return find_target(world, world.s
 // 1138:0459 / Item_I_move: where the marker of `target` goes when the target
 // is at (x, y, z).
 // @orig 1148:04A5
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0459, similarity 0.65)
+// No Regret (1148:04A5): the same, but for the marker frames (designate).
 World::Point marker_place(const World& world, ObjId target, std::int32_t x, std::int32_t y, std::int32_t z) {
     const Item* item = world.get(target);
     const ShapeInfo* info = item ? world.shape_info(item->shape) : nullptr;
@@ -174,8 +174,11 @@ void refresh_crosshair(World& world, const AnimDat& anims) {
     if (world.state.aim.active && world.state.aim.crosshair_dirty) place_crosshair(world, anims);
 }
 
+// No Regret (1148:1768): outside the aiming mode, a busy controlled NPC
+// without action 1 has its running animation turned one step by the arrows,
+// at most every 12 ticks (the original turns it to an unset direction on
+// another key; the port leaves it).
 // @orig 1148:1768
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:10C8, similarity 0.68)
 void turn_crosshair(Kernel& kernel, World& world, const AnimDat& anims, std::uint8_t scancode, bool walk_only,
                     int& dir, int& action) {
     GameState::Aim& aim = world.state.aim;
@@ -184,7 +187,17 @@ void turn_crosshair(Kernel& kernel, World& world, const AnimDat& anims, std::uin
     int wanted = current;
     bool turned = false;
     if (!aim.active) {
-        if (!aim.no_stand || actor_busy(kernel, id)) return;
+        if (!aim.no_stand) return;
+        if (actor_busy(kernel, id)) {
+            if (world.remorse()) return;
+            const std::uint32_t now = kernel.ticks();
+            if (now < aim.busy_turn_time + 12) return;
+            auto* anim = dynamic_cast<ActorAnimProcess*>(kernel.find_process(id, ActorAnimProcess::kType));
+            if (anim && (scancode == kKeyLeft || scancode == kKeyRight))
+                anim->set_direction((current + (scancode == kKeyLeft ? -1 : 1)) & 0xF);
+            aim.busy_turn_time = now;
+            return;
+        }
         if (scancode == kKeyLeft) wanted = (current - 1) & 0xF;
         else if (scancode == kKeyRight) wanted = (current + 1) & 0xF;
         else return;
@@ -262,7 +275,7 @@ std::optional<World::Point> crosshair_aim(const World& world, int z) {
 }
 
 // @orig 1148:04A5
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0459, similarity 0.65)
+// No Regret (1148:04A5): the marker takes frames style * 6 .. + 5 (DS:2FC2).
 void designate(Kernel& kernel, World& world, const AnimDat& anims, ObjId target) {
     GameState::Aim& aim = world.state.aim;
     if (!world.state.target_designation || aim.target == target) return;
@@ -318,7 +331,7 @@ void check_designation(Kernel& kernel, World& world, const AnimDat& anims) {
 }
 
 // @orig 10B0:1575 1148:04A5
-// TODO(regret): modified in REGRET.EXE (No Remorse 1138:0459, similarity 0.65)
+// No Regret (1148:04A5): the same as No Remorse here.
 void designated_target_moved(Kernel& kernel, World& world, const AnimDat& anims, ObjId target, std::int32_t x,
                              std::int32_t y, std::int32_t z) {
     const ObjId npc = world.state.controlled_npc;
