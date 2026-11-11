@@ -246,9 +246,6 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     reset_world();
 }
 
-// @orig ?: No Remorse 12E0:06BF, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
-
 // WPNCACHE_1160_005f: a firing frame of an actor's animation. The object that
 // fires is the active inventory item when the actor's last action is 13 and
 // it has one, else its active weapon. The player's weapon of fire type 6 (909)
@@ -259,7 +256,8 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
 // (record +0xC) and aiming, and the object's sound (DTABLE +2) on the actor's
 // voice.
 // @orig 1170:0206
-// TODO(regret): modified in REGRET.EXE (No Remorse 1160:005F, similarity 0.75)
+// No Regret: the 5th and 6th shots of every 6 of the last boss (shape 0x5B1,
+// counter DS:2FC0) are of fire type 0x16, with the sound of weapon 0x388.
 void Game::fire_frame(ObjId actor, int a, int b, int z) {
     ++shots_fired_;
     const auto r = world_->npc_record(actor);
@@ -267,7 +265,16 @@ void Game::fire_frame(ObjId actor, int a, int b, int z) {
     const ObjId item = world_->active_inventory_item(actor);
     const Item* source = world_->get(item != 0 && last == 13 ? item : world_->active_weapon(actor));
     if (!source) return;
-    const int type = dtable::weapon(source->shape).fire_type();
+    int type = dtable::weapon(source->shape).fire_type();
+    std::uint16_t sound_shape = source->shape;
+    if (const Item* shooter = world_->get(actor); !world_->remorse() && shooter && shooter->shape == 0x5B1) {
+        std::int16_t& shots = world_->state.boss_shots;
+        if (shots++ >= 4) {
+            if (shots >= 6) shots = 0;
+            type = 0x16;
+            sound_shape = 0x388;
+        }
+    }
     const Item* equipped_weapon = world_->get(world_->active_weapon(actor));
     const bool source_is_weapon = dtable::weapon(source->shape).shape() == source->shape;
     const std::uint16_t firing_shape = source_is_weapon ? source->shape : (equipped_weapon ? equipped_weapon->shape : 0);
@@ -287,7 +294,7 @@ void Game::fire_frame(ObjId actor, int a, int b, int z) {
         if (vibration.duration_ms != 0)
             vibrate(vibration.low_frequency, vibration.high_frequency, vibration.duration_ms);
     }
-    const std::uint16_t sound = dtable::weapon(source->shape).sound();
+    const std::uint16_t sound = dtable::weapon(sound_shape).sound();
     if (sound != 0 && audio_) audio_->sources.retrigger(*world_, sound, actor);
 }
 
@@ -295,7 +302,9 @@ void Game::fire_frame(ObjId actor, int a, int b, int z) {
 void Game::set_config(GameConfig config) {
     config_ = std::move(config);
     if (world_) world_->state.frameskip = config_.frameskip;
-    // ass_init: the volumes and the filter of the configuration.
+    // ass_init (No Remorse 12E0:06BF, No Regret 12E0:0189, which also asks
+    // ASYLUM for the card's name): the volumes and the filter of the
+    // configuration.
     if (audio_) {
         audio_->mixer.set_music_volume(config_.music_volume);
         audio_->mixer.set_sound_volume(config_.sound_volume);
@@ -498,9 +507,12 @@ bool Game::weapon_out() const {
 // @orig none: the slot's file in the save directory
 void Game::load_save(int slot) { load_save_file(save_dir_ / ("SAVEGAME." + std::to_string(slot))); }
 
+// No Regret (1060:02E4) reads no entry 91, then clears the "Crusader
+// teleporting" and "cru stasis" flags and, the player kneeling, sets his
+// shape's kneeling height again (NPC_10f8_24b9). Not reproduced: the debug
+// gump (DEBUGUMP_13a8_0000) and the music restart of AMFLOAD_12e0_0000 (the
+// music is restored below).
 // @orig 1060:02E4 1030:032D
-// TODO(regret): modified in REGRET.EXE (No Remorse 1058:02F1, similarity 0.85)
-// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::load_save_file(const std::filesystem::path& path) {
     reset_world();
     const auto save = FlexArchive::open(path);
@@ -582,6 +594,11 @@ void Game::load_save_file(const std::filesystem::path& path) {
             audio_->music.restore(track[0] | track[1] << 8, flags[0] | flags[1] << 8);
         }
     }
+    if (!world_->remorse()) {
+        world_->state.crusader_teleporting = false;
+        world_->state.cru_stasis = false;
+        if (const auto r = world_->npc_record(1); !r.empty() && (r[npc::kFlags13] & 0x04)) set_kneeling(*world_, 1, true);
+    }
     world_->state.status_bar_visible = true;
     apply_status_bar_mouse_range();
     // Game_start (1028:0000), a game loaded: the game palette, the colour
@@ -589,8 +606,10 @@ void Game::load_save_file(const std::filesystem::path& path) {
     world_->state.cycle_paused = false;
 }
 
+// No Regret (1060:0115) has no entry 91 (no Weasel), saves as many bytes of
+// globals as UNKDS.DAT has (DS:7150: 0x24), and afterwards clears the
+// "Crusader teleporting" and "cru stasis" flags.
 // @orig 1060:0115
-// TODO(regret): modified in REGRET.EXE (No Remorse 1058:0115, similarity 0.91)
 void Game::save_game(int slot) {
     if (slot < 1 || slot > LoadScreen::kNames) throw std::runtime_error("no save slot " + std::to_string(slot));
     FlexWriter flex(1024);
@@ -608,7 +627,7 @@ void Game::save_game(int slot) {
     std::copy_n(text.begin(), std::min<std::size_t>(text.size(), 31), name.begin());
     flex.add(9, name);
     flex.add(90, bytes({world_->state.alert_active ? 1u : 0u}, 1));
-    flex.add(91, bytes({weasel_intro_played_ ? 1u : 0u}, 1));
+    if (!regret_) flex.add(91, bytes({weasel_intro_played_ ? 1u : 0u}, 1));
     flex.add(0, world_->saved_item_table());
     flex.add(1, world_->saved_item_lists());
     flex.add(10, world_->npc_table());
@@ -629,7 +648,13 @@ void Game::save_game(int slot) {
     for (int part = 0; part < 3; ++part) flex.add(static_cast<std::size_t>(50 + part), world_->saved_tracker(part));
     // Entry 60 (FLAG_1410_02e7): the usecode globals, DS:65A8 bytes (the
     // size of UNKDS.DAT, 0x42).
-    flex.add(60, std::span(machine_->globals()).first(kSavedGlobals));
+    std::size_t globals = kSavedGlobals;
+    if (regret_) {
+        std::error_code error;
+        const auto size = std::filesystem::file_size(game_file(data_, mod_, "USECODE/UNKDS.DAT"), error);
+        if (!error) globals = std::min<std::size_t>(static_cast<std::size_t>(size), machine_->globals().size());
+    }
+    flex.add(60, std::span(machine_->globals()).first(globals));
 
     // Entries 70, 71 (STDINT_1200_0311): the music track and its flags.
     flex.add(70, bytes({static_cast<std::uint32_t>(audio_ ? audio_->music.current() : 0)}, 2));
@@ -637,6 +662,10 @@ void Game::save_game(int slot) {
     const auto& dir = save_dir_;
     std::filesystem::create_directories(dir);
     flex.write(dir / ("SAVEGAME." + std::to_string(slot)));
+    if (regret_) {
+        world_->state.crusader_teleporting = false;
+        world_->state.cru_stasis = false;
+    }
 }
 
 // @orig none: port-only autosave

@@ -166,6 +166,11 @@ ActionTest test_action(const World& world, const AnimDat& anims, ObjId actor, st
 // direction at once (last action = `action`, frame index 0).
 void set_pose(World& world, const AnimDat& anims, ObjId actor, std::uint16_t action);
 
+// NPC_10f0_221b / 226d, for the player only: record +0x13 bit 2
+// (Actor::I_isKneeling) and the footpad height of his shape, 6 kneeling and
+// 10 standing.
+void set_kneeling(World& world, ObjId actor, bool kneel);
+
 // Actor::I_isBusy: the actor has an animation.
 bool actor_busy(const Kernel& kernel, ObjId actor);
 // The running animation of an actor (first of its queue), or nullptr.

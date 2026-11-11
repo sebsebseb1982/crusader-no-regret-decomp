@@ -138,6 +138,8 @@ struct GameState {
     // No Regret DS:2FC4: the shield of shape 0x5B1, 1500 at start; hits take
     // from it (apply_damage) until it is empty.
     std::int16_t boss_shield = 1500;
+    // No Regret DS:2FC0: the shots of shape 0x5B1, 0..5 (Game::fire_frame).
+    std::int16_t boss_shots = 0;
     // No Regret DS:2DBE: set by 1140:018B around the hit that ends the game,
     // so that the explosion takes the player apart (shape 0x656).
     bool forced_blast_death = false;

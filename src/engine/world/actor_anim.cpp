@@ -756,6 +756,9 @@ bool kneeling_action(const World& world, std::uint16_t action) {
     return std::find(std::begin(kKneelingActions), end, action) != end;
 }
 
+
+}  // namespace
+
 // NPC_10f0_221b / 226d, for the player only: record +0x13 bit 2
 // (Actor::I_isKneeling) and the footpad height of his shape, 6 kneeling and
 // 10 standing.
@@ -769,8 +772,6 @@ void set_kneeling(World& world, ObjId actor, bool kneel) {
     if (kneel) record[npc::kFlags13] |= 0x04;
     else record[npc::kFlags13] &= static_cast<std::uint8_t>(~0x04);
 }
-
-}  // namespace
 
 // @orig 10F8:039A
 Pid do_anim(Kernel& kernel, World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
