@@ -159,6 +159,10 @@ struct GameState {
 
     std::uint16_t controlled_npc = 1; // World::I_getControlledNPCNum (1 = the player)
     int frameskip = 0;                 // DS:2887; animation frame skipping (0 or 3 in CRUSADER.CFG)
+    // Character 9 of "VIOLENCE=1" (No Regret DS:0AE1, set by "violence" in
+    // CRUSADER.CFG; always on in No Remorse): UCMachine::I_true 0x06D
+    // (1058:00A1), the gory deaths and the death cries.
+    bool violence = true;
     // The AutoFirer (1138:2FFB): the process that fires weapon 909 (fire type 6) at 6 Hz while
     // the player holds the fire key (DS:2871, 0 when there is none); the fire key flag of the
     // last Controller_fire call (DS:28CD); a shot of the AutoFirer under way (DS:2876).

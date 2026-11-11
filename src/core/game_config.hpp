@@ -1,15 +1,16 @@
 #pragma once
 // CRUSADER.CFG, "key=value" lines: read at start-up (1020:0000) and written
-// back by config_save (1020:0C7F) when the options screen closes.
+// back by config_save (1020:0DB7) when the options screen closes. Keys and
+// values are compared in lower case.
 //
-// Only the keys of the options screen, the subtitles and "noweasel" are
-// decoded here; the others (sound card, CD letter, mouse buttons...) are kept
-// as they are. Defaults are the data segment's initial values, used when a
-// key is missing.
+// Only the keys of the options screen, the movies' and the violence are
+// decoded here; the others (sound card, CD letter, mouse buttons, joystick...)
+// are kept as they are. Defaults are the data segment's initial values, used
+// when a key is missing.
 //
 // The original rewrites the whole file from its globals, with lines ending in
-// "\n\r"; the port replaces the lines of the keys it knows, keeps the other
-// lines and their order, and ends lines with "\r\n" like the installer.
+// "\r\n"; the port replaces the lines of the keys it knows, keeps the other
+// lines and their order.
 
 #include "core/pad_config.hpp"
 
@@ -22,23 +23,30 @@ namespace crusader {
 
 class GameConfig {
 public:
-    int sound_volume = 0x40;   // "soundvolume" (DS:464B), 0..0x40
-    int music_volume = 0x20;   // "musicvolume" (DS:464D)
-    bool filter = true;        // "filter" (DS:464F): the mixer's oversampling
-    int animation = 0;         // "animation" (DS:0636): 0 shows the animations
-    int frameskip = 0;         // "frameskip" (DS:2887): 0, or 3 for one frame in two
-    bool limit_blasts = false; // "limitblasts" (DS:2888)
-    int mouse_speed = 2;       // "mousespeed" (DS:6001), 0..3
-    bool big_video = false;    // "bigvideo" (DS:68CE: mode 0x13 / 8 when big, else 0x101 / 0)
-    bool subtitles = false;    // "subtitles" (DS:0179): the cutscenes' subtitles
+    int sound_volume = 0x40;   // "soundvolume" (the mixer's), 0..0x40
+    int music_volume = 0x20;   // "musicvolume" (the mixer's)
+    bool filter = true;        // "filter" (DS:5579): the mixer's oversampling
+    int animation = 0;         // "animation" (DS:0864): 0 shows the animations
+    int frameskip = 0;         // "frameskip" (DS:2FC8): 0, or 3 for one frame in two
+    bool limit_blasts = false; // "limitblasts" (DS:2FCA)
+    int mouse_speed = 2;       // "mousespeed" (DS:00A7), 0..3
+    // "bigvideo" (DS:75A2, 2 when set; "true", "1" or "yes"): the movies doubled.
+    bool big_video = false;
+    bool subtitles = false;    // "subtitles" (DS:030A): the cutscenes' subtitles
     // No Regret: "lowresmovies" (DS:75A6), the movies decoded without their
-    // luma corrections. Kept as read (the port does not write it).
+    // luma corrections. Always written.
     bool low_res_movies = false;
     // No Regret: "moviehicolor" (DS:0309; "true", "1" or "yes"), the movies
     // played in 16-bit colour (VESA mode 0x111) instead of through their
     // 256-colour palette.
     bool movie_hicolor = false;
-    bool no_weasel = false;    // "noweasel" (DS:0178): no movies in Weasel's shop
+    // No Regret: "violence" ("true", "1" or "yes"; character 9 of "VIOLENCE=1",
+    // DS:0AE1, always written). Read by UCMachine::I_true 0x06D (1058:00A1):
+    // the burning, melting and blown-apart deaths, the death cries.
+    bool violence = true;
+    // No Remorse's "noweasel" (no movies in Weasel's shop): No Regret neither
+    // reads nor writes it, so it stays false.
+    bool no_weasel = false;
     // Port addition, written only when set: "followplayer", the camera keeps
     // the controlled NPC at the centre of the screen.
     bool follow_player = false;

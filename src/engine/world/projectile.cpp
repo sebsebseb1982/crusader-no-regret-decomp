@@ -534,7 +534,9 @@ void damage_npc_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId
             set_controlled_npc(kernel, world, anims, 0);
         }
     }
-    // The violence option (UCMachine::I_true 0x06D in No Regret) is always on.
+    // The violence option (UCMachine::I_true 0x06D, 1058:00A1) gates the
+    // burning and blown-apart deaths, the melting (0xE), type 0x14 and the cry.
+    const bool violence = world.state.violence;
     const auto become = [&](std::uint16_t new_shape, std::uint16_t pose) {
         world.set_shape(*item, new_shape);
         set_pose(world, anims, target, pose);
@@ -547,7 +549,7 @@ void damage_npc_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId
             become(0x5EF, 0x12);
         }
     } else if (fire_type == 3 || fire_type == 4 || fire_type == 10 || fire_type == 12) {
-        if (human) {
+        if (human && violence) {
             // A damage roll of the fire type: from 6/10 of it the human burns
             // and runs (0x576), unless from 8/10 a coin toss (or DS:2DBE)
             // takes him apart (0x656); type 12 always burns. The original
@@ -587,7 +589,7 @@ void damage_npc_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId
     } else if (fire_type == 6) {
         if (human) become(0x58F, 0);  // burnt
     } else if (fire_type == 0xE) {
-        if (human) become(0x596, 0x12);
+        if (human && violence) become(0x596, 0x12);
     } else if (fire_type == 0xF) {
         if (human) become(0x59C, 0x12);
     } else if (fire_type == 0x10 || fire_type == 0x12) {
@@ -595,7 +597,7 @@ void damage_npc_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId
     } else if (fire_type == 0x11) {
         if (human) become(0x62D, 0x12);
     } else if (fire_type == 0x14) {
-        if (human) become(0x278, 0x12);
+        if (human && violence) become(0x278, 0x12);
     } else if (fire_type == 7 && target == 1) {
         do_anim(kernel, world, anims, 1, 0x37, kDirCurrent, 0, false);
     }
@@ -636,7 +638,7 @@ void damage_npc_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId
         // Death cry of the shapes with TYPEFLAG byte 6 bit 7 (ITEM_10b0_06de):
         // DS:2DD1 for women, DS:2DD9 for five shapes, DS:2DBF for the others.
         const ShapeInfo* info = world.shape_info(item->shape);
-        if (info && (info->bytes[6] & 0x80)) {
+        if (info && (info->bytes[6] & 0x80) && violence) {
             static constexpr int kWoman[] = {0xD8, 0x10, 0x21F, 0x220};
             static constexpr int kSpecial[] = {0x22B, 0x22E, 0x231, 0x232, 0x233, 0x235, 0x223,
                                                0x22C, 0x22D, 0x22F, 0x234, 0x237, 0x238};

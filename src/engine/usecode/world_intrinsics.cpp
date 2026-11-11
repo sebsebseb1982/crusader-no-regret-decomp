@@ -106,10 +106,11 @@ std::vector<std::uint16_t> register_world_intrinsics(UCMachine& m, World& w, con
     });
     // UCMachine::I_true (1050:00C1): character 13 of "GAME COMPILE=1" (DS:0908) is '1'.
     bind({0x02C}, [](UCMachine&, UCProcess&, Args) -> std::uint32_t { return 1; });
-    // Violence (1050:00A1): character 9 of "VIOLENCE=1" (DS:090C) is '1' in
-    // this build. Gates the blood under the bodies (NPCDEATH) and the bodies'
-    // reaction to shots (D_GUARD... gotHit).
-    bind({0x06D}, [](UCMachine&, UCProcess&, Args) -> std::uint32_t { return 1; });
+    // Violence (1058:00A1): character 9 of "VIOLENCE=1" (DS:0AE1) is '1'.
+    // Always so in No Remorse; No Regret sets it from "violence" in
+    // CRUSADER.CFG. Gates the blood under the bodies (NPCDEATH) and the
+    // bodies' reaction to shots (D_GUARD... gotHit).
+    bind({0x06D}, [&s](UCMachine&, UCProcess&, Args) -> std::uint32_t { return s.violence; });
     bind({0x029}, [&s](UCMachine&, UCProcess&, Args) -> std::uint32_t { return s.difficulty; });
     bind({0x01B}, [&s](UCMachine&, UCProcess&, Args) -> std::uint32_t { return s.controlled_npc; });
     // Ultima8Engine::I_setAvatarInStasis (10F0:3696): the flag; a living

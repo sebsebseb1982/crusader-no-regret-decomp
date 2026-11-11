@@ -224,7 +224,8 @@ void special_frame_regret(Kernel& kernel, World& world, const AnimDat& anims, Ob
         play(cry_from(world, r, kMan, kWoman));
         return;
     }
-    case 0x576: {  // with violence on (always in this build)
+    case 0x576: {  // with violence on (UCMachine::I_true 0x06D)
+        if (!world.state.violence) return;
         static constexpr int kMan[] = {0x24F, 0x250, 0x201, 0x200}, kWoman[] = {0x3D, 0x77, 0x210};
         const bool woman = r[npc::kStance] & 0x04;
         const std::span<const int> table = woman ? std::span<const int>(kWoman) : std::span<const int>(kMan);

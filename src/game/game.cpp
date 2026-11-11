@@ -303,7 +303,10 @@ void Game::fire_frame(ObjId actor, int a, int b, int z) {
 // @orig none: applying the port's settings
 void Game::set_config(GameConfig config) {
     config_ = std::move(config);
-    if (world_) world_->state.frameskip = config_.frameskip;
+    if (world_) {
+        world_->state.frameskip = config_.frameskip;
+        world_->state.violence = !regret_ || config_.violence;
+    }
     // ass_init (No Remorse 12E0:06BF, No Regret 12E0:0189, which also asks
     // ASYLUM for the card's name): the volumes and the filter of the
     // configuration.
@@ -336,6 +339,7 @@ void Game::reset_world() {
     world_ = std::make_unique<World>(typeflags_);
     world_->set_remorse(!regret_);
     world_->state.frameskip = config_.frameskip;
+    world_->state.violence = !regret_ || config_.violence;
     world_->state.target_designation = target_designation;
     world_->state.cheats = cheats;
     world_->set_damage_table(damage_);
@@ -1116,9 +1120,11 @@ void Game::next_start_up_movie() {
 }
 
 // @orig 1020:0DB7
-// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0C7F, similarity 0.73)
 void Game::save_config() {
-    if (world_) world_->state.frameskip = config_.frameskip;
+    if (world_) {
+        world_->state.frameskip = config_.frameskip;
+        world_->state.violence = !regret_ || config_.violence;
+    }
     if (config_file_.empty()) return;
     try {
         config_.save(config_file_);

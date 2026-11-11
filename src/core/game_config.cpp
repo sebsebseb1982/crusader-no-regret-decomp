@@ -1,6 +1,7 @@
 #include "core/game_config.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
@@ -11,10 +12,39 @@ namespace crusader {
 
 namespace {
 
-std::string_view key_of(std::string_view line) {
-    const auto eq = line.find('=');
-    return eq == std::string_view::npos ? std::string_view{} : line.substr(0, eq);
+bool is_blank(char ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
+
+std::string lower(std::string_view text) {
+    std::string out(text);
+    for (char& ch : out) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    return out;
 }
+
+// A line as 1020:0000 reads it (FILEPARS.C): lines starting with '#' or '/'
+// are comments; then blanks skipped, the key up to '=' and cut at its first
+// blank, the value the first word after '=', both lowered (strlwr).
+struct Entry {
+    std::string key, value;
+};
+
+// @orig 1020:0000
+Entry entry_of(std::string_view line) {
+    if (line.empty() || line[0] == '#' || line[0] == '/') return {};
+    std::size_t i = 0;
+    while (i < line.size() && is_blank(line[i])) ++i;
+    const auto eq = line.find('=', i);
+    if (eq == std::string_view::npos) return {};
+    std::size_t k = i;
+    while (k < eq && !is_blank(line[k])) ++k;
+    std::size_t v = eq + 1;
+    while (v < line.size() && is_blank(line[v])) ++v;
+    std::size_t w = v;
+    while (w < line.size() && !is_blank(line[w])) ++w;
+    return {lower(line.substr(i, k - i)), lower(line.substr(v, w - v))};
+}
+
+// "true", "1" or "yes" (No Regret's "bigvideo", "moviehicolor", "violence").
+bool is_yes(std::string_view value) { return value == "true" || value == "1" || value == "yes"; }
 
 // atoi, as the original reads numbers.
 int number(std::string_view value) { return std::atoi(std::string(value).c_str()); }
@@ -45,7 +75,6 @@ int GameConfig::next_view_zoom(int current_pct, int limit_pct) {
 }
 
 // @orig 1020:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0000, similarity 0.73)
 GameConfig GameConfig::load(const std::filesystem::path& path) {
     std::ifstream in(path, std::ios::binary);
     if (!in) return {};
@@ -55,7 +84,9 @@ GameConfig GameConfig::load(const std::filesystem::path& path) {
 }
 
 // @orig 1020:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0000, similarity 0.73)
+// No Regret reads "violence" and "lowresmovies", takes "true", "1" or "yes"
+// for "bigvideo", and no longer reads "noweasel", "videosize" or
+// "fullinstall" ("cdicon" is recognised and ignored).
 GameConfig GameConfig::parse(std::string_view text) {
     GameConfig c;
     while (!text.empty()) {
@@ -64,8 +95,9 @@ GameConfig GameConfig::parse(std::string_view text) {
         text = end == std::string_view::npos ? std::string_view{} : text.substr(end + 1);
         if (line.empty()) continue;
         c.lines_.emplace_back(line);
-        const std::string_view key = key_of(line);
-        const std::string_view value = line.substr(key.size() + (key.empty() ? 0 : 1));
+        const Entry e = entry_of(line);
+        const std::string_view key = e.key;
+        const std::string_view value = e.value;
         if (key == "soundvolume") c.sound_volume = number(value);
         else if (key == "musicvolume") c.music_volume = number(value);
         else if (key == "filter") c.filter = value == "true";
@@ -73,11 +105,11 @@ GameConfig GameConfig::parse(std::string_view text) {
         else if (key == "frameskip") c.frameskip = number(value);
         else if (key == "limitblasts") c.limit_blasts = value == "true";
         else if (key == "mousespeed") c.mouse_speed = number(value);
-        else if (key == "bigvideo") c.big_video = value == "true";
+        else if (key == "bigvideo") c.big_video = is_yes(value);
         else if (key == "lowresmovies") c.low_res_movies = value == "true";
-        else if (key == "moviehicolor") c.movie_hicolor = value == "true" || value == "1" || value == "yes";
+        else if (key == "moviehicolor") c.movie_hicolor = is_yes(value);
+        else if (key == "violence") c.violence = is_yes(value);
         else if (key == "subtitles") c.subtitles = value == "true";
-        else if (key == "noweasel") c.no_weasel = value == "true";
         else if (key == "followplayer") c.follow_player = value == "true";
         else if (key == "directionalmove") c.directional_move = value == "true";
         else if (key == "viewzoom") c.view_zoom_pct = view_zoom_pct_of(value);
@@ -105,7 +137,8 @@ GameConfig GameConfig::parse(std::string_view text) {
 }
 
 // @orig 1020:0DB7
-// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0C7F, similarity 0.73)
+// No Regret writes "fullinstall", "lowresmovies" and "violence", and no
+// longer "noweasel".
 std::string GameConfig::text() const {
     GameConfig out = *this;
     out.set("musicvolume", std::to_string(music_volume));
@@ -115,17 +148,18 @@ std::string GameConfig::text() const {
     out.set("limitblasts", limit_blasts ? "true" : "false");
     out.set("frameskip", std::to_string(frameskip));
     out.set("filter", filter ? "true" : "false");
-    // Written only when set (DS:68CE == 0x80013).
-    if (big_video) out.set("bigvideo", "true");
-    else out.erase("bigvideo");
-    // No Regret writes it either way (1020:0DB7).
-    out.set("moviehicolor", movie_hicolor ? "true" : "false");
-    // Written only when set (DS:0179 != 0).
+    // DS:1184, never cleared: always written.
+    out.set("fullinstall", "true");
+    // Written only when set (DS:030A != 0).
     if (subtitles) out.set("subtitles", "true");
     else out.erase("subtitles");
-    // Written only when set (DS:0178 != 0).
-    if (no_weasel) out.set("noweasel", "true");
-    else out.erase("noweasel");
+    out.set("lowresmovies", low_res_movies ? "true" : "false");
+    // Written only when set (DS:75A2 != 0).
+    if (big_video) out.set("bigvideo", "true");
+    else out.erase("bigvideo");
+    out.set("moviehicolor", movie_hicolor ? "true" : "false");
+    // The original rewrites the file, so a No Remorse "noweasel" goes.
+    out.erase("noweasel");
     if (follow_player) out.set("followplayer", "true");
     else out.erase("followplayer");
     if (directional_move) out.set("directionalmove", "true");
@@ -162,13 +196,14 @@ std::string GameConfig::text() const {
         out.set("padaim", std::to_string(pad.aim));
         out.set("paddeadzone", std::to_string(pad.dead_zone));
     }
+    // Character 9 of "VIOLENCE=1" (DS:0AE1).
+    out.set("violence", violence ? "true" : "false");
     std::string s;
     for (const std::string& line : out.lines_) s += line + "\r\n";
     return s;
 }
 
 // @orig 1020:0DB7
-// TODO(regret): modified in REGRET.EXE (No Remorse 1020:0C7F, similarity 0.73)
 void GameConfig::save(const std::filesystem::path& path) const {
     std::ofstream out(path, std::ios::binary | std::ios::trunc);
     const std::string s = text();
@@ -180,7 +215,7 @@ void GameConfig::save(const std::filesystem::path& path) const {
 void GameConfig::set(std::string_view key, const std::string& value) {
     const std::string line = std::string(key) + "=" + value;
     for (std::string& l : lines_) {
-        if (key_of(l) == key) {
+        if (entry_of(l).key == key) {
             l = line;
             return;
         }
@@ -189,7 +224,7 @@ void GameConfig::set(std::string_view key, const std::string& value) {
 }
 
 void GameConfig::erase(std::string_view key) {
-    std::erase_if(lines_, [key](const std::string& l) { return key_of(l) == key; });
+    std::erase_if(lines_, [key](const std::string& l) { return entry_of(l).key == key; });
 }
 
 }  // namespace crusader

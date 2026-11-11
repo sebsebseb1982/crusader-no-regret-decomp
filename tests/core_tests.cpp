@@ -42,8 +42,27 @@ void check_config() {
     e.big_video = false;
     e.frameskip = 3;
     check(e.text() == "irq=7\r\nmusicvolume=40\r\nfilter=false\r\nlimitblasts=true\r\nsoundvolume=64\r\n"
-                      "mousespeed=2\r\nanimation=0\r\nframeskip=3\r\nmoviehicolor=false\r\n",
+                      "mousespeed=2\r\nanimation=0\r\nframeskip=3\r\nfullinstall=true\r\nlowresmovies=false\r\n"
+                      "moviehicolor=false\r\nviolence=true\r\n",
           "config written over its lines, other keys kept");
+
+    // 1020:0000 lowers keys and values, cuts them at blanks, skips comments.
+    {
+        const GameConfig l = GameConfig::parse("# filter=false\r\n  MusicVolume = 12  \r\nBIGVIDEO=Yes\r\n/limitblasts=true\r\n");
+        check(l.music_volume == 12 && l.big_video && l.filter && !l.limit_blasts, "config case, blanks, comments");
+        GameConfig r = l;
+        r.music_volume = 20;
+        check(r.text().find("musicvolume=20\r\n") != std::string::npos &&
+                  r.text().find("MusicVolume") == std::string::npos && r.text().find("# filter=false\r\n") == 0,
+              "config line of a lowered key replaced");
+    }
+
+    // No Regret's "violence": on unless the file says otherwise; written either way.
+    check(GameConfig::parse("irq=7\r\n").violence && GameConfig::parse("violence=1\r\n").violence &&
+              !GameConfig::parse("violence=false\r\n").violence && !GameConfig::parse("violence=on\r\n").violence,
+          "config violence");
+    check(GameConfig::parse("violence=no\r\n").text().find("violence=false\r\n") != std::string::npos,
+          "config violence written");
 
     // No Regret's "moviehicolor": "true", "1" or "yes"; written either way.
     check(GameConfig::parse("moviehicolor=true\r\n").movie_hicolor && GameConfig::parse("moviehicolor=1\r\n").movie_hicolor &&
@@ -53,11 +72,9 @@ void check_config() {
     check(GameConfig::parse("moviehicolor=yes\r\n").text().find("moviehicolor=true\r\n") != std::string::npos,
           "config moviehicolor written");
 
-    // "noweasel": read, and written only when set (1020:0C7F).
-    GameConfig w = GameConfig::parse("irq=7\r\nnoweasel=true\r\n");
-    check(w.no_weasel && !GameConfig::parse("noweasel=false\r\n").no_weasel, "config noweasel");
-    w.no_weasel = false;
-    check(w.text().find("noweasel") == std::string::npos, "config noweasel erased when clear");
+    // "noweasel": No Remorse's, neither read nor written by No Regret (1020:0DB7).
+    const GameConfig w = GameConfig::parse("irq=7\r\nnoweasel=true\r\n");
+    check(!w.no_weasel && w.text().find("noweasel") == std::string::npos, "config noweasel dropped");
 
     // "autosave" (port addition): on by default, written only when switched off.
     GameConfig saving = GameConfig::parse("irq=7\r\n");
