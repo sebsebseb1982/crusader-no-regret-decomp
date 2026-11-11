@@ -40,8 +40,12 @@ ShapeButton::ShapeButton(ShapeCache& g, std::uint16_t s, int i, int x, int y) : 
     rect = {x, y, x + w - 1, y + h - 1};
 }
 
+// @orig 1370:0105
+// No Regret takes the whole rectangle; No Remorse (1378:0105) only the shape's
+// pixels in it.
 bool ShapeButton::contains(int x, int y) const {
     if (!rect.contains(x, y)) return false;
+    if (regret_data()) return true;
     const ShapeFrame* f = first_frame(*gumps, shape, selected ? 1 : 0);
     return f && f->pixel(x - rect.x0, y - rect.y0) >= 0;
 }

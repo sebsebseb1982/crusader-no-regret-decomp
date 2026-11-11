@@ -46,6 +46,13 @@
 // (_ASS_SetSoundVolume / _ASS_SetMusicVolume), mouse speed DS:6001 (0..3).
 // The volume and mouse buttons play sound 0x98 even at the end of the range.
 //
+// No Regret (13B8:0F53, 13B8:1851, 13B8:25CF): the US places of the widgets
+// (x 95 for the second choices, the video line at y 243), "quit" at x 551, the
+// main menu's background (GUMPS 54..57 from y 75) under the labels 44..47,
+// "music volume" at x 465, the US focus outlines in colour 0x74. Line 4 is
+// "movies in 16-bit colours" (0x54 / 0x55, DS:0309, "moviehicolor"); the
+// mixer's filter is not on the screen. The keys (13B8:231A) are the same.
+//
 // Port addition: an "ameliorations" button (line 9, left of "quit", a text
 // button with a "+" icon in the colours of the quit one) opens the
 // enhancements window (enhancements_screen.hpp), which holds the controller

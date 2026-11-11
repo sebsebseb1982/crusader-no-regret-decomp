@@ -20,6 +20,7 @@
 // (keyboard or left mouse button; "quit" leaves).
 
 #include "core/iso_image.hpp"
+#include "core/language.hpp"
 #include "core/png_writer.hpp"
 #include "crusader_version.hpp"
 #include "engine/world/inventory.hpp"
@@ -203,8 +204,13 @@ int main(int argc, char** argv) {
                 game.update(kFrameUs);
             }
             if (!wav.empty()) write_wav(wav, game.captured_sound(), AsylumMixer::kMixRate);
-            if (menu) {  // --menu: Escape, as pressed in play
-                game.key(0x01, false, true, 0, 0x1B);
+            if (menu) {  // --menu: Escape (F1 in No Regret), as pressed in play
+                if (regret_data()) {
+                    game.key(0x3B, false, true, 0);
+                    game.key(0x3B, false, false, 0);
+                    game.update(kFrameUs);  // the play keys go through the queue
+                }
+                else game.key(0x01, false, true, 0, 0x1B);
                 game.mouse_move(320, 240);
             }
             if (menu_load) {  // then down to "load" and Enter

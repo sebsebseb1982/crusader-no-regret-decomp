@@ -43,15 +43,38 @@ constexpr std::array<Placement, OptionsScreen::kWidgets> kPlacementsUs = {{
     {W::kMouseDown, 49, 435, 249},   {W::kMouseUp, 50, 597, 249},
     {W::kQuit, 43, 517, 318},
 }};
+// No Regret (13B8:0F53): the US places, line 4 is the movies' colours (0x54 /
+// 0x55, DS:0309) and "quit" is at x 551.
+constexpr std::array<Placement, OptionsScreen::kWidgets> kPlacementsRegret = {{
+    {W::kAnimationOn, 31, 35, 163},  {W::kAnimationOff, 32, 95, 163},
+    {W::kFrameSkipOn, 33, 35, 203},  {W::kFrameSkipOff, 34, 95, 203},
+    {W::kBlastsOn, 37, 35, 283},     {W::kBlastsOff, 38, 95, 283},
+    {W::kFilterOn, 39, 35, 323},     {W::kFilterOff, 40, 95, 323},
+    {W::kVideoBig, 35, 35, 243},     {W::kVideoSmall, 36, 137, 243},
+    {W::kSoundDown, 49, 435, 146},   {W::kSoundUp, 50, 597, 146},
+    {W::kMusicDown, 49, 435, 197},   {W::kMusicUp, 50, 597, 197},
+    {W::kMouseDown, 49, 435, 249},   {W::kMouseUp, 50, 597, 249},
+    {W::kQuit, 43, 551, 318},
+}};
+
+const std::array<Placement, OptionsScreen::kWidgets>& placements() {
+    if (regret_data()) return kPlacementsRegret;
+    return us_version() ? kPlacementsUs : kPlacements;
+}
 
 struct Point {
     int x, y;
 };
 constexpr std::uint16_t kFirstBackground = 44;
 constexpr std::array<Point, 4> kBackgroundCorners = {{{1, 120}, {320, 120}, {1, 240}, {320, 240}}};
+// No Regret (13B8:1851): the main menu's background (shapes 54..57, from y 75)
+// first, then shapes 44..47, the labels, at the corners above.
+constexpr std::uint16_t kFirstMenuBackground = 54;
+constexpr std::array<Point, 4> kMenuBackgroundCorners = {{{1, 75}, {320, 75}, {1, 240}, {320, 240}}};
 constexpr std::uint16_t kMarker = 48;
 constexpr int kMarkerX = 456, kMarkerStep = 6;
 constexpr std::uint8_t kFocusColour = 0x0C;
+constexpr std::uint8_t kFocusColourRegret = 0x74;  // 13B8:1851
 constexpr std::uint32_t kRepeatTicks = 10;
 // The controller button (port addition): colours of the quit button's frames.
 constexpr std::uint8_t kButtonColour = 0x75, kButtonFill = 0x34;
@@ -62,12 +85,13 @@ constexpr std::array<OptionsScreen::Rect, OptionsScreen::kQuitLine> kLineRects =
     {22, 145, 258, 176}, {22, 185, 258, 216}, {22, 225, 227, 256}, {22, 265, 314, 296},
     {22, 305, 349, 336}, {432, 144, 614, 191}, {432, 194, 614, 242}, {432, 247, 614, 294},
 }};
-// US: the left lines end where their English labels do.
+// US and No Regret (13B8:20C3): the left lines end where their English labels do.
 constexpr std::array<OptionsScreen::Rect, OptionsScreen::kQuitLine> kLineRectsUs = {{
     {22, 145, 198, 176}, {22, 185, 202, 216}, {22, 225, 225, 256}, {22, 265, 232, 296},
     {22, 305, 284, 336}, {432, 144, 614, 191}, {432, 194, 614, 242}, {432, 247, 614, 294},
 }};
-// Widgets acted on by left / '4' and right / '6', by line (tables at 13D0:234C and 233C).
+// Widgets acted on by left / '4' and right / '6', by line (tables at 13D0:234C
+// and 233C; No Regret 13B8:25AD and 259D, the same).
 constexpr std::array<W, OptionsScreen::kQuitLine> kLeftOf = {
     W::kAnimationOn, W::kFrameSkipOn, W::kVideoBig, W::kBlastsOn, W::kFilterOn, W::kSoundDown, W::kMusicDown, W::kMouseDown};
 constexpr std::array<W, OptionsScreen::kQuitLine> kRightOf = {
@@ -76,7 +100,6 @@ constexpr std::array<W, OptionsScreen::kQuitLine> kRightOf = {
 // First step not below `volume`. The original keeps the volume itself as the
 // step when it is above every step; the port takes the last one.
 // @orig 13B8:0F53
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0ECE, similarity 0.95)
 int step_for(const std::array<std::uint8_t, OptionsScreen::kSteps>& steps, int volume) {
     for (int i = 0; i < OptionsScreen::kSteps; ++i) {
         if (volume <= steps[i]) return i;
@@ -86,7 +109,6 @@ int step_for(const std::array<std::uint8_t, OptionsScreen::kSteps>& steps, int v
 
 // One step up or down within the table; false at its end.
 // @orig 13B8:25CF
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:236E, similarity 0.88)
 bool step(int& s, bool up) {
     const int next = s + (up ? 1 : -1);
     if (next < 0 || next >= OptionsScreen::kSteps) return false;
@@ -97,13 +119,13 @@ bool step(int& s, bool up) {
 }  // namespace
 
 // @orig 13B8:0F53
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0ECE, similarity 0.95)
+// No Regret: the places of kPlacementsRegret; line 4 is the movies' colours.
 OptionsScreen::OptionsScreen(ShapeCache& gumps, GameConfig& config, Audio* audio, int& focus, const FontSet* fonts,
                              std::function<void()> vibration_preview)
     : gumps_(&gumps), config_(&config), audio_(audio), focus_(&focus), fonts_(fonts),
       vibration_preview_(std::move(vibration_preview)) {
     for (int i = 0; i < kWidgets; ++i) {
-        const Placement& p = (us_version() ? kPlacementsUs : kPlacements)[i];
+        const Placement& p = placements()[i];
         const Shape* s = gumps_->get(p.shape);
         const int w = s && !s->frames().empty() ? s->frames()[0].width : 1;
         const int h = s && !s->frames().empty() ? s->frames()[0].height : 1;
@@ -112,6 +134,8 @@ OptionsScreen::OptionsScreen(ShapeCache& gumps, GameConfig& config, Audio* audio
     sound_step_ = step_for(kSoundSteps, config.sound_volume);
     music_step_ = step_for(kMusicSteps, config.music_volume);
     quit_selected_ = *focus_ == kQuitLine;
+    // Port addition: the enhancements button follows "quit".
+    if (regret_data()) pad_rect_ = {386, 318, 537, 339};
 }
 
 // @orig none: index into the widget tables
@@ -131,7 +155,6 @@ int OptionsScreen::line_of(Widget w) {
 }
 
 // @orig 13B8:0F53
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:0ECE, similarity 0.95)
 bool OptionsScreen::chosen(Widget w) const {
     const GameConfig& c = *config_;
     switch (w) {
@@ -139,8 +162,8 @@ bool OptionsScreen::chosen(Widget w) const {
     case kAnimationOff: return c.animation == 1;
     case kFrameSkipOn: return c.frameskip == 3;
     case kFrameSkipOff: return c.frameskip != 3;
-    case kFilterOn: return c.filter;
-    case kFilterOff: return !c.filter;
+    case kFilterOn: return regret_data() ? c.movie_hicolor : c.filter;
+    case kFilterOff: return regret_data() ? !c.movie_hicolor : !c.filter;
     case kVideoBig: return c.big_video;
     case kVideoSmall: return !c.big_video;
     case kBlastsOn: return c.limit_blasts;
@@ -160,22 +183,30 @@ void OptionsScreen::draw_shape(Surface8& screen, std::uint16_t shape, int frame,
 }
 
 // @orig 13B8:1851
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:17C5, similarity 0.40)
+// No Regret draws the main menu's background under the labels, "music volume"
+// at x 465 and the focus outline in colour 0x74.
 void OptionsScreen::draw(Surface8& screen) const {
     if (enh_) {
         enh_->draw(screen);
         return;
     }
     screen.clear(0);
+    const bool regret = regret_data();
+    if (regret) {
+        for (int q = 0; q < 4; ++q) {
+            draw_shape(screen, static_cast<std::uint16_t>(kFirstMenuBackground + q), 0, kMenuBackgroundCorners[q].x,
+                       kMenuBackgroundCorners[q].y);
+        }
+    }
     for (int q = 0; q < 4; ++q) {
         draw_shape(screen, static_cast<std::uint16_t>(kFirstBackground + q), 0, kBackgroundCorners[q].x,
                    kBackgroundCorners[q].y);
     }
     draw_shape(screen, 41, 0, 468, 146);
-    draw_shape(screen, 42, 0, us_version() ? 465 : 459, 196);  // 13D0:17C5: "music volume"
+    draw_shape(screen, 42, 0, us_version() || regret ? 465 : 459, 196);  // 13D0:17C5: "music volume"
     if (*focus_ >= 0 && *focus_ < kQuitLine) {
-        const Rect& r = (us_version() ? kLineRectsUs : kLineRects)[*focus_];
-        outline(screen, r.x0, r.y0, r.x1, r.y1, kFocusColour);
+        const Rect& r = (us_version() || regret ? kLineRectsUs : kLineRects)[*focus_];
+        outline(screen, r.x0, r.y0, r.x1, r.y1, regret ? kFocusColourRegret : kFocusColour);
     }
     // Mouse speed: 0x2164 per notch in 16.16, the last notch pulled back.
     int mouse = (config_->mouse_speed << 16) / 0x2164;
@@ -225,8 +256,7 @@ void OptionsScreen::open_enhancements() {
     enh_ = std::make_unique<EnhancementsScreen>(*fonts_, *config_, pad_focus_, vibration_preview_);
 }
 
-// @orig ?: No Remorse 13D0:20B7, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig 13B8:231A (outside the Ghidra list; No Remorse 13D0:20B7), the same
 void OptionsScreen::key(std::uint16_t code) {
     if (enh_) {
         enh_->key(code);
@@ -284,8 +314,7 @@ void OptionsScreen::key(std::uint16_t code) {
     }
 }
 
-// @orig 1370:0105
-// TODO(regret): modified in REGRET.EXE (No Remorse 1378:0105, similarity 0.52)
+// @orig 1370:0105 (the rectangle only, as No Regret's)
 const OptionsScreen::Item* OptionsScreen::hit(int x, int y) const {
     // The last created is on top.
     for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
@@ -373,7 +402,8 @@ void OptionsScreen::widget_acted(Widget w) {
 }
 
 // @orig 13B8:25CF
-// TODO(regret): modified in REGRET.EXE (No Remorse 13D0:236E, similarity 0.88)
+// No Regret: 0x54 / 0x55 set the movies' colours (DS:0309) instead of the
+// mixer's filter.
 void OptionsScreen::act(Widget w) {
     GameConfig& c = *config_;
     auto click = [this] {
@@ -386,6 +416,10 @@ void OptionsScreen::act(Widget w) {
     case kFrameSkipOff: c.frameskip = 0; break;
     case kFilterOn:
     case kFilterOff:
+        if (regret_data()) {
+            c.movie_hicolor = w == kFilterOn;
+            break;
+        }
         c.filter = w == kFilterOn;
         if (audio_) audio_->mixer.set_filter(c.filter);
         break;

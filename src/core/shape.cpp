@@ -81,8 +81,8 @@ ShapeLayout layout_for_archive(const std::string& filename) {
                : ShapeLayout::World;
 }
 
-// @orig 1370:0105; pixel test of ShapeButton_contains
-// TODO(regret): modified in REGRET.EXE (No Remorse 1378:0105, similarity 0.52)
+// @orig 1338:01CF: the pixel test No Remorse's ShapeButton_contains makes
+// (1378:0105); No Regret's (1370:0105) no longer does.
 int ShapeFrame::pixel(int fx, int fy) const {
     if (fx < 0 || fy < 0 || fx >= width || fy >= height) return -1;
     std::size_t p = lines[fy];
