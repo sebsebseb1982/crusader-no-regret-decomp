@@ -271,8 +271,9 @@ void special_frame(Kernel& kernel, World& world, const AnimDat& anims, ObjId act
     }
 }
 
+// No Regret's process is 3 bytes longer: a new byte +0x42 (cleared here) and
+// word +0x4B (face_target); the fields from +0x42 on move by one.
 // @orig 1168:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:0000, similarity 0.84)
 ActorAnimProcess::ActorAnimProcess(World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
                                    Pid previous)
     : world_(world), anims_(anims), action_(action), dir_(dir), previous_(previous) {
@@ -361,7 +362,6 @@ const ActorAnimProcess* ActorAnimProcess::next_queued() const {
 }
 
 // @orig 1168:1FCD 1168:373F
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:1908, similarity 0.76)
 void ActorAnimProcess::run() {
     // ANIMPRIM.C 1908: out of the fast area the animation waits, without
     // sleeping, for the actor to come back (Item_I_inFastArea). Played out
@@ -392,7 +392,6 @@ void ActorAnimProcess::run() {
 }
 
 // @orig 1168:1FCD
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:1908, similarity 0.76)
 bool ActorAnimProcess::step(bool skip_frames, bool& skipped_frames) {
     skipped_frames = false;
     Item* item = world_.get(owner());
@@ -405,6 +404,11 @@ bool ActorAnimProcess::step(bool skip_frames, bool& skipped_frames) {
         if (!start()) return false;
         item = world_.get(owner());
         if (!item) return false;
+    }
+    if (face_target_ != 0 && (action_ == 8 || action_ == 0xD)) {  // 1168:20F3
+        const Item* t = world_.get(face_target_);
+        if (!t || closest_direction_in_range(item->x, item->y, t->x, t->y, 16, 0, 15) != dir_) return false;
+        face_target_ = 0;
     }
     const AnimAction* a = anims_.action(item->shape, action_);
     if (!a || a->frame_count() == 0) return false;
@@ -589,7 +593,6 @@ bool ActorAnimProcess::fall_if_unsupported(const World::Point& from, const World
 
 // @orig 1168:336B 1168:0174 1168:1FCD
 // TODO(regret): modified in REGRET.EXE (No Remorse 1158:016F, similarity 0.39)
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:1908, similarity 0.76)
 ActionTest test_action(const World& world, const AnimDat& anims, ObjId actor, std::uint16_t action, int dir,
                        World::Point pos, ObjId goal) {
     ActionTest out;

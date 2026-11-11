@@ -83,6 +83,11 @@ public:
     // 1158:2E55: a turning animation of the controlled NPC (+0x40), counted
     // in DS:288A; its end lets the aiming mode back (1158:2E66).
     void mark_turning();
+    // No Regret (+0x42, +0x4B, set by the RollingThunder process 1118:0FD9 on
+    // its shots): a shot (action 8 or 0xD) ends at its first step when the
+    // direction from the actor to `target` is not the animation's; once it
+    // is, the check is dropped (1168:20F3).
+    void face_target(ObjId target) { face_target_ = target; }
 
 protected:
     void run() override;
@@ -105,6 +110,7 @@ private:
     bool in_place_ = false;  // +0x3B: an unstoppable action blocked, the rest plays in place
     bool turning_ = false;
     bool destroys_actor_ = false;  // +0x4D bit 7: the action destroys the actor at its end
+    ObjId face_target_ = 0;        // +0x4B while +0x42 is set
 };
 
 // CRUSADER_1130_2105, applied first by Actor::I_doAnim: the action an actor

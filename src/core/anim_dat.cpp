@@ -19,7 +19,8 @@ AnimFrame AnimFrame::decode(std::span<const std::uint8_t, 8> d) {
     f.event = w0 & 0x4000;
     f.mirrored = w0 & 0x8000;
     f.delta_z = static_cast<std::int8_t>(d[2]);
-    f.sfx = d[3];
+    // 1190:0063: bits 6-7 of [7] are bits 8-9 of the sound (new in No Regret).
+    f.sfx = static_cast<std::uint16_t>(d[3] | ((d[7] >> 6) & 3) << 8);
     // 9-bit signed distance.
     f.distance = static_cast<std::int16_t>((w4 & 0x1FF) ^ 0x100) - 0x100;
     f.ground_check = w4 & 0x200;

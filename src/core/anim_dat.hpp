@@ -16,7 +16,8 @@
 //   u16 [0-1]  bits 0-11 shape frame; 0x1000 fire the weapon; 0x4000 frame
 //              event (ITEM.C 2B01); 0x8000 mirrored (item flag 0x20)
 //   s8  [2]    z change
-//   u8  [3]    sound effect (0 = none)
+//   u8  [3]    sound effect (0 = none), bits 0-7; bits 8-9 are bits 6-7 of
+//              [7] (No Regret, 1190:0063)
 //   u16 [4-5]  bits 0-8 signed distance along the direction; bit 9: the
 //              collision check also tests the ground (sweep flags 0x11, not 4)
 //   [5-7]      weapon overlay offsets: bits 6-10 of u16 [5-6] and bits 3-7 of
@@ -39,7 +40,7 @@ struct AnimFrame {
     bool event = false;
     bool mirrored = false;
     std::int8_t delta_z = 0;
-    std::uint8_t sfx = 0;
+    std::uint16_t sfx = 0;
     std::int16_t distance = 0;
     bool ground_check = false;
     // Muzzle offset of the weapon shot fired on this frame (ANIMPRIM.C, then

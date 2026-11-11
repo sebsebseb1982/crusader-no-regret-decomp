@@ -274,9 +274,9 @@ protected:
 //   the target within two steps of its direction, and from there the
 //   controlled NPC must be in its line of fire (fire_distance_from) in that
 //   direction or one or two steps aside. It then rolls, turns to that
-//   direction, fires rand(1..3) times (the original also points each shot's
-//   animation at the controlled NPC, +0x42 / +0x4B: the port's NPC shots aim
-//   at their target, that NPC) and rolls back, and waits for that;
+//   direction, fires rand(1..3) times, each shot ending at once unless the
+//   NPC faces the controlled NPC (ActorAnimProcess::face_target), and rolls
+//   back, and waits for that;
 // - without a roll, facing the target it fires when hit within the last 120
 //   ticks or in the line of fire, else may take a decoy as target
 //   (aim_at_decoy); not facing it, it turns to it.
@@ -329,7 +329,10 @@ protected:
                 do_anim(k, world_, anims_, npc, action, kDirCurrent, 0, false);
                 if (roll_dir != facing) turn_to(k, world_, anims_, npc, roll_dir, true, false);
                 const int shots = crt_rnd(world_, 3) + 1;
-                for (int i = 0; i < shots; ++i) do_anim(k, world_, anims_, npc, 8, kDirCurrent, 10000, false);
+                for (int i = 0; i < shots; ++i) {
+                    const Pid shot = do_anim(k, world_, anims_, npc, 8, kDirCurrent, 10000, false);
+                    if (auto* p = dynamic_cast<ActorAnimProcess*>(k.get(shot))) p->face_target(controlled);
+                }
                 const Pid back = do_anim(k, world_, anims_, npc, action == 0x3D ? 0x3E : 0x3D, kDirCurrent, 10000, false);
                 if (back != 0) wait_for(back);
             } else if (const Item* t = world_.get(target); t && (self = world_.get(npc))) {
