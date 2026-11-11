@@ -6,13 +6,13 @@ namespace crusader {
 
 namespace {
 
-// Octave 0 periods (DS:0123).
+// Octave 0 periods (DS:0129).
 constexpr std::array<std::uint32_t, 12> kOctave0 = {1712, 1616, 1524, 1440, 1356, 1280,
                                                     1208, 1140, 1076, 1016, 960,  907};
 // C rate by finetune (DS:00AB): 0..7 up, 8..15 down.
 constexpr std::array<std::uint32_t, 16> kCRates = {8363, 8413, 8463, 8529, 8581, 8651, 8723, 8757,
                                                    7895, 7941, 7985, 8046, 8107, 8169, 8232, 8280};
-// Vibrato: half a sine (DS:026E).
+// Vibrato: half a sine (DS:02D0).
 constexpr std::array<std::uint8_t, 32> kSine = {0x00, 0x19, 0x32, 0x4A, 0x62, 0x78, 0x8E, 0xA2, 0xB4, 0xC5, 0xD4,
                                                 0xE1, 0xEC, 0xF4, 0xFA, 0xFE, 0xFF, 0xFE, 0xFA, 0xF4, 0xEC, 0xE1,
                                                 0xD4, 0xC5, 0xB4, 0xA2, 0x8E, 0x78, 0x62, 0x4A, 0x32, 0x19};
@@ -20,7 +20,7 @@ constexpr std::uint32_t kClock = 0xDA7A68;  // 4 * the Amiga clock
 constexpr int kMinPeriod = 0x71;
 constexpr int kMaxPeriod = 0x6B00;
 constexpr int kMaxVolume = 0x40;
-constexpr int kPlayerSamples = 31;  // 1008:004D copies 31 of the 64 samples
+constexpr int kPlayerSamples = 31;  // 1008:008E copies 31 of the 64 samples
 constexpr std::uint8_t kNoOrder = 0xFF;
 constexpr std::uint16_t kSpentEffect = 0x0EFF;  // after EAy / EBy: nothing
 
@@ -47,14 +47,12 @@ void AsylumMusic::set_period(Channel& c, AsylumVoice& v, int period) {
 }
 
 void AsylumMusic::set_tick_length_bpm(int tempo) {
-    // 1008:004D and 1008:01AA: BPM * 24 / 60 ticks per second.
+    // 1008:008E and 1008:01EB: BPM * 24 / 60 ticks per second.
     const int per_second = static_cast<std::int8_t>(tempo) * 24 / 60;
     if (per_second != 0) tick_length_ = mix_rate_ / static_cast<std::uint16_t>(per_second);
 }
 
-// @orig ASYLUM.DLL:1018:0772 ASYLUM.DLL:1008:004D
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:0772)
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1008:004D)
+// @orig ASYLUM.DLL:1018:07DC ASYLUM.DLL:1008:008E
 void AsylumMusic::load(std::shared_ptr<const AmfModule> module) {
     playing_ = false;
     module_ = std::move(module);
@@ -64,11 +62,14 @@ void AsylumMusic::load(std::shared_ptr<const AmfModule> module) {
     restart_ = module_->restart < module_->order_count ? module_->restart : kNoOrder;
 }
 
-// @orig ASYLUM.DLL:1018:024A ASYLUM.DLL:1008:01AA
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:024A)
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1008:01AA)
+// @orig ASYLUM.DLL:1018:0257 ASYLUM.DLL:1008:01EB
 void AsylumMusic::start() {
-    for (AsylumVoice& v : voices_) v.active = false;
+    // 1008:01EB: volume and both shares 0x40, the panned routine (+44).
+    for (AsylumVoice& v : voices_) {
+        v.active = false;
+        v.first_share = v.second_share = AsylumVoice::kFullShare;
+        v.surround = false;
+    }
     if (!module_) return;
     order_pos_ = 0;
     speed_ = module_->speed;
@@ -79,9 +80,9 @@ void AsylumMusic::start() {
     playing_ = true;
 }
 
-// @orig ASYLUM.DLL:1018:0286 ASYLUM.DLL:1008:01F4
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1018:0286)
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1008:01F4)
+// 1008:0276 also clears the channels' shares and routines; the next
+// start() sets them again.
+// @orig ASYLUM.DLL:1018:0293 ASYLUM.DLL:1008:0276
 void AsylumMusic::stop() {
     playing_ = false;
     module_.reset();
@@ -96,8 +97,7 @@ void AsylumMusic::stop() {
     for (AsylumVoice& v : voices_) v.active = false;
 }
 
-// @orig ASYLUM.DLL:1000:092A
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:092A)
+// @orig ASYLUM.DLL:1000:1809
 void AsylumMusic::tick() {
     if (--counter_ != 0) {
         for (int i = 0; i < kChannels; ++i) effect(channels_[i], voices_[i]);
@@ -126,8 +126,7 @@ void AsylumMusic::tick() {
     for (int i = 0; i < kChannels; ++i) effect(channels_[i], voices_[i]);
 }
 
-// @orig ASYLUM.DLL:1000:062D
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:062D)
+// @orig ASYLUM.DLL:1000:14E3
 void AsylumMusic::row_cell(Channel& c, AsylumVoice& v, const AmfCell& cell) {
     c.effect = static_cast<std::uint16_t>(cell.command << 8 | cell.param);
     if (cell.sample != 0) {
@@ -205,6 +204,8 @@ void AsylumMusic::row_cell(Channel& c, AsylumVoice& v, const AmfCell& cell) {
         } else if (x == 0x9) {
             c.retrigger = static_cast<std::uint8_t>(y);
             c.retrigger_count = static_cast<std::uint8_t>(y);
+        } else if (x == 0x8) {
+            set_pan(v, y);
         }
         break;
     case 0xF:
@@ -230,13 +231,26 @@ void AsylumMusic::row_cell(Channel& c, AsylumVoice& v, const AmfCell& cell) {
     }
 }
 
+// E8x (No Regret only): x 0 sends the channel to the surround routine,
+// otherwise to the panned one with the shares of DS:0141 (second output) and
+// DS:0161 (first output); a ProTracker E8x means 0 left, F right.
+// @orig ASYLUM.DLL:1018:0E2E ASYLUM.DLL:1018:0E65
+void AsylumMusic::set_pan(AsylumVoice& v, int x) {
+    v.surround = x == 0;
+    if (x == 0) {
+        v.first_share = v.second_share = AsylumVoice::kFullShare;
+        return;
+    }
+    v.second_share = x < 8 ? 0x40 : 0x40 - 8 * (x - 7);
+    v.first_share = x < 8 ? 8 * x : 0x40;
+}
+
 void AsylumMusic::volume_slide(AsylumVoice& v, std::uint8_t param) {
     const int down = std::max(v.volume - (param & 0xF), 0);
     v.volume = std::min(down + (param >> 4), kMaxVolume);
 }
 
-// @orig ASYLUM.DLL:1000:03E6
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:03E6)
+// @orig ASYLUM.DLL:1000:129C
 void AsylumMusic::tone_portamento(Channel& c, AsylumVoice& v, int speed) {
     const int target = as_i16(c.target);
     int period = as_i16(c.period);
@@ -249,8 +263,7 @@ void AsylumMusic::tone_portamento(Channel& c, AsylumVoice& v, int speed) {
     set_period(c, v, period);
 }
 
-// @orig ASYLUM.DLL:1000:03E6
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:03E6)
+// @orig ASYLUM.DLL:1000:129C
 void AsylumMusic::vibrato(Channel& c, AsylumVoice& v, std::uint8_t param) {
     c.vibrato_pos = static_cast<std::uint8_t>(c.vibrato_pos + (param >> 4) * 4);
     int delta = kSine[(c.vibrato_pos >> 2) & 0x1F] * (param & 0xF) >> 7;
@@ -265,8 +278,7 @@ void AsylumMusic::retrigger(Channel& c, AsylumVoice& v) {
     c.retrigger_count = c.retrigger;
 }
 
-// @orig ASYLUM.DLL:1000:03E6
-// TODO(regret): ASYLUM.DLL is another build in No Regret (No Remorse 1000:03E6)
+// @orig ASYLUM.DLL:1000:129C
 void AsylumMusic::effect(Channel& c, AsylumVoice& v) {
     if (c.effect == 0) return;
     const std::uint8_t p = c.effect & 0xFF;

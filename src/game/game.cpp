@@ -314,6 +314,11 @@ void Game::set_config(GameConfig config) {
         audio_->mixer.set_music_volume(config_.music_volume);
         audio_->mixer.set_sound_volume(config_.sound_volume);
         audio_->mixer.set_filter(config_.filter);
+        // The card's output (ASYLUM.DLL 1018:058F, 1038:0050): No Regret's
+        // Sound Blaster 16 in stereo, 16-bit on a high DMA channel. The port
+        // keeps No Remorse's 16-bit mono.
+        using Output = AsylumMixer::Output;
+        audio_->mixer.set_output(!regret_ ? Output::kMono16 : config_.dma >= 4 ? Output::kStereo16 : Output::kStereo8);
     }
 }
 
@@ -950,7 +955,7 @@ void Game::mix_elapsed(std::uint32_t elapsed_us) {
     std::vector<std::int16_t> scratch;
     std::vector<std::int16_t>& out = capture_ ? captured_ : scratch;
     const std::size_t from = out.size();
-    out.resize(from + count);
+    out.resize(from + count * static_cast<std::size_t>(audio_->mixer.channels()));
     audio_->mixer.mix(out.data() + from, count);
 }
 

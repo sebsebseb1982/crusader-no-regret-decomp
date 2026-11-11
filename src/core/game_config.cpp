@@ -101,6 +101,7 @@ GameConfig GameConfig::parse(std::string_view text) {
         if (key == "soundvolume") c.sound_volume = number(value);
         else if (key == "musicvolume") c.music_volume = number(value);
         else if (key == "filter") c.filter = value == "true";
+        else if (key == "dma") c.dma = number(value);
         else if (key == "animation") c.animation = number(value);
         else if (key == "frameskip") c.frameskip = number(value);
         else if (key == "limitblasts") c.limit_blasts = value == "true";

@@ -1,8 +1,8 @@
 #pragma once
 // Plays the Asylum mixer through SDL: replaces the Sound Blaster driver of
 // ASYLUM.DLL (DMA buffer refilled from the IRQ handler and ASSProcess).
-// The device pulls mono 16-bit samples at the mixer's rate from its own
-// thread.
+// The device pulls 16-bit samples at the mixer's rate from its own thread,
+// mono or stereo as the mixer's output was when it opened.
 
 #include "engine/audio/asylum_mixer.hpp"
 
@@ -24,6 +24,7 @@ private:
     static void callback(void* self, std::uint8_t* stream, int len);
 
     AsylumMixer& mixer_;
+    int channels_;
     std::uint32_t device_ = 0;
 };
 

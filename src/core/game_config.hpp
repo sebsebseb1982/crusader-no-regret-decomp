@@ -26,6 +26,10 @@ public:
     int sound_volume = 0x40;   // "soundvolume" (the mixer's), 0..0x40
     int music_volume = 0x20;   // "musicvolume" (the mixer's)
     bool filter = true;        // "filter" (DS:5579): the mixer's oversampling
+    // "dma": the Sound Blaster's DMA channel, handed to _ASS_Init (the DLL's
+    // DS:EB2C). No Regret's DLL mixes for a 16-bit card from 4 up, for an
+    // 8-bit one below (asylum_mixer.hpp). Read only.
+    int dma = 1;
     int animation = 0;         // "animation" (DS:0864): 0 shows the animations
     int frameskip = 0;         // "frameskip" (DS:2FC8): 0, or 3 for one frame in two
     bool limit_blasts = false; // "limitblasts" (DS:2FCA)

@@ -68,9 +68,9 @@ std::string diagnostics(Game& game, const RenderStats& stats, double fps) {
     return text;
 }
 
-// Mono 16-bit PCM WAV.
+// 16-bit PCM WAV, `channels` interleaved.
 // @orig none: WAV export for the tools
-void write_wav(const std::string& path, const std::vector<std::int16_t>& samples, int rate) {
+void write_wav(const std::string& path, const std::vector<std::int16_t>& samples, int rate, int channels) {
     std::ofstream out(path, std::ios::binary);
     auto u32 = [&](std::uint32_t v) { out.write(reinterpret_cast<const char*>(&v), 4); };
     auto u16 = [&](std::uint16_t v) { out.write(reinterpret_cast<const char*>(&v), 2); };
@@ -80,10 +80,10 @@ void write_wav(const std::string& path, const std::vector<std::int16_t>& samples
     out.write("WAVEfmt ", 8);
     u32(16);
     u16(1);
-    u16(1);
+    u16(static_cast<std::uint16_t>(channels));
     u32(static_cast<std::uint32_t>(rate));
-    u32(static_cast<std::uint32_t>(rate * 2));
-    u16(2);
+    u32(static_cast<std::uint32_t>(rate * 2 * channels));
+    u16(static_cast<std::uint16_t>(2 * channels));
     u16(16);
     out.write("data", 4);
     u32(bytes);
@@ -203,7 +203,8 @@ int main(int argc, char** argv) {
                 }
                 game.update(kFrameUs);
             }
-            if (!wav.empty()) write_wav(wav, game.captured_sound(), AsylumMixer::kMixRate);
+            if (!wav.empty()) write_wav(wav, game.captured_sound(), AsylumMixer::kMixRate,
+                                    game.audio() ? game.audio()->mixer.channels() : 1);
             if (menu) {  // --menu: Escape (F1 in No Regret), as pressed in play
                 if (regret_data()) {
                     game.key(0x3B, false, true, 0);

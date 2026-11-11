@@ -4,12 +4,12 @@
 
 namespace crusader {
 
-SdlAudio::SdlAudio(AsylumMixer& mixer) : mixer_(mixer) {
+SdlAudio::SdlAudio(AsylumMixer& mixer) : mixer_(mixer), channels_(mixer.channels()) {
     if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) return;
     SDL_AudioSpec want{};
     want.freq = AsylumMixer::kMixRate;
     want.format = AUDIO_S16SYS;
-    want.channels = 1;
+    want.channels = static_cast<std::uint8_t>(mixer.channels());
     want.samples = 512;  // about 23 ms
     want.callback = &SdlAudio::callback;
     want.userdata = this;
@@ -24,7 +24,8 @@ SdlAudio::~SdlAudio() {
 
 void SdlAudio::callback(void* self, std::uint8_t* stream, int len) {
     auto* audio = static_cast<SdlAudio*>(self);
-    audio->mixer_.mix(reinterpret_cast<std::int16_t*>(stream), static_cast<std::size_t>(len) / 2);
+    const auto frames = static_cast<std::size_t>(len) / 2 / static_cast<std::size_t>(audio->channels_);
+    audio->mixer_.mix(reinterpret_cast<std::int16_t*>(stream), frames);
 }
 
 }  // namespace crusader

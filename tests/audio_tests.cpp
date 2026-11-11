@@ -40,14 +40,15 @@ SoundSample sample_of(const std::vector<std::int8_t>& pcm, std::uint16_t rate, s
     return s;
 }
 
+// `n` samples: n / channels() frames.
 std::vector<std::int16_t> mix(AsylumMixer& m, std::size_t n) {
     std::vector<std::int16_t> out(n);
-    m.mix(out.data(), n);
+    m.mix(out.data(), n / static_cast<std::size_t>(m.channels()));
     return out;
 }
 
 // Ends the current buffer: a request posted now applies at the next one.
-void flush(AsylumMixer& m) { mix(m, m.buffered()); }
+void flush(AsylumMixer& m) { mix(m, m.buffered() * static_cast<std::size_t>(m.channels())); }
 
 void test_mixer() {
     // At the mix rate, one sample per output; volume 0x40 at sound volume
@@ -312,6 +313,74 @@ void test_regret_music_restore() {
     CHECK(music.current() == 1 && m.music_playing() && m.music().order_position() <= 1);
     std::filesystem::remove_all(dir);
 }
+// No Regret's stereo outputs (ASYLUM.DLL 1000:1EC0, 1000:2144).
+void test_stereo_mixer() {
+    CHECK(AsylumVoice::scaled(-5, 0x41, SampleDepth::k8) == -5 && AsylumVoice::scaled(-5, 0x41, SampleDepth::k16) == -256);
+    CHECK(AsylumVoice::scaled(100, 0x40, SampleDepth::k8) == 50 && AsylumVoice::scaled(-100, 0x40, SampleDepth::k8) == -49);
+
+    // E8x: x 15 the first output only, 1 mostly the second, 0 the surround.
+    auto bytes = make_module_bytes();
+    auto put_cell = [&](int ch, std::uint8_t cmd, std::uint8_t param) {
+        const std::size_t at = 0xA66 + static_cast<std::size_t>(ch) * 4;
+        bytes[at] = 36;
+        bytes[at + 1] = 1;
+        bytes[at + 2] = cmd;
+        bytes[at + 3] = param;
+    };
+    put_cell(0, 0xE, 0x8F);
+    put_cell(2, 0xE, 0x81);
+    put_cell(4, 0xE, 0x80);
+    const auto module = std::make_shared<const AmfModule>(*AmfModule::parse(bytes));
+    AsylumMusic mu(22050);
+    mu.load(module);
+    mu.start();
+    mu.tick();
+    mu.tick();
+    const auto& v = mu.voices();
+    CHECK(v[0].first_share == 0x40 && v[0].second_share == 0 && !v[0].surround);
+    CHECK(v[2].first_share == 8 && v[2].second_share == 0x40 && !v[2].surround);
+    CHECK(v[4].surround && v[1].first_share == 0x40 && v[1].second_share == 0x40);
+
+    // 16 bits: the sample (10) at 0x40 * 0x20 / 0x40; channel 0 gives 160 to
+    // the first output, channel 2 20 and 160, channel 4 -161 and 160.
+    AsylumMixer m;
+    m.set_output(AsylumMixer::Output::kStereo16);
+    CHECK(m.channels() == 2);
+    m.set_filter(false);
+    m.play_music(module);
+    auto out = mix(m, 2 * 441 * 2);
+    CHECK(out[0] == 0 && out[1] == 0 && out[2 * 441] == 19 && out[2 * 441 + 1] == 320);
+
+    // 8 bits: the fixed routines; channel 0 in surround (2, -3), channels 2
+    // and 4 on the second output only (2 each): bytes 130 and 129.
+    AsylumMixer m8;
+    m8.set_output(AsylumMixer::Output::kStereo8);
+    m8.set_filter(false);
+    m8.play_music(module);
+    out = mix(m8, 2 * 441 * 2);
+    CHECK(out[0] == 0 && out[2 * 441] == 2 * 256 && out[2 * 441 + 1] == 256);
+
+    // A sound effect's first buffer takes its volume as both shares.
+    const std::vector<std::int8_t> loud(2000, 100);
+    AsylumMixer s;
+    s.set_output(AsylumMixer::Output::kStereo16);
+    s.set_filter(false);
+    s.play(0, sample_of(loud, 22050), 0x20, 0, false);
+    out = mix(s, 2);
+    CHECK(out[0] == 800 && out[1] == 800);  // 100 * (0x20 * 0x20 / 0x40) / 2
+    CHECK(s.buffered() == 22050 / 50 - 1);
+    flush(s);
+    out = mix(s, 2);
+    CHECK(out[0] == 1600 && out[1] == 1600);
+
+    // 8 bits, oversampled: the halves start at 0x50 and 0 (DS:0CB1).
+    AsylumMixer f;
+    f.set_output(AsylumMixer::Output::kStereo8);
+    f.play(0, sample_of(loud, 22050), 0x40, 0, false);
+    out = mix(f, 4);
+    CHECK(out[0] == (0x50 + 89 - 128) * 256 && out[1] == (89 - 128) * 256);
+    CHECK(out[2] == 50 * 256 && out[3] == 50 * 256);
+}
 }  // namespace
 
 int main() {
@@ -321,6 +390,7 @@ int main() {
     test_teleport_sounds();
     test_music_player();
     test_regret_music_restore();
+    test_stereo_mixer();
     if (failures) {
         std::fprintf(stderr, "%d failure(s)\n", failures);
         return 1;
