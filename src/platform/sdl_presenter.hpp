@@ -27,6 +27,9 @@ public:
     void set_title(const std::string& title);
     // Brightens (> 1) or darkens (< 1) the picture; 1 is the original palette.
     void set_gamma(double gamma);
+    // Scales the frames to the window with bilinear filtering (soft edges, as
+    // DOSBox's "output=opengl") instead of nearest pixels (its "openglnb").
+    void set_smooth(bool smooth);
     void present(const Surface8& frame, const Palette& palette);
     // An RGB565 frame (No Regret's movies with "moviehicolor=true"), with
     // the same gamma.
@@ -46,6 +49,7 @@ private:
     SDL_Renderer* renderer_ = nullptr;
     SDL_Texture* texture_ = nullptr;
     std::array<std::uint8_t, 256> gamma_table_;
+    bool smooth_ = false;
     int width_;
     int height_;
 };

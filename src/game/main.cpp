@@ -360,6 +360,7 @@ int main(int argc, char** argv) {
                 if (!relative_mouse) presenter.warp_mouse(game.cursor().x() + game.ui_x(), game.cursor().y() + game.ui_y());
             }
             fit_screen();
+            presenter.set_smooth(game.config().smooth_scaling);
             // No Regret's movie with "moviehicolor=true": its 16-bit screen.
             if (screen16.width != screen.width || screen16.height != screen.height) {
                 screen16 = Surface16(screen.width, screen.height);
