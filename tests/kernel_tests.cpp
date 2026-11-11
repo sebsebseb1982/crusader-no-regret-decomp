@@ -1,7 +1,9 @@
 // Kernel scheduling semantics (no game data needed).
 
 #include "engine/input/keyboard.hpp"
+#include "core/language.hpp"
 #include "engine/kernel.hpp"
+#include "engine/palette_fader.hpp"
 
 #include <cstdio>
 #include <functional>
@@ -233,6 +235,36 @@ void test_keyboard_repeat() {
 
 }  // namespace
 
+// No Regret (1418:0000): a fade started while another runs is never
+// activated; it leaves the palette and the colour cycling alone and stays.
+void test_regret_second_fade() {
+    set_regret_data(true);
+    Kernel k;
+    Palette screen = Palette::filled(63, 63, 63);
+    bool paused = false;
+    auto& first = k.spawn<PaletteFaderProcess>(screen, Palette::filled(0, 0, 0), 60, 0, 1, &paused, false);
+    CHECK(paused);
+    paused = false;  // as if something resumed it meanwhile
+    auto& second = k.spawn<PaletteFaderProcess>(screen, Palette::filled(63, 0, 0), 60, 0, 1, &paused, true);
+    CHECK(!paused);
+    for (int i = 0; i < 120; ++i) {
+        k.advance_time(kFrameUs);
+        k.run_slice();
+    }
+    CHECK(first.terminated() && !second.terminated());
+    CHECK(screen == Palette::filled(0, 0, 0));
+    set_regret_data(false);
+    Kernel r;
+    Palette remorse = Palette::filled(63, 63, 63);
+    r.spawn<PaletteFaderProcess>(remorse, Palette::filled(0, 0, 0), 60, 0, 1, nullptr, false);
+    auto& both = r.spawn<PaletteFaderProcess>(remorse, Palette::filled(0, 0, 0), 60, 0, 1, nullptr, false);
+    for (int i = 0; i < 120; ++i) {
+        r.advance_time(kFrameUs);
+        r.run_slice();
+    }
+    CHECK(both.terminated());
+}
+
 int main() {
     test_pids();
     test_sleep();
@@ -246,6 +278,7 @@ int main() {
     test_count_processes();
     test_fail_processes();
     test_keyboard_repeat();
+    test_regret_second_fade();
     std::printf(failures ? "%d failure(s)\n" : "all kernel checks passed\n", failures);
     return failures ? 1 : 0;
 }

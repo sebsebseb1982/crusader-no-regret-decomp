@@ -87,6 +87,7 @@ private:
     bool* cycle_paused_;
     bool resume_cycle_;
     bool was_paused_ = true;  // +0x40
+    bool inert_ = false;      // No Regret: started while another fade ran
 };
 
 // The process returned by fadeToGamePal and fadeFromBlack (vtable 68A7): it

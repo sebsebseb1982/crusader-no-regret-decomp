@@ -1,5 +1,8 @@
 #include "engine/palette_fader.hpp"
 
+#include "core/language.hpp"
+#include "engine/kernel.hpp"
+
 namespace crusader {
 
 std::uint8_t luminance(std::uint8_t r, std::uint8_t g, std::uint8_t b) {
@@ -42,7 +45,6 @@ bool PaletteFade::tick(Palette& out) {
 }
 
 // @orig 1418:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 1440:0000, similarity 0.78)
 PaletteFaderProcess::PaletteFaderProcess(Palette& screen, const Palette& target, std::uint32_t rate, int count,
                                          int step, bool* cycle_paused, bool resume_cycle)
     : screen_(&screen),
@@ -63,15 +65,25 @@ PaletteFaderProcess::PaletteFaderProcess(Palette& screen, const Palette& target,
 }
 
 // @orig 1418:0000
-// TODO(regret): modified in REGRET.EXE (No Remorse 1440:0000, similarity 0.78)
+// No Regret first looks for another fade (11E8:13A4, type 0x206): when one
+// runs, the new process is never activated: no rate,
+// no palettes, flag +0x41 cleared, the colour cycling not paused. It does
+// nothing and does not end by itself (a kill of the type 0x206 ends it).
 void PaletteFaderProcess::on_added() {
     if (rate_ == 0) {
         *screen_ = target_;
         terminate();
+        return;
+    }
+    if (regret_data() && kernel().count_processes(0, kType) > 1) {
+        inert_ = true;
+        resume_cycle_ = false;
+        if (cycle_paused_) *cycle_paused_ = was_paused_;
     }
 }
 
 void PaletteFaderProcess::tick() {
+    if (inert_) return;
     if (!fade_.tick(*screen_)) terminate();
 }
 
