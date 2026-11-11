@@ -218,7 +218,7 @@ void test_teleport_sounds() {
 //   row 1: channel 0 slides the period down by 8 a tick (1 02), channel 1
 //          sets the tempo to 125 (F 7D);
 //   row 2: pattern break to row 10 (D 10).
-AmfModule make_module() {
+std::vector<std::uint8_t> make_module_bytes() {
     std::vector<std::uint8_t> d(0xA66 + 0x800 + 1000, 0);
     std::memcpy(d.data(), "ASYLUM Music Format V1.0", 24);
     d[0x20] = 2;
@@ -242,7 +242,11 @@ AmfModule make_module() {
     put_cell(1, 1, 0, 0, 0xF, 0x7D);
     put_cell(2, 0, 0, 0, 0xD, 0x10);
     std::fill(d.begin() + 0xA66 + 0x800, d.end(), std::uint8_t{10});
-    auto m = AmfModule::parse(d);
+    return d;
+}
+
+AmfModule make_module() {
+    auto m = AmfModule::parse(make_module_bytes());
     CHECK(m.has_value());
     return m ? *m : AmfModule{};
 }
@@ -282,6 +286,32 @@ void test_music_player() {
     m.stop_music();
     CHECK(!m.music_playing());
 }
+// No Regret, a game loaded from the menu (1210:0381): the saved track is
+// read into a local, so the menu's track, still the current one, does not
+// hide it and the saved music starts.
+void test_regret_music_restore() {
+    const auto dir = std::filesystem::temp_directory_path() / "crusader_music_test";
+    std::filesystem::create_directories(dir);
+    const auto bytes = make_module_bytes();
+    for (const char* name : {"regret.amf", "ninth.amf"}) {
+        std::ofstream(dir / name, std::ios::binary).write(reinterpret_cast<const char*>(bytes.data()),
+                                                          static_cast<std::streamsize>(bytes.size()));
+    }
+    AsylumMixer m;
+    Music music(m, dir);
+    music.set_remorse(false);
+    music.push(Music::kMenu);
+    CHECK(music.current() == Music::kMenu);
+    flush(m);
+    mix(m, 441 * 8);  // the menu's track some rows on
+    CHECK(m.music().order_position() > 1);
+    music.pop();  // the menu closes: nothing kept, the menu's track goes on
+    music.restore(1, 1);
+    flush(m);
+    // The saved track from its start, not the menu's going on.
+    CHECK(music.current() == 1 && m.music_playing() && m.music().order_position() <= 1);
+    std::filesystem::remove_all(dir);
+}
 }  // namespace
 
 int main() {
@@ -290,6 +320,7 @@ int main() {
     test_sources();
     test_teleport_sounds();
     test_music_player();
+    test_regret_music_restore();
     if (failures) {
         std::fprintf(stderr, "%d failure(s)\n", failures);
         return 1;

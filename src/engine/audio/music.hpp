@@ -71,7 +71,7 @@ public:
     // 1200:02AD: forgets the kept tracks, silence.
     void reset();
 
-    // Loading a saved game (1200:02BF): entries 70 and 71.
+    // Loading a saved game (1200:02BF, No Regret 1210:0381): entries 70 and 71.
     void restore(int track, int flags);
 
     int current() const { return current_; }

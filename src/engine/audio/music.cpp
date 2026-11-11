@@ -148,8 +148,11 @@ void Music::reset() {
     play(0);
 }
 
+// No Regret reads the track into a local, only the flags into DS:45D9: the
+// current track (the menu's) stays, so the saved one does start.
+// @orig 1200:02BF 1210:0381
 void Music::restore(int track, int flags) {
-    current_ = track;
+    if (remorse_) current_ = track;
     flags_ = flags;
     play(track);
 }
