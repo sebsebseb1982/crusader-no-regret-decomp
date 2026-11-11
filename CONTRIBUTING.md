@@ -55,7 +55,7 @@ Releases are fully automated: versions are computed from [Conventional Commits](
 | `feat` | minor bump |
 | `fix`, `perf`, `revert` | patch bump |
 | `docs`, `refactor`, `test`, `build`, `ci`, `chore` | no release |
-| `BREAKING CHANGE` in the footer | minor bump (before 1.0) |
+| `BREAKING CHANGE` in the footer or `!` after the type | major bump |
 
 Examples: `feat(aiming): add directional aiming for right stick controls`, `fix(portmaster): remove ghost key strokes`.
 

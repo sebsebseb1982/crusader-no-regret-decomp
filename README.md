@@ -117,7 +117,7 @@ In addition to `crusader`, the build produces several tools: `shapeview` (shape 
 
 ## Versioning
 
-Versions follow [SemVer](https://semver.org) and are calculated automatically from [Conventional Commits](https://www.conventionalcommits.org): `fix:` increments the patch version, `feat:` increments the minor version, and `BREAKING CHANGE` increments the major version (or the minor version before `1.0`). A release is published on every push to `main` that contains a `fix:` or `feat:` commit. See [`docs/RELEASING.md`](docs/RELEASING.md) for details.
+Versions follow [SemVer](https://semver.org) and are calculated automatically from [Conventional Commits](https://www.conventionalcommits.org): `fix:` increments the patch version, `feat:` increments the minor version, and `BREAKING CHANGE` increments the major version. A release is published on every push to `main` that contains a `fix:` or `feat:` commit. See [`docs/RELEASING.md`](docs/RELEASING.md) for details.
 
 ## Contribution
 

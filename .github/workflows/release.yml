@@ -3,14 +3,14 @@ name: Release
 # Every push to the main branch is analysed with Conventional Commits:
 #   fix: / perf:            -> patch
 #   feat:                   -> minor
-#   BREAKING CHANGE / "!"   -> minor while 0.x, major from 1.0.0 (see .releaserc.json)
+#   BREAKING CHANGE / "!"   -> major
 #   docs:, chore:, ci:...   -> no release
 # When a release is due, Linux and Windows binaries are built and tested, the
 # PortMaster (aarch64 handhelds) binary is cross-built, and all of them are
 # attached to the GitHub release created for the new vX.Y.Z tag.
 
-# The first release is v0.1.0: the v0.0.0 tag on the first commit keeps
-# semantic-release from starting at 1.0.0 while the game is not finished.
+# The first release was v0.1.0: the v0.0.0 tag on the first commit kept
+# semantic-release from starting at 1.0.0. The project moved to 1.x with v1.0.0.
 on:
   push:
     branches: [main]

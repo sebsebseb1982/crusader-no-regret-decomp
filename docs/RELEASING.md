@@ -8,7 +8,7 @@ On every push to `main`, the commits since the last `vX.Y.Z` tag are analysed:
 |---|---|
 | `fix:`, `perf:`, `revert:` | patch |
 | `feat:` | minor |
-| `BREAKING CHANGE` footer or `!` after the type | minor while on `0.x`, major from `1.0.0` |
+| `BREAKING CHANGE` footer or `!` after the type | major |
 | `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `style:`, `build:` | none |
 
 When a release is due:
@@ -21,4 +21,4 @@ Pushes to `main` and pull requests are checked by [`.github/workflows/ci.yml`](.
 
 There is nothing to do by hand: to publish a version, merge or push a `fix:` or `feat:` commit. The workflow can also be started by hand from the Actions tab (*Release* → *Run workflow*).
 
-The `v0.0.0` tag on the first commit is the starting point: without it semantic-release would publish `1.0.0` first. The project stays on `0.x` until the game is complete.
+The `v0.0.0` tag on the first commit is the starting point: without it semantic-release would have published `1.0.0` first. The project was on `0.x` up to `v0.4.1` and moved to `1.x` with `v1.0.0`.
