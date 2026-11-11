@@ -74,6 +74,7 @@ GameConfig GameConfig::parse(std::string_view text) {
         else if (key == "limitblasts") c.limit_blasts = value == "true";
         else if (key == "mousespeed") c.mouse_speed = number(value);
         else if (key == "bigvideo") c.big_video = value == "true";
+        else if (key == "lowresmovies") c.low_res_movies = value == "true";
         else if (key == "subtitles") c.subtitles = value == "true";
         else if (key == "noweasel") c.no_weasel = value == "true";
         else if (key == "followplayer") c.follow_player = value == "true";

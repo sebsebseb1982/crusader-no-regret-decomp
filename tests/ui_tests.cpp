@@ -6,6 +6,7 @@
 #include "engine/ui/enhancements_screen.hpp"
 #include "engine/ui/keypad_gump.hpp"
 #include "engine/ui/gump_keys.hpp"
+#include "engine/ui/xan_player.hpp"
 #include "engine/world/render.hpp"
 
 #include <cstdint>
@@ -130,9 +131,76 @@ void test_vibration_settings() {
     CHECK(!config.vibration);
 }
 
+// A RIFF chunk: id, size, data, padding.
+void put_chunk(std::vector<std::uint8_t>& out, const char* id, const std::vector<std::uint8_t>& data) {
+    out.insert(out.end(), id, id + 4);
+    const auto n = static_cast<std::uint32_t>(data.size());
+    for (int k = 0; k < 4; ++k) out.push_back(static_cast<std::uint8_t>(n >> (8 * k)));
+    out.insert(out.end(), data.begin(), data.end());
+    if (n & 1) out.push_back(0);
+}
+
+std::vector<std::uint8_t> list(const char* type, const std::vector<std::uint8_t>& body) {
+    std::vector<std::uint8_t> d(type, type + 4);
+    d.insert(d.end(), body.begin(), body.end());
+    return d;
+}
+
+std::vector<std::uint8_t> u32s(std::initializer_list<std::uint32_t> v) {
+    std::vector<std::uint8_t> d;
+    for (std::uint32_t x : v)
+        for (int k = 0; k < 4; ++k) d.push_back(static_cast<std::uint8_t>(x >> (8 * k)));
+    return d;
+}
+
+// A 4 x 4 Xxan movie, one black frame (all luma and chroma 0): table entry 0
+// is 0xFF, which 1448:03B4 turns into the colour nearest to colour 255.
+void test_regret_movie() {
+    CHECK(regret_movie_base_name("1a") == "01A" && regret_movie_base_name("anim02") == "ANIM02");
+
+    std::vector<std::uint8_t> pal(768, 0);
+    for (int k = 0; k < 3; ++k) {
+        pal[3 * 7 + k] = 0xF0;    // 60 in 6 bits
+        pal[3 * 255 + k] = 0xFC;  // 63
+    }
+    std::vector<std::uint8_t> move, strl, hdrl, movi, riff;
+    put_chunk(move, "_PC_", u32s({4, 1}));
+    put_chunk(move, "PAL8", pal);
+    put_chunk(move, "BEST", {0xE0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC});
+    std::vector<std::uint8_t> strh = {'v', 'i', 'd', 's', 'X', 'x', 'a', 'n'};
+    strh.resize(56);
+    put_chunk(strl, "strh", strh);
+    put_chunk(strl, "strf", u32s({40, 4, 4, 0x00100001, 0}));
+    put_chunk(strl, "LIST", list("MOVE", move));
+    put_chunk(hdrl, "LIST", list("strl", strl));
+    // Type 0, no chroma, no corrections; 8 luma deltas of 0 ("00" each), end ("1").
+    std::vector<std::uint8_t> frame = u32s({0, 0, 0});
+    frame.insert(frame.end(), {2, 2, 0, 1, 3, 2, 0x00, 0x00, 0x80});
+    put_chunk(movi, "00db", frame);
+    std::vector<std::uint8_t> body = list("AVI ", {});
+    put_chunk(body, "LIST", list("hdrl", hdrl));
+    put_chunk(body, "LIST", list("movi", movi));
+    put_chunk(riff, "RIFF", body);
+
+    XanMovie movie = XanMovie::parse(riff);
+    CHECK(movie.width() == 4 && movie.height() == 4 && movie.version() == 4 && movie.chunks().size() == 1);
+    FontSet fonts;
+    XanPlayer player(std::move(movie), {}, false, false, true, fonts);
+    CHECK(player.darkest() == 0);
+    CHECK(player.screen().row(0)[0] == 0);
+    const std::array<std::uint8_t, 768> vga = player.palette().to_vga();
+    CHECK(vga[3 * 255] == 63 && vga[3 * 7] == 60);
+    player.advance(0, false);
+    CHECK(player.frame() == 1 && !player.finished());
+    CHECK(player.screen().row(238)[318] == 7 && player.screen().row(241)[321] == 7);
+    player.advance(1'000'000 / 15, false);
+    CHECK(player.finished());
+}
+
 }  // namespace
 
 int main() {
+    test_regret_movie();
     test_keypad_digit_spacing();
     test_vibration_settings();
     if (failures == 0) std::printf("all ui checks passed\n");

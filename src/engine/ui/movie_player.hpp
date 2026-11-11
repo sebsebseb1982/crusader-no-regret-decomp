@@ -1,5 +1,6 @@
 #pragma once
-// The video player (PLAYER.C, segment 1468): "Video Player(AVI)", a timed
+// No Remorse's video player (PLAYER.C, segment 1468; No Regret has
+// XANPLAY.C instead, xan_player.hpp): "Video Player(AVI)", a timed
 // process of type 0x240 created and run to its end inside the usecode
 // intrinsics (the game is frozen meanwhile):
 //   0x0D2, 0x00F  MovieGump::I_playMovieCutscene(name, x, y)  -> 1468:3F77

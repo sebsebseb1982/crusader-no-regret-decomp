@@ -3,6 +3,8 @@
 #include "core/data_info.hpp"
 #include "core/game_config.hpp"
 #include "core/iso_image.hpp"
+#include "core/movie_subtitles.hpp"
+#include "core/xan_movie.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -235,8 +237,46 @@ void check_data_info() {
 
 }  // namespace
 
+// No Regret's movies: XANDRV32's unpacker and Huffman decoder, the DPCM
+// sound of 1478:0198 / 02AC, the IFF subtitles.
+void check_xan() {
+    using Bytes = std::vector<std::uint8_t>;
+    // 4 literals, a copy of 3 from 4 back, the end code.
+    const Bytes packed = {0xE0, 'a', 'b', 'c', 'd', 0x00, 0x03, 0xFC};
+    const Bytes unpacked = xan_unpack(packed, 0, 100);
+    check(unpacked == Bytes({'a', 'b', 'c', 'd', 'a', 'b', 'c'}), "xan unpack literals and copy");
+    bool threw = false;
+    try {
+        xan_unpack(packed, 0, 5);
+    } catch (const std::out_of_range&) {
+        threw = true;
+    }
+    check(threw, "xan unpack limit");
+    // Nodes 3 (0 / 1) and 4, the root (3 / end 2): 1, 0, 1 is 01 00 01, then 1.
+    const Bytes huff = {2, 2, 0, 1, 3, 2, 0x46};
+    check(xan_huffman(huff, 0, 10) == Bytes({1, 0, 1}), "xan huffman");
+
+    // Mono: the start value, then 0x40 (+0x4000 >> 4), then 0x03 (shift + 1).
+    const Bytes mono = {0x00, 0x10, 0x40, 0x03};
+    const std::vector<std::int8_t> m = xan_audio_samples(mono, 1);
+    check(m == std::vector<std::int8_t>({0x10, 0x14, 0x14}), "xan mono samples");
+    // Stereo: the channels' average, one sample per pair.
+    const Bytes stereo = {0x00, 0x10, 0x00, 0x20, 0x00, 0x40};
+    const std::vector<std::int8_t> s = xan_audio_samples(stereo, 2);
+    check(s == std::vector<std::int8_t>({0x18, 0x1A}), "xan stereo samples");
+
+    // "FREN" first, then "ENGL": entries frame, length, text with its NUL.
+    Bytes iff = {'F', 'O', 'R', 'M', 0, 0, 0, 0, 'L', 'A', 'N', 'G', 'F', 'R', 'E', 'N', 0, 0, 0, 7,
+                 5, 0, 0, 0, 2, 'X', 0, 'E', 'N', 'G', 'L', 0, 0, 0, 15,
+                 5, 0, 0, 0, 3, 'H', 'i', 0, 9, 0, 0, 0, 1, 0};
+    const std::vector<RegretSubtitle> subs = parse_regret_movie_subtitles(iff);
+    check(subs.size() == 2 && subs[0].frame == 5 && subs[0].text == "Hi" && subs[1].frame == 9 && subs[1].text.empty(),
+          "regret subtitles: the English entries");
+}
+
 int main() {
     check_config();
+    check_xan();
     check_iso();
     check_data_info();
     std::printf(failures ? "%d failure(s)\n" : "all checks passed\n", failures);

@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -36,5 +37,20 @@ std::vector<MovieSubtitle> parse_movie_subtitles(std::string_view text, const Fo
 
 // Reads the file; an empty list when it cannot be read.
 std::vector<MovieSubtitle> load_movie_subtitles(const std::filesystem::path& path, const FontSet& fonts, int font);
+
+// No Regret: FLICS/<movie>.IFF, read when "subtitles=true" (DS:030A). An
+// IFF "FORM" of type "LANG" with one chunk per language ("FREN", "ENGL"...).
+// XANPLAY_1448_008B looks for the bytes "ENGL" anywhere in the file and reads
+// the entries 8 bytes further: u32 frame, u8 length, then the text (with its
+// NUL). The entries go by increasing frame; the end of the file (the buffer
+// is filled with 0xFF past it, a negative frame) or a negative frame ends
+// them. An empty text clears the line. Only English is ever shown.
+struct RegretSubtitle {
+    std::int32_t frame = 0;
+    std::string text;
+};
+
+std::vector<RegretSubtitle> parse_regret_movie_subtitles(std::span<const std::uint8_t> file);
+std::vector<RegretSubtitle> load_regret_movie_subtitles(const std::filesystem::path& path);
 
 }  // namespace crusader

@@ -31,8 +31,7 @@ void remap_luma(Surface8& s, const Palette& p) {
 
 }  // namespace
 
-// @orig ?: No Remorse 1468:2F7C, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:2F7C, the No Remorse video player only (No Regret: xan_player.hpp)
 std::string movie_base_name(std::string_view name) {
     std::string up(name);
     for (char& c : up) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
@@ -44,8 +43,7 @@ std::string movie_base_name(std::string_view name) {
     return "0" + up;
 }
 
-// @orig ?: No Remorse 1468:03E3, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:03E3, the No Remorse video player only (No Regret: xan_player.hpp)
 MoviePlayer::MoviePlayer(AviMovie movie, MovieKind kind, std::vector<MovieSubtitle> subtitles, bool big,
                          Surface8 screen, const Palette& dac, ShapeCache& gumps, const FontSet& fonts)
     : movie_(std::move(movie)),
@@ -79,8 +77,7 @@ MoviePlayer::MoviePlayer(AviMovie movie, MovieKind kind, std::vector<MovieSubtit
     }
 }
 
-// @orig ?: No Remorse 1468:3ABC, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:3ABC, the No Remorse video player only (No Regret: xan_player.hpp)
 void MoviePlayer::setup_screen() {
     // 1468:37C4: the frame around the movie, or black under a doubled one.
     if (doubled_) {
@@ -160,8 +157,7 @@ bool MoviePlayer::at_video_chunk() const {
 }
 
 // 1468:17B0: the next chunk; the end of the "movi" list stops the movie.
-// @orig ?: No Remorse 1468:17B0, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:17B0, the No Remorse video player only (No Regret: xan_player.hpp)
 bool MoviePlayer::next_chunk() {
     ++chunk_;
     if (chunk_ >= movie_.chunks().size()) {
@@ -172,8 +168,7 @@ bool MoviePlayer::next_chunk() {
 }
 
 // 1468:1EF7: an audio chunk goes to the sound buffer.
-// @orig ?: No Remorse 1468:1EF7, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:1EF7, the No Remorse video player only (No Regret: xan_player.hpp)
 bool MoviePlayer::queue_audio() {
     if (chunk_ >= movie_.chunks().size() || movie_.chunks()[chunk_].id != AviMovie::kAudioChunk) return false;
     ++audio_queued_;
@@ -188,8 +183,7 @@ bool MoviePlayer::queue_audio() {
 }
 
 // 1468:1A92: one strip of the current chunk, then onto the screen.
-// @orig ?: No Remorse 1468:1A92, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:1A92, the No Remorse video player only (No Regret: xan_player.hpp)
 void MoviePlayer::decode(int strip) {
     const AviMovie::Chunk& c = movie_.chunks()[chunk_];
     const bool half = movie_.rrv() && c.id == AviMovie::kHalfWidthChunk;
@@ -213,8 +207,7 @@ void MoviePlayer::decode(int strip) {
 }
 
 // 1468:1DA1.
-// @orig ?: No Remorse 1468:1DA1, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:1DA1, the No Remorse video player only (No Regret: xan_player.hpp)
 void MoviePlayer::show_subtitle() {
     if (subtitles_.empty() || subtitle_wait_-- != 0) return;
     Surface8 strip(kSubtitleWidth, kSubtitleHeight, 0);
@@ -232,8 +225,7 @@ void MoviePlayer::show_subtitle() {
 }
 
 // 1468:2869.
-// @orig ?: No Remorse 1468:2869, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:2869, the No Remorse video player only (No Regret: xan_player.hpp)
 void MoviePlayer::tick(const std::function<bool(std::uint8_t)>& key_down) {
     if (key_down(0x01) || key_down(0x39) || key_down(0x1C)) {
         finished_ = true;

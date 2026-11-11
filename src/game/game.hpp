@@ -27,6 +27,7 @@
 #include "engine/ui/message_gump.hpp"
 #include "engine/ui/modal_gump.hpp"
 #include "engine/ui/movie_player.hpp"
+#include "engine/ui/xan_player.hpp"
 #include "engine/ui/mouse_cursor.hpp"
 #include "engine/ui/pickup_area.hpp"
 #include "engine/ui/status_bar.hpp"
@@ -180,7 +181,7 @@ public:
         aim_stick_ = active;
         aim_stick_deg_ = screen_deg;
     }
-    bool mouse_in_play() const { return !modal() && !movie_; }
+    bool mouse_in_play() const { return !modal() && !in_movie(); }
     // True in play while the controlled NPC has its weapon out. The controller
     // then strafes with the left stick while the right stick aims.
     bool weapon_out() const;
@@ -223,6 +224,11 @@ public:
     // render() shows it.
     void play_movie(const std::string& name, MovieKind kind);
     const MoviePlayer* movie() const { return movie_.get(); }
+    // No Regret's movies (MovieGump::I_playMovieCutsceneRegret, xan_player.hpp):
+    // FLICS/<name>.AVI, nothing when it does not exist; the same freezing.
+    void play_regret_movie(const std::string& name, bool fade);
+    const XanPlayer* regret_movie() const { return xan_movie_.get(); }
+    bool in_movie() const { return movie_ || xan_movie_; }
 
     // ComputerGump::I_readComputer (computer_gump.hpp): the text on the
     // computer screen, in the menu mode, until it is closed. The calling
@@ -331,6 +337,8 @@ private:
     int ui_x_ = 0, ui_y_ = 0;
     void update_movie(std::uint32_t elapsed_us);
     void end_movie();
+    void update_regret_movie(std::uint32_t elapsed_us);
+    void end_regret_movie();
     void save_config();
     void draw_autosave_icon(Surface8& screen);
     void save_picture(const Surface8& screen);
@@ -397,6 +405,8 @@ private:
     int shots_fired_ = 0;
 
     std::unique_ptr<MoviePlayer> movie_;
+    std::unique_ptr<XanPlayer> xan_movie_;
+    bool movie_key_pressed_ = false;  // No Regret: a key went down during the movie
     // Player field +0xC2: the movie resumes the colour cycling when it ends
     // (DS:5FFE clear when it started).
     bool movie_resumes_cycle_ = true;

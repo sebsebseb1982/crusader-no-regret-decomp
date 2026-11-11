@@ -31,6 +31,9 @@ public:
     int mouse_speed = 2;       // "mousespeed" (DS:6001), 0..3
     bool big_video = false;    // "bigvideo" (DS:68CE: mode 0x13 / 8 when big, else 0x101 / 0)
     bool subtitles = false;    // "subtitles" (DS:0179): the cutscenes' subtitles
+    // No Regret: "lowresmovies" (DS:75A6), the movies decoded without their
+    // luma corrections. Kept as read (the port does not write it).
+    bool low_res_movies = false;
     bool no_weasel = false;    // "noweasel" (DS:0178): no movies in Weasel's shop
     // Port addition, written only when set: "followplayer", the camera keeps
     // the controlled NPC at the centre of the screen.

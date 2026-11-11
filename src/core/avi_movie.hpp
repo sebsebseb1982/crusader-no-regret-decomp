@@ -1,6 +1,7 @@
 #pragma once
-// The cutscenes, FLICS/*.AVI, as the video player (PLAYER.C, segment 1468)
-// reads them: RIFF AVI files with the Origin codecs RRV1, RRV2 and JYV1.
+// The cutscenes, FLICS/*.AVI, as No Remorse's video player (PLAYER.C,
+// segment 1468) reads them: RIFF AVI files with the Origin codecs RRV1, RRV2
+// and JYV1. No Regret's are Xan movies (xan_movie.hpp).
 //
 // Header (PLAYER_1468_2188): the "avih" chunk, then one "strl" list per
 // stream with its "strh" (stream header) and "strf" (format). The video

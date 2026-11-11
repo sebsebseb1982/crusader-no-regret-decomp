@@ -353,7 +353,9 @@ void Game::reset_world() {
     register_world_intrinsics(*machine_, *world_, &anims_);
     register_audio_intrinsics(*machine_, *world_);
     register_npc_intrinsics(*machine_, *world_, anims_, &npc_types_);
-    register_movie_intrinsics(*machine_, [this](const std::string& name, MovieKind kind) { play_movie(name, kind); });
+    register_movie_intrinsics(
+        *machine_, [this](const std::string& name, MovieKind kind) { play_movie(name, kind); },
+        [this](const std::string& name, bool fade) { play_regret_movie(name, fade); });
     // 13E8:00A8 (unnamed in ScummVM): the keyboard queue and the mouse clicks
     // kept by the mouse handler (DS:8A80..8A84) are forgotten.
     machine_->set_intrinsic(0x0D3, [this](UCMachine&, UCProcess&, std::span<const std::uint8_t>) -> std::uint32_t {
@@ -671,7 +673,7 @@ void Game::save_game(int slot) {
 
 // @orig none: port-only autosave
 void Game::autosave() {
-    if (!config_.autosave || modal() || movie_ || !world_ || !world_->get(1) || world_->is_dead(1) ||
+    if (!config_.autosave || modal() || in_movie() || !world_ || !world_->get(1) || world_->is_dead(1) ||
         world_->state.controlled_npc != 1) {
         return;
     }
@@ -842,7 +844,7 @@ void Game::update(std::uint32_t elapsed_us) {
     // too), with the fire key's conditions (CombatControl::handle_key): not
     // for a dead NPC, nor for the player held in stasis.
     const ObjId aim_npc = world_ ? world_->state.controlled_npc : 0;
-    if (aim_stick_ && aim_npc != 0 && !modal() && !movie_ && !world_->is_dead(aim_npc) &&
+    if (aim_stick_ && aim_npc != 0 && !modal() && !in_movie() && !world_->is_dead(aim_npc) &&
         !(aim_npc == 1 && world_->state.avatar_in_stasis)) {
         // Screen east is the world angle 315 degrees, north 225: 315 - screen.
         aim_at_angle(*kernel_, *world_, anims_, static_cast<int>(std::lround(315.0 - aim_stick_deg_)),
@@ -867,6 +869,11 @@ void Game::update(std::uint32_t elapsed_us) {
         new_game(difficulty);
     }
     autosave_icon_us_ -= std::min(autosave_icon_us_, elapsed_us);
+    if (xan_movie_) {
+        update_regret_movie(elapsed_us);
+        mix_elapsed(elapsed_us);
+        return;
+    }
     if (movie_) {
         // The game is frozen while the movie plays (the original plays it
         // inside the intrinsic).
@@ -890,7 +897,7 @@ void Game::update(std::uint32_t elapsed_us) {
         kernel_->run_slice();
         animate_scenery();
         left -= step;
-        if (!more || movie_ || kernel_->slice_interrupted()) break;
+        if (!more || in_movie() || kernel_->slice_interrupted()) break;
     }
     if (autosave_pending_ && kernel_->ticks() >= autosave_due_ && !modal() && player_may_act(*world_)) {
         autosave_pending_ = false;
@@ -937,18 +944,27 @@ void Game::mix_elapsed(std::uint32_t elapsed_us) {
     audio_->mixer.mix(out.data() + from, count);
 }
 
-// @orig ?: No Remorse 1468:3F77 1468:4060 1468:4169, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:3F77 1468:4060 1468:4169, the No Remorse video player only (No Regret: xan_player.hpp)
 void Game::play_movie(const std::string& name, MovieKind kind) {
-    if (movie_) return;
+    if (in_movie()) return;
+    if (regret_) {
+        // The command line's --movie: No Regret has only the one intrinsic.
+        play_regret_movie(name, true);
+        return;
+    }
     Surface8 screen(kScreenWidth, kScreenHeight);
     render_view(screen);
     start_movie(name, kind, std::move(screen));
 }
 
-// @orig ?: No Remorse 1468:03E3 1468:3ABC, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:03E3 1468:3ABC, the No Remorse video player only (No Regret: xan_player.hpp)
 void Game::start_movie(const std::string& name, MovieKind kind, Surface8 screen) {
+    if (regret_) {
+        // Game_start (1030:032D): ORIGIN and ANIM01 with a fade of 0 (the
+        // 30 ticks waited between them are not).
+        play_regret_movie(name, false);
+        return;
+    }
     const std::filesystem::path base = data_ / "FLICS" / movie_base_name(name);
     std::filesystem::path avi = base;
     avi += ".AVI";
@@ -972,8 +988,7 @@ void Game::start_movie(const std::string& name, MovieKind kind, Surface8 screen)
     kernel_->interrupt_slice();
 }
 
-// @orig ?: No Remorse 1468:03E3 1468:2869, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:03E3 1468:2869, the No Remorse video player only (No Regret: xan_player.hpp)
 void Game::update_movie(std::uint32_t elapsed_us) {
     movie_->advance(elapsed_us, [this](std::uint8_t scancode) { return keyboard_.down(scancode, false) != 0; });
     if (movie_->take_playback_start() && audio_) {
@@ -991,8 +1006,7 @@ void Game::update_movie(std::uint32_t elapsed_us) {
     if (movie_->finished()) end_movie();
 }
 
-// @orig ?: No Remorse 1468:3D7A 1468:3C23, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:3D7A 1468:3C23, the No Remorse video player only (No Regret: xan_player.hpp)
 void Game::end_movie() {
     const bool shop_movie = weasel_movie_;
     // 1468:3D7A / 3C23.
@@ -1018,6 +1032,59 @@ void Game::end_movie() {
     next_start_up_movie();
 }
 
+// @orig 1448:0B5A
+void Game::play_regret_movie(const std::string& name, bool fade) {
+    if (in_movie()) return;
+    const std::filesystem::path base = data_ / "FLICS" / regret_movie_base_name(name);
+    std::filesystem::path avi = base, iff = base;
+    avi += ".AVI";
+    iff += ".IFF";
+    std::optional<XanMovie> movie;
+    try {
+        movie = XanMovie::load(avi);
+    } catch (const std::exception&) {
+        return;  // DSFXMAN_12d8_020a: no such movie, nothing happens
+    }
+    std::vector<RegretSubtitle> subtitles;
+    if (config_.subtitles) subtitles = load_regret_movie_subtitles(iff);
+    std::string upper = name;
+    for (char& c : upper) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    const bool big = config_.big_video && upper != "ORIGIN";
+    xan_movie_ = std::make_unique<XanPlayer>(std::move(*movie), std::move(subtitles), big, config_.low_res_movies,
+                                             fade, fonts_);
+    world_->state.cycle_paused = true;
+    world_->state.screen_palette = xan_movie_->palette();
+    keyboard_.reset();  // 11E8:33E3
+    movie_key_pressed_ = false;
+    kernel_->interrupt_slice();
+}
+
+// @orig 1448:06F4 1468:04C8
+void Game::update_regret_movie(std::uint32_t elapsed_us) {
+    xan_movie_->advance(elapsed_us, std::exchange(movie_key_pressed_, false));
+    if (xan_movie_->take_sound_start() && audio_) {
+        movie_sounds_.push_back(xan_movie_->sound());
+        if (movie_sounds_.size() > 2) movie_sounds_.pop_front();
+        const std::vector<std::int8_t>& pcm = movie_sounds_.back();
+        audio_->mixer.play(0, SoundSample{pcm, 0, 0, XanMovie::kAudioRate}, AsylumMixer::kMaxVolume + 1, 0, false);
+    }
+    world_->state.screen_palette = xan_movie_->palette();
+    if (xan_movie_->finished()) end_regret_movie();
+}
+
+// @orig 1448:0B5A
+void Game::end_regret_movie() {
+    if (audio_) audio_->mixer.stop(0);
+    keyboard_.reset();  // 11E8:33E3
+    // A fade of 0: PaletteFaderProcess::I_jumpToAllBlack; otherwise the game
+    // palette written back. The cycling resumes either way.
+    world_->state.screen_palette = xan_movie_->fade() ? world_->state.game_palette : Palette::filled(0, 0, 0);
+    world_->state.cycle_paused = false;
+    xan_movie_.reset();
+    if (!menu_ && !end_credits_ && !end_credits_pending_) request_autosave();
+    next_start_up_movie();
+}
+
 // @orig 1030:032D
 void Game::next_start_up_movie() {
     // Game_start after the end credits: the movies of the start-up, one
@@ -1025,12 +1092,12 @@ void Game::next_start_up_movie() {
     // missing one is skipped. Then the menu gets its music: in the original
     // it only opens now (IRGUMP_13d0_0000), the port opened it before to
     // hold the credits.
-    while (!movie_ && !next_movies_.empty()) {
+    while (!in_movie() && !next_movies_.empty()) {
         const std::string next = next_movies_.front();
         next_movies_.erase(next_movies_.begin());
         start_movie(next, MovieKind::kCutsceneNoFade, Surface8(kScreenWidth, kScreenHeight));
     }
-    if (!movie_ && end_credits_) {
+    if (!in_movie() && end_credits_) {
         end_credits_ = false;
         if (audio_) audio_->music.push(Music::kMenu);
     }
@@ -1127,6 +1194,11 @@ void Game::play_end_credits() {
 // cheats.hpp.
 // @orig 1148:09FD 1008:1565
 void Game::on_key(const GameKeyEvent& e) {
+    // No Regret's movie stops at a key in the buffer (1448:02BC).
+    if (xan_movie_) {
+        if (e.pressed && e.count == 1) movie_key_pressed_ = true;
+        return;
+    }
     // A movie only looks at the keys held (1468:2869).
     if (movie_) return;
     const std::uint16_t code = gump_key_code(e);
@@ -1528,7 +1600,7 @@ void Game::close_screen() {
 
 // @orig 1390:0005 1390:021C (No Regret: the same, menu mode with 1)
 void Game::read_computer(const std::string& text) {
-    if (modal() || movie_) return;
+    if (modal() || in_movie()) return;
     enter_menu_mode();
     cursor_.hide();  // 13A0:0034
     auto gump = std::make_unique<ComputerGump>(gumps_, fonts_, text, [this](int sfx) {
@@ -1546,7 +1618,7 @@ void Game::read_computer(const std::string& text) {
 
 // @orig 13B0:00FE 13B0:04F8 (No Regret: the same, menu mode with 1)
 void Game::show_keypad(std::int16_t code, Pid pid) {
-    if (modal() || movie_) return;
+    if (modal() || in_movie()) return;
     enter_menu_mode();
     auto gump = std::make_unique<KeypadGump>(gumps_, code, [this](int sfx) {
         if (audio_) audio_->play_sfx(sfx);
@@ -1567,7 +1639,7 @@ void Game::show_keypad(std::int16_t code, Pid pid) {
 // @orig ?: No Remorse 13E0:0000 13E0:0435, no counterpart found in REGRET.EXE
 // TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::show_weasel(int level) {
-    if (modal() || movie_) return;
+    if (modal() || in_movie()) return;
     std::vector<std::uint8_t> stuff;
     if (std::ifstream in{data_ / "STATIC" / "STUFF.DAT", std::ios::binary}) {
         stuff.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
@@ -1593,7 +1665,7 @@ void Game::show_weasel(int level) {
 // @orig ?: No Remorse 13E0:0CD8, no counterpart found in REGRET.EXE
 // TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
 void Game::play_weasel_movie(const std::string& name) {
-    if (movie_) return;
+    if (in_movie()) return;
     Surface8 screen(kScreenWidth, kScreenHeight);
     render_view(screen);
     if (screen_) screen_->draw(screen);
@@ -1756,12 +1828,13 @@ void Game::render(Surface8& screen, RenderStats* stats) {
     if (!large && (screen.width != kScreenWidth || screen.height != kScreenHeight)) {
         screen = Surface8(kScreenWidth, kScreenHeight);
     }
-    if (movie_) {
+    if (in_movie()) {
+        const Surface8& picture = xan_movie_ ? xan_movie_->screen() : movie_->screen();
         if (!large) {
-            screen = movie_->screen();
+            screen = picture;
         } else {
             screen.clear(0);
-            copy_block(movie_->screen(), 0, 0, screen, ui_x_, ui_y_, kScreenWidth, kScreenHeight);
+            copy_block(picture, 0, 0, screen, ui_x_, ui_y_, kScreenWidth, kScreenHeight);
         }
         return;
     }

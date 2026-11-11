@@ -49,6 +49,7 @@ add_library(crusader_core
   src/core/amf_module.cpp
   src/core/png_writer.cpp
   src/core/avi_movie.cpp
+  src/core/xan_movie.cpp
   src/core/movie_subtitles.cpp)
 target_include_directories(crusader_core PUBLIC src)
 
@@ -117,6 +118,7 @@ add_library(crusader_engine
   src/engine/ui/gamepad_screen.cpp
   src/engine/ui/enhancements_screen.cpp
   src/engine/ui/movie_player.cpp
+  src/engine/ui/xan_player.cpp
   src/engine/world/auto_firer.cpp
   src/engine/world/render.cpp)
 target_link_libraries(crusader_engine PUBLIC crusader_core)

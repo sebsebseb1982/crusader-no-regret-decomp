@@ -21,8 +21,7 @@ class BitReader {
 public:
     explicit BitReader(std::span<const std::uint8_t> d) : d_(d) {}
 
-    // @orig ?: No Remorse 1460:0000, no counterpart found in REGRET.EXE
-    // TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+    // @orig ?: No Remorse 1460:0000, the No Remorse video player only (No Regret: xan_player.hpp)
     std::uint32_t get(int n) {
         std::uint32_t window = 0;
         const std::size_t byte = pos_ >> 3;
@@ -45,8 +44,7 @@ struct RiffChunk {
     std::uint32_t size;
 };
 
-// @orig ?: No Remorse 1468:2188, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:2188, the No Remorse video player only (No Regret: xan_player.hpp)
 std::vector<RiffChunk> riff_chunks(std::span<const std::uint8_t> d, std::size_t from, std::size_t to) {
     std::vector<RiffChunk> out;
     std::size_t p = from;
@@ -74,8 +72,7 @@ AviMovie AviMovie::load(const std::filesystem::path& path) {
     return parse(std::move(bytes));
 }
 
-// @orig ?: No Remorse 1468:2188 1468:17B0, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1468:2188 1468:17B0, the No Remorse video player only (No Regret: xan_player.hpp)
 AviMovie AviMovie::parse(std::vector<std::uint8_t> bytes) {
     AviMovie m;
     m.bytes_ = std::move(bytes);
@@ -120,8 +117,7 @@ AviMovie AviMovie::parse(std::vector<std::uint8_t> bytes) {
         }
     }
     if (!video || m.width_ <= 0 || m.height_ <= 0) throw std::runtime_error("AVI file without a video stream");
-    // No Regret's movies use Origin's Xan codec ("Xxan", XANPLAY.C), which
-    // the port does not decode yet: refused, so that the movie is skipped.
+    // No Regret's movies (Origin's Xan codec, "Xxan") are XanMovie's.
     if (m.codec_ != fourcc("RRV1") && m.codec_ != fourcc("RRV2") && m.codec_ != fourcc("JYV1"))
         throw std::runtime_error("AVI file with an unknown codec");
     return m;

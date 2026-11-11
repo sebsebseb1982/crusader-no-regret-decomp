@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 
 namespace crusader {
@@ -24,8 +25,7 @@ std::int32_t frame_number(std::string_view s, std::size_t at) {
 }
 
 // FUN_1470_0398: the line after the one at `at`, if it is a subtitle.
-// @orig ?: No Remorse 1470:0398, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1470:0398, the No Remorse video player only (No Regret: xan_player.hpp)
 std::optional<std::string> text_after(std::string_view s, std::size_t at) {
     const std::size_t cr = s.find('\r', at);
     if (cr == std::string_view::npos) return std::nullopt;
@@ -39,8 +39,7 @@ std::optional<std::string> text_after(std::string_view s, std::size_t at) {
 
 }  // namespace
 
-// @orig ?: No Remorse 1470:0239, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1470:0239, the No Remorse video player only (No Regret: xan_player.hpp)
 std::vector<MovieSubtitle> parse_movie_subtitles(std::string_view s, const FontSet& fonts, int font) {
     std::vector<MovieSubtitle> out;
     const TextWriter writer(fonts, font);
@@ -61,14 +60,46 @@ std::vector<MovieSubtitle> parse_movie_subtitles(std::string_view s, const FontS
     return out;
 }
 
-// @orig ?: No Remorse 1470:00FB, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig ?: No Remorse 1470:00FB, the No Remorse video player only (No Regret: xan_player.hpp)
 std::vector<MovieSubtitle> load_movie_subtitles(const std::filesystem::path& path, const FontSet& fonts, int font) {
     std::ifstream in(path, std::ios::binary);
     if (!in) return {};
     std::ostringstream text;
     text << in.rdbuf();
     return parse_movie_subtitles(text.str(), fonts, font);
+}
+
+// @orig 1448:008B 1440:0732
+std::vector<RegretSubtitle> parse_regret_movie_subtitles(std::span<const std::uint8_t> file) {
+    std::vector<RegretSubtitle> out;
+    std::size_t p = 0;
+    for (; p + 4 <= file.size(); ++p) {
+        if (file[p] == 'E' && file[p + 1] == 'N' && file[p + 2] == 'G' && file[p + 3] == 'L') break;
+    }
+    if (p + 4 > file.size()) return out;
+    p += 8;
+    while (p + 5 <= file.size()) {
+        const auto frame = static_cast<std::int32_t>(file[p] | file[p + 1] << 8 | file[p + 2] << 16 |
+                                                     static_cast<std::uint32_t>(file[p + 3]) << 24);
+        if (frame < 0) break;
+        const std::size_t length = file[p + 4];
+        const std::size_t text = p + 5;
+        if (text + length > file.size()) break;
+        std::size_t end = text;
+        while (end < text + length && file[end] != 0) ++end;
+        out.push_back({frame, std::string(file.begin() + static_cast<std::ptrdiff_t>(text),
+                                          file.begin() + static_cast<std::ptrdiff_t>(end))});
+        p = text + length;
+    }
+    return out;
+}
+
+// @orig 1448:0B5A
+std::vector<RegretSubtitle> load_regret_movie_subtitles(const std::filesystem::path& path) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return {};
+    const std::vector<std::uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    return parse_regret_movie_subtitles(bytes);
 }
 
 }  // namespace crusader
