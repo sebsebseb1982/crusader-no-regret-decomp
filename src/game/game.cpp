@@ -386,8 +386,9 @@ void Game::reset_world() {
     machine_->set_intrinsic(0x096, [this](UCMachine&, UCProcess&, std::span<const std::uint8_t>) -> std::uint32_t {
         return keyboard_.held();
     });
-    // Game::I_playCredits (13E8:003F): creates a process (vtable DS:628B)
-    // whose run is the end of the game (play_end_credits).
+    // Game::I_playCredits (13E8:003F, No Regret 1008:009C): creates a process
+    // (vtable DS:628B, No Regret DS:02E4) whose run is the end of the game
+    // (play_end_credits).
     machine_->set_intrinsic(0x095, [this](UCMachine&, UCProcess&, std::span<const std::uint8_t>) -> std::uint32_t {
         play_credits();
         return 0;
@@ -1018,7 +1019,6 @@ void Game::end_movie() {
 }
 
 // @orig 1030:032D
-// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::next_start_up_movie() {
     // Game_start after the end credits: the movies of the start-up, one
     // after the other on a black screen (the credits leave it black); a
@@ -1078,27 +1078,29 @@ void Game::run_credits(std::uint32_t ticks_before) {
         if (end_credits_) {
             // Game_start (1028:0000), while DS:08F6 (a mission on the command
             // line) is -1 and DS:0904 (play them until a click) is 0.
-            next_movies_ = {"T01", "T02"};
+            // No Regret (1030:032D): ORIGIN, then ANIM01 half a second later.
+    next_movies_ = regret_ ? std::vector<std::string>{"ORIGIN", "ANIM01"} : std::vector<std::string>{"T01", "T02"};
             next_start_up_movie();
         }
     }
 }
 
 // @orig 1030:032D
-// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
 void Game::start_up() {
     // As the end of play_end_credits, without the credits: the menu is open
     // first (no game), the movies play over it on a black screen, and its
     // music starts once they are over (next_start_up_movie).
     open_menu(true);
     end_credits_ = true;
-    next_movies_ = {"T01", "T02"};
+    // No Regret (1030:032D): ORIGIN, then ANIM01 half a second later.
+    next_movies_ = regret_ ? std::vector<std::string>{"ORIGIN", "ANIM01"} : std::vector<std::string>{"T01", "T02"};
     next_start_up_movie();
 }
 
-// @orig 1030:032D
-// TODO(regret): modified in REGRET.EXE (No Remorse 1028:0000, similarity 0.75)
-// TODO(regret): No Remorse 13E8:0000 has no counterpart in REGRET.EXE
+// No Regret's process (vtable DS:02E4, run 1008:0000) rolls no credits:
+// the status bar boxes go, the music stops, the screen goes black, then
+// Game_start (the start-up movies and the menu).
+// @orig 1030:032D 1008:0000
 void Game::play_end_credits() {
     // 13E8:0000: the music stopped and its stack emptied (music_reset), no
     // game any more (DS:5BEE), the cursor hidden, the screen black; then the
@@ -1109,6 +1111,10 @@ void Game::play_end_credits() {
     if (audio_) {
         audio_->music.stop();
         audio_->music.reset();
+    }
+    if (regret_) {
+        start_up();
+        return;
     }
     open_menu(true);
     end_credits_ = true;

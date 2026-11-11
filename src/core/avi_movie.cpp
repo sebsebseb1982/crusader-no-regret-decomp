@@ -120,6 +120,10 @@ AviMovie AviMovie::parse(std::vector<std::uint8_t> bytes) {
         }
     }
     if (!video || m.width_ <= 0 || m.height_ <= 0) throw std::runtime_error("AVI file without a video stream");
+    // No Regret's movies use Origin's Xan codec ("Xxan", XANPLAY.C), which
+    // the port does not decode yet: refused, so that the movie is skipped.
+    if (m.codec_ != fourcc("RRV1") && m.codec_ != fourcc("RRV2") && m.codec_ != fourcc("JYV1"))
+        throw std::runtime_error("AVI file with an unknown codec");
     return m;
 }
 
