@@ -13,6 +13,8 @@
 #include "core/shape.hpp"
 #include "core/typeflags.hpp"
 #include "engine/audio/audio.hpp"
+#include "engine/ui/gump_keys.hpp"
+#include "engine/ui/help_screen.hpp"
 #include "engine/ui/load_screen.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
 #include "game/game.hpp"
@@ -22,6 +24,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace crusader;
 
@@ -244,6 +247,29 @@ void test_load_screen(const std::filesystem::path& data) {
     CHECK(save.palette() == &pictures.pages[0]->palette);
 }
 
+// The help (1008:3906, 3B08, 3D42): HELP1.BMP .. HELP5.BMP, no buttons, the
+// opening sound 0x1A3; any key but Escape turns the page, 5 back to 0.
+void test_help_screen(const std::filesystem::path& data) {
+    set_regret_data(true);
+    const auto flex = FlexArchive::open(data / "STATIC/GUMPS.FLX");
+    ShapeCache gumps(flex, ShapeLayout::Flat2D);
+    const auto pictures = HelpScreen::Pictures::load(data / "STATIC");
+    for (const auto& page : pictures.pages) CHECK(page && page->picture.width == 640 && page->picture.height == 480);
+    std::vector<int> sounds;
+    HelpScreen help(gumps, pictures, [](int) { return 0; }, [&sounds](int sfx) { sounds.push_back(sfx); });
+    CHECK(help.buttons().empty() && sounds == std::vector<int>{HelpScreen::kRegretOpenSound});
+    CHECK(help.page() == 0 && help.palette() == &pictures.pages[0]->palette);
+    Surface8 screen(640, 480);
+    help.draw(screen);
+    shot_surface(screen, *help.palette(), "help_screen.png");
+    for (int i = 1; i < 5; ++i) help.key('a');
+    CHECK(help.page() == 4 && help.palette() == &pictures.pages[4]->palette);
+    help.key(gump_key::kRight);
+    CHECK(help.page() == 0 && !help.closed());
+    help.key(gump_key::kEscape);
+    CHECK(help.closed());
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -262,6 +288,7 @@ int main(int argc, char** argv) {
         test_new_game(data);
         test_start_up(data);
         test_load_screen(data);
+        test_help_screen(data);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "FAIL: exception: %s\n", e.what());
         ++failures;

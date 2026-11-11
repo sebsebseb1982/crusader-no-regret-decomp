@@ -31,6 +31,12 @@
 //
 // Not reproduced: the keyboard and mouse clicks flushed after a page turn
 // (keyboard_flush, DS:8A80..8A84).
+//
+// No Regret (WORLD 1008:3906, opened by F3): five pages, STATIC/HELP1.BMP ..
+// HELP5.BMP (1008:3B08), page 5 going back to 0; no buttons, the cursor
+// hidden, sound 0x1A3 at the opening. Keys (1008:3D42): Escape closes, any
+// other key turns to the next page. No hidden page and no sounds (No
+// Remorse's 13E8:3EC8 has no counterpart).
 
 #include "core/palette.hpp"
 #include "engine/ui/modal_gump.hpp"
@@ -48,14 +54,17 @@ class HelpScreen : public ModalGump {
 public:
     static constexpr std::uint16_t kCursor = 0x27;
     static constexpr int kHiddenPage = 4;
+    static constexpr int kRegretPages = 5;
+    static constexpr int kRegretOpenSound = 0x1A3;  // 1008:3A23
 
     struct Page {
         Surface8 picture;
         Palette palette;
     };
-    // The three pictures (STATIC/HELP1.DAT .. HELP3.DAT), read once.
+    // The pictures, read once: STATIC/HELP1.DAT .. HELP3.DAT (No Remorse), or
+    // HELP1.BMP .. HELP5.BMP when HELP1.BMP is there (No Regret).
     struct Pictures {
-        std::array<std::optional<Page>, 3> pages;
+        std::array<std::optional<Page>, kRegretPages> pages;
         static Pictures load(const std::filesystem::path& static_dir);
     };
 
@@ -77,7 +86,8 @@ public:
     const std::vector<ShapeButton>& buttons() const { return buttons_.buttons; }
 
 private:
-    bool show();  // 13E8:3BA5
+    bool show();  // 13E8:3BA5, No Regret 1008:3B08
+
 
     const Pictures* pictures_;
     std::function<int(int)> random_;
@@ -88,6 +98,7 @@ private:
     int picture_ = -1;  // the picture loaded
     std::optional<std::uint32_t> last_tick_;
     bool closed_ = false;
+    bool regret_ = false;  // No Regret's help (regret_data())
 };
 
 }  // namespace crusader

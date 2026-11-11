@@ -21,13 +21,13 @@ constexpr int kSounds[] = {0xB8, 0x62, 0x67, 0xA, 0xB};
 
 }  // namespace
 
-// @orig 1008:3B08
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3BA5, similarity 0.65)
+// @orig 1008:3B08 (No Regret's "static/help1.bmp" .. "help5.bmp", DS:0206..022E)
 HelpScreen::Pictures HelpScreen::Pictures::load(const std::filesystem::path& static_dir) {
     Pictures p;
-    for (int i = 0; i < 3; ++i) {
+    const bool bmp = std::filesystem::exists(static_dir / "HELP1.BMP");
+    for (int i = 0; i < (bmp ? kRegretPages : 3); ++i) {
         try {
-            const auto file = read_file(static_dir / ("HELP" + std::to_string(i + 1) + ".DAT"));
+            const auto file = read_file(static_dir / ("HELP" + std::to_string(i + 1) + (bmp ? ".BMP" : ".DAT")));
             p.pages[i] = Page{read_bmp8(file), read_bmp_palette(file)};
         } catch (const std::exception&) {
             // missing or unreadable: the page stays black
@@ -38,15 +38,30 @@ HelpScreen::Pictures HelpScreen::Pictures::load(const std::filesystem::path& sta
 
 HelpScreen::HelpScreen(ShapeCache& gumps, const Pictures& pictures, std::function<int(int)> random,
                        std::function<void(int)> play_sfx)
-    : pictures_(&pictures), random_(std::move(random)), play_sfx_(std::move(play_sfx)) {
+    : pictures_(&pictures), random_(std::move(random)), play_sfx_(std::move(play_sfx)), regret_(regret_data()) {
+    // No Regret (1008:3906): no buttons; the opening sound.
+    if (regret_) {
+        show();
+        if (play_sfx_) play_sfx_(kRegretOpenSound);
+        return;
+    }
     buttons_.buttons.emplace_back(gumps, kNextShape, kNextId, us_version() ? kNextXUs : kNextX, kButtonY);
     buttons_.buttons.emplace_back(gumps, kQuitShape, 1, us_version() ? kQuitXUs : kQuitX, kButtonY);
     show();
 }
 
 // @orig 1008:3B08
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3BA5, similarity 0.65)
+// No Regret: pages 0..4 (HELP1.BMP .. HELP5.BMP), 5 back to 0; never closes.
 bool HelpScreen::show() {
+    if (regret_) {
+        if (page_ == -1) {
+            page_ = 0;
+            return true;
+        }
+        if (page_ == kRegretPages) page_ = 0;
+        picture_ = page_;
+        return true;
+    }
     if (page_ == -1) {
         page_ = 0;
         return true;
@@ -68,7 +83,6 @@ const Palette* HelpScreen::palette() const {
 }
 
 // @orig 1008:3B08
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3BA5, similarity 0.65)
 void HelpScreen::draw(Surface8& screen) const {
     screen.clear(0);
     if (picture_ >= 0 && pictures_->pages[picture_]) {
@@ -80,9 +94,19 @@ void HelpScreen::draw(Surface8& screen) const {
 }
 
 // @orig 1008:3D42
-// TODO(regret): modified in REGRET.EXE (No Remorse 13E8:3D99, similarity 0.42)
+// No Regret: Escape closes, any other key shows the next page.
 void HelpScreen::key(std::uint16_t code) {
     if (closed_) return;
+    if (regret_) {
+        if (page_ == kRegretPages) page_ = 0;
+        if (code == gump_key::kEscape) {
+            closed_ = true;
+            return;
+        }
+        ++page_;
+        if (show()) sequence_ = 0;
+        return;
+    }
     if (page_ == kHiddenPage) page_ = 0;
     switch (code) {
     case gump_key::kEscape:
@@ -133,8 +157,7 @@ void HelpScreen::mouse_up(int x, int y) {
     }
 }
 
-// @orig ?: No Remorse 13E8:3EC8, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig none: No Remorse 13E8:3EC8, which No Regret does not have (no hidden page)
 void HelpScreen::update(std::uint32_t ticks) {
     if (!last_tick_) last_tick_ = ticks;
     for (; *last_tick_ < ticks; ++*last_tick_) {

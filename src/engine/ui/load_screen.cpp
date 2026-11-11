@@ -63,7 +63,6 @@ LoadScreen::Pictures LoadScreen::Pictures::load(const std::filesystem::path& sta
 }
 
 // @orig 13C0:000E 13C0:067B
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:0088, similarity 0.54)
 LoadScreen::LoadScreen(ShapeCache& gumps, const FontSet& fonts, const Names& names, int& selected, Mode mode,
                        const Pictures* pictures)
     : gumps_(&gumps), fonts_(&fonts), regret_(regret_data()), names_(&names), selected_(&selected), mode_(mode) {
@@ -89,9 +88,7 @@ const Palette* LoadScreen::palette() const {
     return page_ ? &page_->palette : &black;
 }
 
-// @orig 13C0:0C02
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:0C9A, similarity 0.71)
-// TODO(regret): No Remorse 1008:05A6 has no counterpart in REGRET.EXE
+// @orig 13C0:0C02 (No Remorse's background, 1008:05A6, is the BMP in No Regret)
 void LoadScreen::draw(Surface8& screen) const {
     screen.clear(0);
     if (regret_) {
@@ -125,7 +122,6 @@ void LoadScreen::draw(Surface8& screen) const {
 }
 
 // @orig 13C0:038E
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:0312, similarity 0.85)
 void LoadScreen::key(std::uint16_t code) {
     if (result_) return;
     if (editing_) {
@@ -154,8 +150,6 @@ void LoadScreen::key(std::uint16_t code) {
 }
 
 // @orig 13C0:0A37 13C0:0AB6
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:0AEA, similarity 0.85)
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:0B63, similarity 0.89)
 void LoadScreen::mouse_down(int x, int y) {
     if (result_ || editing_) return;
     for (int i = 0; i < visible_slots(); ++i) {
@@ -168,7 +162,6 @@ void LoadScreen::mouse_down(int x, int y) {
 }
 
 // @orig 13C0:0AB6
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:0B63, similarity 0.89)
 void LoadScreen::choose(int i) {
     if (mode_ == Mode::kLoad) {
         if (!(*names_)[i].empty()) result_ = 1;
@@ -179,8 +172,7 @@ void LoadScreen::choose(int i) {
 }
 
 // @orig 13C0:07D5 13C0:04A0
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:089C, similarity 0.75)
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:041A, similarity 0.80)
+// No Regret takes the US punctuation and converts no key (13C0:0000 is empty).
 void LoadScreen::edit_key(std::uint16_t code) {
     // Escape, Enter and Backspace are told by the code's low byte.
     const auto c = static_cast<std::uint8_t>(code);
@@ -200,8 +192,8 @@ void LoadScreen::edit_key(std::uint16_t code) {
         return;
     }
     const bool alnum = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-    // The US executable no longer takes < : and ; (13D8:09F3).
-    const std::string_view punctuation = us_version() ? " .?!,/\"'" : "< :;.?!,/\"'";
+    // The US executable and No Regret no longer take < : and ; (13D8:09F3).
+    const std::string_view punctuation = us_version() || regret_ ? " .?!,/\"'" : "< :;.?!,/\"'";
     if (!(alnum || punctuation.find(static_cast<char>(c)) != std::string_view::npos)) return;
     if (name_.size() >= kMaxNameLength || code >= 0x100) return;
     name_ += static_cast<char>(c >= 'a' && c <= 'z' ? c - 0x20 : c);

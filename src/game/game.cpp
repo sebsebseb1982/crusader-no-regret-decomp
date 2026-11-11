@@ -753,11 +753,10 @@ void Game::set_save_name(int slot, const std::string& name) {
 }
 
 // @orig 13C0:04A0 1050:0429
-// TODO(regret): modified in REGRET.EXE (No Remorse 1008:041A, similarity 0.80)
 void Game::save_named(int slot, const std::string& name) {
     // The save screen: the name is set, then the free space of the drive is
     // checked (GAMEPAL_1048_0429, 500000 bytes at least); without it, the
-    // message DS:00A3 instead of the save.
+    // message DS:6F1F instead of the save.
     set_save_name(slot, name);
     std::error_code ec;
     const auto space = std::filesystem::space(save_dir_, ec);
@@ -1455,11 +1454,13 @@ bool Game::function_key(std::uint16_t code) {
             });
         // 13E8:38E5: the menu mode, the palette faders stopped, the colour
         // cycling paused (DS:6810 +0x40), cursor 0x27.
+        // No Regret (1008:3906) hides the cursor instead.
         enter_menu_mode();
         kernel_->fail_processes(0, PaletteFaderProcess::kType, kernel_->level());
         world_->state.cycle_paused = true;
         cursor_.reset(HelpScreen::kCursor);
-        cursor_.show();
+        if (regret) cursor_.hide();
+        else cursor_.show();
         world_->state.screen_palette = *help->palette();
         open_screen(std::move(help), [this](const ModalGump&) {
             // 13E8:3AAE: the game palette, the colour cycling again.
