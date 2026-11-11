@@ -834,4 +834,13 @@ private:
 
 };
 
+// The NPC's map number (Actor::I_getMap) is the one where it neither fires
+// nor uses its weapon's actions: 0x19 in No Regret (NPC_10f8_0277), 40 in No
+// Remorse (NPC_10f0_0122).
+// @orig 10F8:0277
+inline bool on_unarmed_map(const World& world, ObjId npc) {
+    const Item* it = world.get(npc);
+    return it && it->map_number == (world.remorse() ? 40 : 0x19);
+}
+
 }  // namespace crusader

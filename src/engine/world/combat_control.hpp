@@ -12,7 +12,7 @@
 //   explicit = 1) when it stands in a combat stance (last action other than
 //   0, 1, 0x3A, 0xB, 0x10), otherwise it raises its weapon (action 7).
 // - Release: fire with explicit = 0.
-// Nothing happens on map 40 (NPC_10f0_0122).
+// Nothing happens on map 40 (No Regret: 0x19, on_unarmed_map).
 //
 // Fire (CRUSADER_1138_2789): DS:2854 says a shot is wanted; it is set at the
 // end of each call to `explicit` (so the first press only arms it) and the

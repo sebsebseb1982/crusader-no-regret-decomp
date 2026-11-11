@@ -40,11 +40,6 @@ bool kneeling(const World& w, ObjId npc) {  // Actor::I_isKneeling, record +0x13
     return !r.empty() && (r[npc::kFlags13] & 0x04);
 }
 
-// NPC_10f0_0122.
-bool on_map_40(const World& w, ObjId npc) {
-    const Item* it = w.get(npc);
-    return it && it->map_number == 40;
-}
 
 // NPC_10f0_395e: first item of the player's 30 equipment slots with this shape.
 // @orig 10F8:4056
@@ -186,14 +181,14 @@ void CombatControl::handle_key(const GameKeyEvent& e) {
     const bool used = mover_.handle_key(e);
     if (!used && e.pressed) {
         if (keypad_command(e)) return;
-        if (!is_fire_key(e) || on_map_40(world_, npc)) return;
+        if (!is_fire_key(e) || on_unarmed_map(world_, npc)) return;
         if (e.count == 1) shot_since_press_ = false;
         if (actor_busy(kernel(), npc) && !fire_interrupts(npc)) return;
         if (in_combat_stance(world_, npc)) fire(true);
         else do_anim(kernel(), world_, anims_, npc, kActionRaise, kDirCurrent);
         return;
     }
-    if (on_map_40(world_, npc) || !is_fire_key(e)) return;
+    if (on_unarmed_map(world_, npc) || !is_fire_key(e)) return;
     fire(false);
 }
 

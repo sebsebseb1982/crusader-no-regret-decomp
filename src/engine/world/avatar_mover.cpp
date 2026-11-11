@@ -108,7 +108,7 @@ bool AvatarMover::handle_key(const GameKeyEvent& e) {
     const bool num_lock = e.flags & kNumLock;
     const bool alt = e.flags & (kLeftAlt | kRightAlt);
     const bool ctrl = e.flags & (kLeftCtrl | kRightCtrl);
-    const bool map_40 = world_.get(a_id)->map_number == 40;  // NPC.C 0122
+    const bool map_40 = on_unarmed_map(world_, a_id);  // NPC_10f8_0277
     const std::uint8_t sc = e.scancode;
     const bool kneel = kneeling();
 

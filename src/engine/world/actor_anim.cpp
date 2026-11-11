@@ -677,31 +677,39 @@ ActorAnimProcess* current_anim(const Kernel& kernel, ObjId actor) {
     return current;
 }
 
+// No Regret (1140:2AB8): an NPC also keeps action 0x27 (DS:2E5C); the map
+// where the weapon's actions are not used is 0x19 (on_unarmed_map); and with
+// no weapon, or one that keeps its actions (record +0xC), the actions are
+// still remapped by the plain table (No Remorse leaves them).
 // @orig 1140:2AB8
-// TODO(regret): modified in REGRET.EXE (No Remorse 1130:2105, similarity 0.84)
 std::uint16_t remap_action(const World& world, ObjId actor, std::uint16_t action) {
     struct Pair {
         std::uint16_t from, to;
     };
+    // DS:2E08 (No Remorse DS:2749).
     static constexpr Pair kPairs[] = {{4, 0x25},    {0xB, 0x10},  {7, 0xC},     {8, 0xD},     {0x2E, 0x2F},
                                       {0x2A, 0x2B}, {0xA, 0xF},   {0x30, 0x31}, {3, 0x31},    {0x22, 0x23},
                                       {0x27, 0x19}, {0x24, 0x2C}, {2, 0x2D}};
-    static constexpr std::size_t kMap40Pairs = 6;  // entries of DS:277F
-    static constexpr std::uint16_t kNpcKept[] = {4, 0xB, 7, 8, 0x24, 2};
-
-    if (actor != 1) {
-        if (std::find(std::begin(kNpcKept), std::end(kNpcKept), action) != std::end(kNpcKept)) return action;
-        if (action == 0x30) return 3;
-    }
-    const Item* item = world.get(actor);
-    if (item && item->map_number == 40) {
-        for (std::size_t i = 0; i < kMap40Pairs; ++i) {
+    static constexpr std::size_t kUnarmedMapPairs = 6;  // entries of DS:2E40 (No Remorse DS:277F)
+    // DS:2E5C (No Remorse: without 0x27).
+    static constexpr std::uint16_t kNpcKept[] = {4, 0xB, 7, 8, 0x24, 2, 0x27};
+    const auto plain = [&](std::size_t pairs) {
+        for (std::size_t i = 0; i < pairs; ++i) {
             if (kPairs[i].from == action) return kPairs[i].to;
         }
         return action;
+    };
+
+    if (actor != 1) {
+        const auto kept = world.remorse() ? std::end(kNpcKept) - 1 : std::end(kNpcKept);
+        if (std::find(std::begin(kNpcKept), kept, action) != kept) return action;
+        if (action == 0x30) return 3;
     }
+    if (on_unarmed_map(world, actor)) return plain(kUnarmedMapPairs);
     const Item* weapon = world.get(world.active_weapon(actor));
-    if (!weapon || dtable::weapon(weapon->shape).keeps_actions()) return action;
+    if (!weapon || dtable::weapon(weapon->shape).keeps_actions()) {
+        return world.remorse() ? action : plain(std::size(kPairs));
+    }
     for (const Pair& p : kPairs) {
         if (p.from != action) continue;
         if (action != 8 && action != 0x2A) return p.to;
