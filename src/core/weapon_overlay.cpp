@@ -1,29 +1,13 @@
 #include "core/weapon_overlay.hpp"
 
+#include "core/dtable.hpp"
 #include "core/flex.hpp"
-
-#include <array>
 
 namespace crusader {
 
-namespace {
-
-// DS:2B82: weapon shape, class.
-struct WeaponClass {
-    std::uint16_t shape;
-    int weapon_class;
-};
-constexpr std::array<WeaponClass, 13> kClasses = {{
-    {0x32E, 0}, {0x32F, 0}, {0x330, 1}, {0x38C, 2}, {0x332, 4}, {0x333, 2}, {0x334, 2},
-    {0x38E, 3}, {0x388, 3}, {0x38A, 2}, {0x38D, 3}, {0x38B, 3}, {0x386, 3},
-}};
-// DS:2B64.
-constexpr std::array<std::uint16_t, 5> kClassShapes = {0x1A1, 0x36D, 0x36F, 0x36E, 0x33B};
-
-}  // namespace
-
-// @orig ?: No Remorse 1160:03FF, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// The original reads the entries of the player's shape when it changes
+// (1178:0000, through FastFlex); the port reads them all at once.
+// @orig 1178:0000
 WeaponOverlay WeaponOverlay::load(const std::filesystem::path& path) {
     const FlexArchive flex = FlexArchive::open(path);
     WeaponOverlay o;
@@ -35,21 +19,15 @@ WeaponOverlay WeaponOverlay::load(const std::filesystem::path& path) {
     return o;
 }
 
-// @orig ?: No Remorse 1160:0572 1160:05B7, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig 1178:0175 1178:01BA
 std::optional<int> WeaponOverlay::weapon_class(std::uint16_t weapon_shape) {
-    for (const WeaponClass& w : kClasses) {
-        if (w.shape == weapon_shape) return w.weapon_class;
-    }
-    return std::nullopt;
+    const int c = dtable::overlay_class(weapon_shape);
+    return c < 0 ? std::nullopt : std::optional<int>(c);
 }
 
-std::uint16_t WeaponOverlay::class_shape(int weapon_class) {
-    return weapon_class >= 0 && weapon_class < static_cast<int>(kClassShapes.size()) ? kClassShapes[weapon_class] : 0;
-}
+std::uint16_t WeaponOverlay::class_shape(int weapon_class) { return dtable::overlay_class_shape(weapon_class); }
 
-// @orig ?: No Remorse 1160:0643, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
+// @orig 1178:0246
 std::optional<WeaponOverlay::Piece> WeaponOverlay::piece(std::uint16_t weapon_shape, std::uint16_t action,
                                                          const AnimAction& header, int dir, int index) const {
     const auto c = weapon_class(weapon_shape);

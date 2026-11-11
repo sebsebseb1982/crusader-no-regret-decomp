@@ -77,10 +77,13 @@ const WeaponRecord& weapon_at(int index);            // record `index` (record 0
 std::uint16_t ammo_shape(std::uint16_t weapon_shape);
 // Rounds in a full clip (DTABLE_1120_0180: word 1 of the ammo record).
 std::uint16_t clip_size(std::uint16_t weapon_shape);
-// Shape of the weapon drawn over the actor (WPNCACHE_1160_0771): the weapon's
-// overlay class (table DS:2B82, 3-byte records) picks one of 0x1A1, 0x36D,
-// 0x36F, 0x36E, 0x33B (DS:2B64). 0 for a shape not in the table (the
-// original stops with a fatal assertion).
+// Shape of the weapon drawn over the actor (1178:0374, No Remorse 1160:0771):
+// the weapon's overlay class (overlay_class: table DS:3434, No Remorse
+// DS:2B82, 3-byte records) picks one of 0x1A1, 0x36D, 0x36F, 0x36E, 0x33B
+// (overlay_class_shape: DS:3416, No Remorse DS:2B64). -1 and 0 for a shape
+// not in the table (the original stops with a fatal assertion).
+int overlay_class(std::uint16_t weapon_shape);
+std::uint16_t overlay_class_shape(int cls);
 std::uint16_t overlay_shape(std::uint16_t weapon_shape);
 // Icon frame of a weapon in GUMPS.FLX shape 3 (DTABLE_1120_030e).
 std::uint16_t weapon_icon(std::uint16_t weapon_shape);

@@ -94,7 +94,8 @@ constexpr std::array<const char*, 9> kFamily12NamesUs = {
     "SPIDER BOMB", "LAND MINE",   "BLAST PAC",          "FUSION PAC",
 };
 
-// DS:2B82: weapon shape -> overlay class; DS:2B64: class -> overlay shape.
+// DS:2B82: weapon shape -> overlay class; DS:2B64: class -> overlay shape
+// (the same in No Regret, DS:3416).
 struct Overlay {
     std::uint16_t weapon;
     std::uint8_t cls;
@@ -206,6 +207,12 @@ constexpr std::array<ItemIcon, 19> kRegretItems = {{
     {1375, 24}, {1328, 7}, {930, 22}, {931, 21}, {932, 23},  {1558, 28}, {286, 29},
     {1555, 30}, {1564, 31}, {1598, 34}, {401, 33}, {1261, 32},
 }};
+// DS:3434: weapon 0x198 takes the place of 0x32E, and 0x5F6 and 0x5F5 are
+// added.
+constexpr std::array<Overlay, 15> kRegretOverlays = {{
+    {0x198, 4}, {0x32F, 0}, {0x330, 1}, {0x38C, 2}, {0x332, 4}, {0x333, 2}, {0x334, 2}, {0x38E, 3},
+    {0x388, 3}, {0x38A, 2}, {0x38D, 3}, {0x38B, 3}, {0x386, 3}, {0x5F6, 2}, {0x5F5, 2},
+}};
 constexpr std::array<ItemIcon, 9> kRegretFamily12Items = {{
     {0, 0}, {835, 0}, {0, 0}, {0, 0}, {848, 3}, {1376, 4}, {922, 5}, {924, 6}, {0, 0},
 }};
@@ -218,14 +225,15 @@ struct Tables {
     std::span<const char* const> weapon_names, item_names, item_names_us, ammo_names, ammo_names_us, family12_names,
         family12_names_us;
     std::span<const ItemIcon> items, family12_items;
+    std::span<const Overlay> overlays;
 };
 constexpr Tables kRemorseTables = {kWeapons,    kFireTypes,   kAmmoShapes, kClipSizes,    kAmmoIcons,
                                    kWeaponNames, kItemNames,   kItemNamesUs, kAmmoNames,   kAmmoNamesUs,
-                                   kFamily12Names, kFamily12NamesUs, kItems, kFamily12Items};
+                                   kFamily12Names, kFamily12NamesUs, kItems, kFamily12Items, kOverlays};
 constexpr Tables kRegretTables = {kRegretWeapons,     kRegretFireTypes, kRegretAmmoShapes, kRegretClipSizes,
                                   kRegretAmmoIcons,   kRegretWeaponNames, kRegretItemNames, kRegretItemNames,
                                   kRegretAmmoNames,   kRegretAmmoNames,  kRegretFamily12Names, kRegretFamily12Names,
-                                  kRegretItems,       kRegretFamily12Items};
+                                  kRegretItems,       kRegretFamily12Items, kRegretOverlays};
 const Tables* g_tables = &kRegretTables;
 const Tables& t() { return *g_tables; }
 
@@ -322,14 +330,20 @@ const char* family12_name(std::uint16_t shape) {
 // @orig 1130:0240
 std::uint16_t ammo_icon(std::uint16_t shape) { return t().ammo_icons[ammo_index(shape)]; }
 
-// @orig ?: No Remorse 1160:0771, no counterpart found in REGRET.EXE
-// TODO(regret): the No Remorse routine has no counterpart in REGRET.EXE
-std::uint16_t overlay_shape(std::uint16_t weapon_shape) {
-    for (const Overlay& o : kOverlays) {
-        if (o.weapon == weapon_shape) return kOverlayShapes[o.cls];
+// @orig 1178:0175 1178:01BA
+int overlay_class(std::uint16_t weapon_shape) {
+    for (const Overlay& o : t().overlays) {
+        if (o.weapon == weapon_shape) return o.cls;
     }
-    return 0;
+    return -1;
 }
+
+std::uint16_t overlay_class_shape(int cls) {
+    return cls >= 0 && cls < static_cast<int>(kOverlayShapes.size()) ? kOverlayShapes[static_cast<std::size_t>(cls)] : 0;
+}
+
+// @orig 1178:0374
+std::uint16_t overlay_shape(std::uint16_t weapon_shape) { return overlay_class_shape(overlay_class(weapon_shape)); }
 
 std::uint16_t item_icon_family12(std::uint16_t shape) { return icon_of(t().family12_items, shape); }
 std::uint16_t item_icon(std::uint16_t shape) { return icon_of(t().items, shape); }
