@@ -550,25 +550,40 @@ bool ActorAnimProcess::step(bool skip_frames, bool& skipped_frames) {
     return true;
 }
 
+// ANIMPRIM.C 3091: when no two opposite quarters of the footprint rest on
+// something (ground down to 9 below), the actor stumbles (action 0x3B,
+// replacing its animations, unless rolling or kneeling) and falls with the
+// step as speed. After a blocked step the support is looked for where the
+// actor stayed.
+// No Regret (1168:38DE): only the controlled NPC stumbles; any other NPC
+// falls straight down (Item::I_fall). The controlled NPC still stands when
+// what supports it lies within one half of its footprint (quarters 9, 6, 3
+// or 0xC); only the player plays the stumble, not after action 5 either; the
+// hurl has gravity 4 (No Remorse: 2).
 // @orig 1168:38DE
-// TODO(regret): modified in REGRET.EXE (No Remorse 1158:3091, similarity 0.67)
 bool ActorAnimProcess::fall_if_unsupported(const World::Point& from, const World::Point& to) {
-    // ANIMPRIM.C 3091: when no two opposite quarters of the footprint rest on
-    // something (ground down to 9 below), the actor stumbles (action 0x3B,
-    // replacing its animations, unless rolling or kneeling) and falls with
-    // the step as speed. After a blocked step the support is looked for
-    // where the actor stayed.
     const Item* item = world_.get(owner());
     if (!item) return false;
     const World::Point& at = blocked_ ? from : to;
-    if (support_mask(world_, item->shape, at.x, at.y, at.z, true, owner()) & 0x10) return false;
+    const std::uint8_t mask = support_mask(world_, item->shape, at.x, at.y, at.z, true, owner());
+    if (mask & 0x10) return false;
+    const bool regret = !world_.remorse();
+    if (regret) {
+        if (owner() != world_.state.controlled_npc) {
+            fall(kernel(), world_, owner());
+            return true;
+        }
+        const auto one_half = [&](std::uint8_t half, std::uint8_t other) { return (mask & half) && !(mask & other); };
+        if (one_half(9, 6) || one_half(6, 9) || one_half(3, 0xC) || one_half(0xC, 3)) return false;
+    }
     auto record = world_.npc_record(owner());
     const std::uint16_t last =
         record.empty() ? 0 : static_cast<std::uint16_t>(record[npc::kLastAnim] | record[npc::kLastAnim + 1] << 8);
-    if (last != 0x3B && last != 0x3A && last != 0x3D && last != 0x3E && last != 0x17 && last != 0x18) {
+    const bool stumbles = !regret || (world_.state.controlled_npc == 1 && last != 5);
+    if (stumbles && last != 0x3B && last != 0x3A && last != 0x3D && last != 0x3E && last != 0x17 && last != 0x18) {
         do_anim(kernel(), world_, anims_, owner(), 0x3B, kDirCurrent, 10000, true);
     }
-    hurl(kernel(), world_, owner(), to.x - from.x, to.y - from.y, to.z - from.z, 2);
+    hurl(kernel(), world_, owner(), to.x - from.x, to.y - from.y, to.z - from.z, regret ? 4 : 2);
     return true;
 }
 
