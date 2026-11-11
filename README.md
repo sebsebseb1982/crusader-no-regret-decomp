@@ -1,5 +1,7 @@
 # Crusader: No Regret — DECOMP
 
+<img src="docs/images/cover.png" alt="Cover" width="300">
+
 A C++20/SDL2 reimplementation of the *Crusader: No Regret* (Origin, 1996) engine for Windows and Linux. The project is an **early work in progress: the game is not fully playable yet** (see [Status](#status)).
 
 ![First map of No Regret drawn by the port](docs/images/screenshot.png)
