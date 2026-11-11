@@ -14,15 +14,13 @@ The engine was forked from the No Remorse port. `REGRET.EXE` (No Regret 1.06) wa
 
 ## Work left in the sources
 
-A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 20 lines are left:
+A function whose original routine is not identical carries a `TODO(regret)` line under its `@orig` tag until it has been read against `REGRET.EXE`. 17 lines are left:
 
 | File | Lines |
 |---|---:|
 | `src/engine/audio/asylum_music.cpp` | 11 |
 | `src/engine/audio/asylum_mixer.cpp` | 5 |
-| `src/engine/world/world.cpp` | 2 |
 | `src/engine/audio/asylum_voice.hpp` | 1 |
-| `src/engine/world/sprite_process.cpp` | 1 |
 
 ## Intrinsics
 
@@ -40,7 +38,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x062 | 10F8:039A | modified | 0x039 | 163 | `Actor::I_doAnim` | case by case: rolls, aim and turn sets, movement window |
 | 0x017 | 10F8:3E0C | constants | 0x01C | 120 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
 | 0x019 | 1140:1A86 | modified | 0x01E | 93 | `Item::I_fireWeapon` | frames of fire types 0x10..0x16, NPC damage floor, NPC target |
-| 0x027 | 1150:00DE | modified | 0x0C7 | 85 | `SpriteProcess::I_createSprite` | read; the wait of the control process on a sprite at the player is still to write |
+| 0x027 | 1150:00DE | modified | 0x0C7 | 85 | `SpriteProcess::I_createSprite` | createSprite: sprites 0x352/0x609/0x1F2/0x3D5/0x62B made on the player follow him (DS:2F9C) |
 | 0x00D | 10F8:44F4 | constants | 0x00B | 77 | `Actor::I_getUnkByte` | NPC record layout, data addresses or assert line only |
 | 0x03C | 1008:03AB | modified | 0x03A | 62 | `MainActor::I_addItemCru` | credits 0x112, unique items 0x4ED and 0x191 |
 | 0x0C3 | 10F8:3E0C | constants | 0x01C | 56 | `Actor::I_getDir` | NPC record layout, data addresses or assert line only |
@@ -51,7 +49,7 @@ Those whose routine is not identical to the No Remorse one, the ones not read ye
 | 0x082 | 1418:080F | modified | 0x090 | 35 | `PaletteFaderProcess::I_jumpToAllBlack` | nothing while a fade runs |
 | 0x066 | 1048:13EB | modified | 0x040 | 32 | `Item::I_fall` | weightless items with flag 0x66 fall |
 | 0x02F | 10F8:39EA | constants | 0x07D | 29 | `Actor::I_getHp` | NPC record layout, data addresses or assert line only |
-| 0x08D | 1198:0CE8 | modified | 0x042 | 29 | `CameraProcess::I_moveTo` | read; one per-item word (DS:3638) not identified |
+| 0x08D | 1198:0CE8 | modified | 0x042 | 29 | `CameraProcess::I_moveTo` | camera: clears DS:3638 (DLITEM node of the item) when it leaves the drawn area |
 | 0x0C0 | 1390:0005 | modified | 0x0FE | 25 | `ComputerGump::I_readComputer` | same (menu mode 1) |
 | 0x0BB | 10F8:2278 | constants | 0x03C | 23 | `Actor::I_isDead` | NPC record layout, data addresses or assert line only |
 | 0x052 | 10F8:32D7 | constants | 0x056 | 21 | `Actor::I_setDefaultActivity2` | NPC record layout, data addresses or assert line only |
