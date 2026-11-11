@@ -342,6 +342,7 @@ int main(int argc, char** argv) {
             fps = fps * 0.95 + (seconds > 0 ? 0.05 / seconds : 0);
 
             // The controller: A/B confirm/cancel in menus, its stick moves the mouse.
+            gamepad.update();  // the sticks, now that both axes of each are in
             gamepad.set_menu(!game.mouse_in_play());
             gamepad.set_capture(game.waiting_for_pad());
             gamepad.set_menu_sends_f1(game.menu_key_is_f1());
