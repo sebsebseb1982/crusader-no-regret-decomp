@@ -73,3 +73,5 @@ Le jeu lit la manette lui-même (SDL_GameController) : `gptokeyb` n'est pas util
 | Start | menu |
 
 Dans les menus : croix = flèches, stick droit = souris, A = Entrée, B et Start = Échap.
+
+Sauvegarde : faute de clavier pour taper un nom, le lanceur passe `--auto-save-names` : choisir un emplacement sur l'écran de sauvegarde propose la date et l'heure (`12/11/2026 14:32`), A sauvegarde sous ce nom, B annule.

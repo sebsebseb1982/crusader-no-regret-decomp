@@ -39,6 +39,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <ctime>
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
@@ -158,6 +159,7 @@ public:
     int result() const override { return s_.result().value_or(0); }
     int slot() const { return s_.slot(); }
     const std::string& name() const { return s_.name(); }
+    void set_auto_name(std::function<std::string()> auto_name) { s_.set_auto_name(std::move(auto_name)); }
 
 private:
     LoadScreen s_;
@@ -748,6 +750,21 @@ void Game::draw_autosave_icon(Surface8& screen) {
 void Game::set_save_dir(const std::filesystem::path& dir) {
     save_dir_ = dir;
     save_names_ = LoadScreen::read_names(dir);
+}
+
+// @orig none: port addition (save names without a keyboard)
+std::function<std::string()> Game::auto_save_name_function() const {
+    if (!auto_save_names_) return {};
+    return [] {
+        const std::time_t now = std::time(nullptr);
+        std::tm local{};
+#ifdef _WIN32
+        localtime_s(&local, &now);
+#else
+        localtime_r(&now, &local);
+#endif
+        return LoadScreen::dated_name(local);
+    };
 }
 
 // @orig 1060:0534
@@ -1370,7 +1387,8 @@ void Game::open_menu(bool no_game) {
                             tr("DONNEES DU JEU ", "GAME DATA ") +
                                 (data_version_.empty() ? std::string(tr("INCONNUES", "UNKNOWN")) : "V" + data_version_) + " " +
                                 (data_language_.empty() ? std::string(tr("LANGUE INCONNUE", "UNKNOWN LANGUAGE")) : data_language_),
-                            &load_pictures_},
+                            &load_pictures_,
+                            auto_save_name_function()},
         menu_shared_, no_game);
     auto p = std::make_unique<ModalProcess>();
     menu_process_ = p.get();
@@ -1577,6 +1595,7 @@ bool Game::function_key(std::uint16_t code) {
         cursor_.show();
         auto save = std::make_unique<LoadGump>(gumps_, fonts_, save_names_, menu_shared_.selected_slot,
                                                LoadScreen::Mode::kSave, &load_pictures_);
+        save->set_auto_name(auto_save_name_function());
         if (const Palette* p = save->palette()) world_->state.screen_palette = *p;
         open_screen(std::move(save), [this](const ModalGump& screen) {
             cursor_.reset(MouseCursor::kArrow);

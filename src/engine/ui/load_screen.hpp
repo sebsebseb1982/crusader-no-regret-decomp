@@ -47,6 +47,12 @@
 // outline, colour 0x6F for the selected one and 0xFD for the others; the
 // name is written as in No Remorse. The autosave row (port addition) follows
 // at y = 407. Names take the US characters (13C0:07D5).
+//
+// Port addition, for consoles without a keyboard (the PortMaster build, see
+// set_auto_name): choosing a slot to save proposes a name made by the caller
+// (the date and time, dated_name) instead of the slot's; Enter (the pad's A)
+// gives it, Escape (B) leaves the slot as it was, and a keyboard plugged in
+// can still edit it.
 
 #include "core/font.hpp"
 #include "core/palette.hpp"
@@ -55,7 +61,9 @@
 
 #include <array>
 #include <cstdint>
+#include <ctime>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 
@@ -107,6 +115,13 @@ public:
     const Palette* palette() const;
     void key(std::uint16_t code);
     void mouse_down(int x, int y);
+    // Port addition: the name proposed when a slot is chosen to save (an
+    // empty function keeps the original's, the slot's own name).
+    void set_auto_name(std::function<std::string()> auto_name) { auto_name_ = std::move(auto_name); }
+    // The proposed name: the local date and time, "DD/MM/YYYY HH:MM" (French)
+    // or "MM/DD/YYYY HH:MM" (US); "SAUVEGARDE" / "SAVED GAME" when the clock
+    // is plainly not set (a console without a real-time clock starts in 1970).
+    static std::string dated_name(const std::tm& local);
 
     // Set once closed: 0 (cancelled) or 1 (slot chosen, see slot()).
     std::optional<int> result() const { return result_; }
@@ -133,6 +148,7 @@ private:
     Mode mode_;
     bool editing_ = false;
     std::string name_;
+    std::function<std::string()> auto_name_;
 };
 
 

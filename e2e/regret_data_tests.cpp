@@ -245,6 +245,15 @@ void test_load_screen(const std::filesystem::path& data) {
     CHECK(screen.row(137)[164] == LoadScreen::kRegretSelectedColour);
     LoadScreen save(gumps, fonts, names, selected, LoadScreen::Mode::kSave, &pictures);
     CHECK(save.palette() == &pictures.pages[0]->palette);
+    // The proposed save name (--auto-save-names, PortMaster): A on a slot
+    // edits the date, every character drawn by the slots' font.
+    save.set_auto_name([] { return std::string("12/11/2026 14:32"); });
+    save.key(gump_key::kEnter);
+    CHECK(save.editing() && save.name() == "12/11/2026 14:32");
+    const TextWriter writer(fonts, LoadScreen::kFont);
+    for (char c : std::string("0123456789/: ")) CHECK(writer.char_width(static_cast<unsigned char>(c)) > 0);
+    save.key(gump_key::kEnter);
+    CHECK(save.result() == 1 && save.slot() == 1 && save.name() == "12/11/2026 14:32");
 }
 
 // The help (1008:3906, 3B08, 3D42): HELP1.BMP .. HELP5.BMP, no buttons, the
