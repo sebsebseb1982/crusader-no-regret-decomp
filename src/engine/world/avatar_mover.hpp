@@ -55,7 +55,6 @@ private:
     World& world_;
     const AnimDat& anims_;
     const Keyboard& keyboard_;
-    bool drawn_before_run_ = false;  // the weapon was out when the run began
     bool keypad_diagonals_held_ = false;
     bool dispatch_regret(const GameKeyEvent& e, int action, int d, int second, bool stance_turn, bool busy);
 };
