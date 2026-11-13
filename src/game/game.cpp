@@ -990,7 +990,7 @@ void Game::play_movie(const std::string& name, MovieKind kind) {
         return;
     }
     Surface8 screen(kScreenWidth, kScreenHeight);
-    render_view(screen);
+    render_view(screen, nullptr, true);
     start_movie(name, kind, std::move(screen));
 }
 
@@ -1728,7 +1728,7 @@ void Game::show_weasel(int level) {
 void Game::play_weasel_movie(const std::string& name) {
     if (in_movie()) return;
     Surface8 screen(kScreenWidth, kScreenHeight);
-    render_view(screen);
+    render_view(screen, nullptr, true);
     if (screen_) screen_->draw(screen);
     start_movie(name, MovieKind::kCutscene, std::move(screen));
     weasel_movie_ = movie_ != nullptr;
@@ -1968,7 +1968,29 @@ void Game::save_picture(const Surface8& screen) {
 }
 
 // @orig 1198:1332
-void Game::render_view(Surface8& screen, RenderStats* stats) {
+void Game::render_view(Surface8& screen, RenderStats* stats, bool keep_view) {
+    // Port (native resolution): resizing the view moves the fast area's
+    // edges. Under a modal screen the items entering it would start their
+    // usecode (event 0x0F) at the screen's raised kernel level; an endless
+    // one kept that level up after the screen, and the game below never ran
+    // again (No Remorse issue #13, Weasel's shop). Snapshots for a movie
+    // (640 x 480) and frames drawn under a modal screen keep the view, and
+    // show its centre.
+    const int view_w = world_->state.screen_right + 1, view_h = world_->state.screen_bottom + 1;
+    if ((keep_view || modal() || in_movie()) && (screen.width != view_w || screen.height != view_h)) {
+        Surface8 view(view_w, view_h);
+        render_view(view, stats, true);
+        screen.clear(0);
+        const int w = std::min(view_w, screen.width), h = std::min(view_h, screen.height);
+        copy_block(view, (view_w - w) / 2, (view_h - h) / 2, screen, (screen.width - w) / 2, (screen.height - h) / 2, w,
+                   h);
+        // The status bar, at the bottom of the large view, at the bottom of this one.
+        if (screen.width >= kScreenWidth && screen.height >= kScreenHeight) {
+            draw_window(screen, (screen.width - kScreenWidth) / 2, screen.height - kScreenHeight,
+                        [this](Surface8& s) { status_bar_.draw(s, *world_); });
+        }
+        return;
+    }
     screen.clear(0);
     world_->set_view_size(screen.width, screen.height);
     const GameState& s = world_->state;
