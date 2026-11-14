@@ -28,6 +28,7 @@
 #include "engine/world/inventory.hpp"
 #include "engine/audio/audio.hpp"
 #include "game/game.hpp"
+#include "platform/real_shift.hpp"
 #include "platform/sdl_audio.hpp"
 #include "platform/sdl_gamepad.hpp"
 #include "platform/sdl_input.hpp"
@@ -265,6 +266,7 @@ int main(int argc, char** argv) {
         game.set_config_file(data / "CRUSADER.CFG");
         SdlPresenter presenter(kWindowTitle, Game::kScreenWidth, Game::kScreenHeight, 2, fullscreen);
         presenter.set_gamma(gamma);
+        install_real_shift();  // Windows: Shift + keypad with Num Lock on (issue #14)
         if (!classic && !fullscreen) presenter.maximize();
         // Native resolution: the game is drawn at the largest whole fraction of
         // the window that is still 640 x 480 or more, so the pixels keep their
@@ -324,7 +326,7 @@ int main(int argc, char** argv) {
                     continue;
                 }
                 if (auto k = translate_key(ev)) {
-                    if (pad_debug) std::printf("[key] sdl keyboard %02x%s %s\n", k->scancode, k->extended ? " ext" : "", k->pressed ? "down" : "up");
+                    if (pad_debug) std::printf("[key] sdl keyboard %02x%s %s%s\n", k->scancode, k->extended ? " ext" : "", k->pressed ? "down" : "up", k->shift() ? " shift" : "");
                     game.key(k->scancode, k->extended, k->pressed, k->flags, k->ascii);
                 }
                 if (auto m = translate_mouse(ev)) {
