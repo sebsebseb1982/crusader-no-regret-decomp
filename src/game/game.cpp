@@ -583,6 +583,18 @@ void Game::load_save_file(const std::filesystem::path& path) {
         world_->set_frame(*steam, frame);
         steam->flags &= static_cast<std::uint16_t>(~0x1000);
     }
+    // No Regret's security monitors (WATCHNS, WATCHEW) hold status 0x1000
+    // while their event 0x20 runs: the text, then the camera view, until a
+    // move key; use() does nothing while it is set. Saved during that run,
+    // the bit stayed with no process left to clear it: the monitor could
+    // never be used again (SEB4). The run is dropped, as the other processes.
+    const UsecodeFile& usecode = machine_->usecode();
+    world_->for_each([&](const Item& i) {
+        if (!(i.flags & 0x1000) || i.parent || !usecode.has_class(i.shape)) return;
+        const std::string cls = usecode.class_name(i.shape);
+        if (cls != "WATCHNS" && cls != "WATCHEW") return;
+        if (Item* monitor = world_->get(i.id)) monitor->flags &= static_cast<std::uint16_t>(~0x1000);
+    });
     world_->clear_fast_area();
     world_->set_camera(player->x, player->y, player->z);
     // An NPC saved while its death played (dead, last action 0x12 or 0x14,

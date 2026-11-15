@@ -202,6 +202,29 @@ void test_new_game(const std::filesystem::path& data) {
     CHECK(!unknown_unbound);
 }
 
+// A security monitor (WATCHNS, WATCHEW) saved while its event 0x20 ran
+// keeps status 0x1000, which makes use() do nothing; the processes are not
+// loaded, so loading clears it (SEB4).
+void test_monitor_saved_busy(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.new_game(0);
+    game.update(kFrameUs);
+    World& w = game.world();
+    const UsecodeFile& uc = game.machine().usecode();
+    ObjId monitor = 0;
+    w.for_each([&](const Item& i) {
+        if (monitor || i.parent || !uc.has_class(i.shape)) return;
+        const std::string cls = uc.class_name(i.shape);
+        if (cls == "WATCHNS" || cls == "WATCHEW") monitor = i.id;
+    });
+    CHECK(monitor != 0);
+    if (!monitor) return;
+    w.get(monitor)->flags |= 0x1000;
+    game.save_game(LoadScreen::kNames);
+    game.load_save_file(saves_dir() / ("SAVEGAME." + std::to_string(LoadScreen::kNames)));
+    CHECK(game.world().get(monitor) != nullptr && !(game.world().get(monitor)->flags & 0x1000));
+}
+
 // Game_start (1030:032D): ORIGIN and ANIM01, then the menu with its palette
 // (MISC.PAL), not the black the movies leave nor the game's cycling colours.
 void test_start_up(const std::filesystem::path& data) {
@@ -295,6 +318,7 @@ int main(int argc, char** argv) {
         test_shapes(data);
         test_tables(data);
         test_new_game(data);
+        test_monitor_saved_busy(data);
         test_start_up(data);
         test_load_screen(data);
         test_help_screen(data);
