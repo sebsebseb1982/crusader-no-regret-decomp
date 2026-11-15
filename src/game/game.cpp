@@ -583,18 +583,34 @@ void Game::load_save_file(const std::filesystem::path& path) {
         world_->set_frame(*steam, frame);
         steam->flags &= static_cast<std::uint16_t>(~0x1000);
     }
-    // No Regret's security monitors (WATCHNS, WATCHEW) hold status 0x1000
-    // while their event 0x20 runs: the text, then the camera view, until a
-    // move key; use() does nothing while it is set. Saved during that run,
-    // the bit stayed with no process left to clear it: the monitor could
-    // never be used again (SEB4). The run is dropped, as the other processes.
+    // Status 0x1000 set by a running process of the item's class, which
+    // alone clears it; saved while it ran, the bit stays with no process.
+    // - The security monitors (WATCHNS, WATCHEW) hold it while their event
+    //   0x20 runs (the text, then the camera view, until a move key); use()
+    //   does nothing while it is set: the monitor could never be used again
+    //   (SEB4). That run is dropped, as the other processes.
+    // - A running timer (TIMER, event 0x20) and a rolling roller (ROLLB_NS,
+    //   ROLLB_EW, event 0x21) loop while it is set; their start events and
+    //   enterFastArea skip them while it is: the loop is started again (the
+    //   timer from the start of its delay).
+    // Not here: FFFLOOR / FFFLOOR2 (bit 0x1000 is the floor's lasting
+    // state) and ELEVAT (a ride also holds the items on the platform).
     const UsecodeFile& usecode = machine_->usecode();
+    std::vector<std::pair<ObjId, std::uint16_t>> restarts;
     world_->for_each([&](const Item& i) {
         if (!(i.flags & 0x1000) || i.parent || !usecode.has_class(i.shape)) return;
         const std::string cls = usecode.class_name(i.shape);
-        if (cls != "WATCHNS" && cls != "WATCHEW") return;
-        if (Item* monitor = world_->get(i.id)) monitor->flags &= static_cast<std::uint16_t>(~0x1000);
+        if (cls == "WATCHNS" || cls == "WATCHEW") {
+            if (Item* monitor = world_->get(i.id)) monitor->flags &= static_cast<std::uint16_t>(~0x1000);
+        } else if (cls == "TIMER") {
+            restarts.emplace_back(i.id, std::uint16_t{0x20});
+        } else if (cls == "ROLLB_NS" || cls == "ROLLB_EW") {
+            restarts.emplace_back(i.id, std::uint16_t{0x21});
+        }
     });
+    if (world_->hooks().start_event) {
+        for (const auto& [id, event] : restarts) world_->hooks().start_event(id, event);
+    }
     world_->clear_fast_area();
     world_->set_camera(player->x, player->y, player->z);
     // An NPC saved while its death played (dead, last action 0x12 or 0x14,
