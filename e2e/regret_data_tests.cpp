@@ -18,11 +18,15 @@
 #include "engine/ui/keypad_gump.hpp"
 #include "engine/ui/load_screen.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
+#include "engine/world/actor_anim.hpp"
+#include "engine/world/collision.hpp"
 #include "engine/world/inventory.hpp"
+#include "engine/world/projectile.hpp"
 #include "game/game.hpp"
 
 #include <cstdio>
 #include <filesystem>
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
@@ -322,6 +326,45 @@ void test_movie_shows_status_bar(const std::filesystem::path& data) {
     CHECK(!game.cursor().visible());
 }
 
+// A shot at a floor mine (FLORMINE, shape 0x29F, 1 high, lying 1 above the
+// floor) whose spread takes it down to z 0 under the mine: the step that
+// ends at z 0 is swept in parts of 16 (SPRITE_1150_123B), meets the mine on
+// the way down and blows it up (shape 0x58). The port ended such a step on
+// nothing, unswept: mines on a floor at z 0 could not be shot.
+void test_shot_floor_mine(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.new_game(0);
+    for (int i = 0; i < 300 && game.in_movie(); ++i) game.update(kFrameUs);
+    World& w = game.world();
+    const Item* player = w.get(1);
+    const ObjId mine = w.create(0x29F, 0);
+    CHECK(mine != 0);
+    if (!mine) return;
+    // A place with a clear line from the player's chest to the mine.
+    const World::Point start{player->x, player->y, player->z + 40};
+    World::Point target{};
+    bool clear = false;
+    for (int dir = 0; dir < 16 && !clear; dir += 2) {
+        for (int distance = 160; distance >= 64 && !clear; distance -= 32) {
+            w.move_item(mine, player->x + kDirectionDx[dir] * distance, player->y + kDirectionDy[dir] * distance,
+                        player->z + 1);
+            target = aim_point(w, 1, mine);
+            const SweepResult line = sweep(w, kProjectileShape, 1, start, target, kSweepNoGround);
+            clear = line.ok && line.blocker == 0;
+        }
+    }
+    CHECK(clear);
+    target.z = 0;
+    game.kernel().add(std::make_unique<ProjectileProcess>(w, game.animations(), 1, start, target, 2, 20, 0));
+    for (int i = 0; i < 120 && game.kernel().count_processes(0, ProjectileProcess::kType) != 0; ++i)
+        game.update(kFrameUs);
+    const Item* after = w.get(mine);
+    std::printf("floor mine: player z %d, aimed at (%d, %d, 0), mine's shape now %X\n", player->z, target.x,
+                target.y, after ? after->shape : 0);
+    CHECK(game.kernel().count_processes(0, ProjectileProcess::kType) == 0);
+    CHECK(!after || after->shape != 0x29F);
+}
+
 // Game_start (1030:032D): ORIGIN and ANIM01, then the menu with its palette
 // (MISC.PAL), not the black the movies leave nor the game's cycling colours.
 void test_start_up(const std::filesystem::path& data) {
@@ -418,6 +461,7 @@ int main(int argc, char** argv) {
         test_saved_busy_items(data);
         test_keypad_autosave(data);
         test_movie_shows_status_bar(data);
+        test_shot_floor_mine(data);
         test_start_up(data);
         test_load_screen(data);
         test_help_screen(data);

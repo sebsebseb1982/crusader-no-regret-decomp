@@ -980,6 +980,31 @@ void ProjectileProcess::on_terminate() {
 }
 
 // @orig 1150:123B
+void ProjectileProcess::impact(const World::Point& next, bool ignore_shooter) {
+    // The last step, from the current position to `next`, is swept again in
+    // parts of 16 (Chebyshev distance, rounded up): the first blocked part
+    // leaves the projectile where that part started and hits its blocker;
+    // none blocked, it ends at `next` and hits nothing. This is also what
+    // ends a shot that comes down to z 0: an item lying on the floor there,
+    // flat as a mine, is hit on the way down.
+    const int distance = chebyshev(pos_, next);
+    const int parts = std::max(1, distance / 16 + (distance % 16 != 0));
+    const World::Point from = pos_;
+    ObjId hit = 0;
+    for (int k = 1; k <= parts; ++k) {
+        const World::Point to{from.x + (next.x - from.x) * k / parts, from.y + (next.y - from.y) * k / parts,
+                              from.z + (next.z - from.z) * k / parts};
+        const ObjId mover = ignore_shooter ? shooter_ : sprite_;
+        const SweepResult r = sweep(world_, kProjectileShape, mover, pos_, to, kSweepNoGround);
+        if (r.blocker != 0) {
+            hit = r.blocker;
+            break;
+        }
+        pos_ = to;
+    }
+    impact(hit);
+}
+
 void ProjectileProcess::impact(ObjId hit) {
     if (hit != 0) {
         // An NPC is hit from the shot's direction; an item from a random one
@@ -1121,11 +1146,12 @@ void ProjectileProcess::run() {
     next.z = std::clamp(next.z, 0, kTopZ);
     ++step_;
     if (next.z == 0 || next.z == kTopZ || step_ >= range_) {
-        impact(0);
+        impact(next, false);
         return;
     }
     SweepResult r = sweep(world_, kProjectileShape, sprite_, pos_, next, kSweepNoGround);
-    if (r.blocker == shooter_ && shooter_ != 0 && step_ < kShooterGrace) {
+    const bool shooter_aside = r.blocker == shooter_ && shooter_ != 0 && step_ < kShooterGrace;
+    if (shooter_aside) {
         // SPRITE_1140_151d: the shooter is set aside and the step retried.
         r = sweep(world_, kProjectileShape, shooter_, pos_, next, kSweepNoGround);
     }
@@ -1139,8 +1165,7 @@ void ProjectileProcess::run() {
         return;
     }
     if (ricochet(r.blocker, next)) return;
-    pos_ = r.end;
-    impact(r.blocker);
+    impact(next, shooter_aside);
 }
 
 }  // namespace crusader
