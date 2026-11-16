@@ -324,7 +324,8 @@ private:
     // The notice (13F8:0383), the menu mode left when it closes.
     void notify(std::uint16_t shape);
     // World_enter_menu_mode / World_leave_menu_mode (13E8:0E7D / 0EF9).
-    void enter_menu_mode();
+    // No Regret's movies enter it with the cursor hidden instead of shown.
+    void enter_menu_mode(bool show_cursor = true);
     void leave_menu_mode();
     // The menu, a message box or a screen holds the game.
     bool modal() const { return menu_ || message_ || screen_; }

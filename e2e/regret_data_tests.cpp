@@ -245,6 +245,28 @@ void test_saved_busy_items(const std::filesystem::path& data) {
     CHECK(!(loaded.get(timer)->flags & 0x1000));
 }
 
+// The datalink (DATALINK use()) hides the status bar, then on some maps has
+// FLICTEST play a movie and shows nothing again: the movie intrinsic
+// (1448:0B5A) does, its WORLD_1008_0ff1(1) shows the bar whatever its state
+// before. During the movie the bar is hidden; afterwards the cursor is too.
+void test_movie_shows_status_bar(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.new_game(0);
+    for (int i = 0; i < 300 && game.in_movie(); ++i) game.update(kFrameUs);
+    World& w = game.world();
+    CHECK(!game.in_movie() && w.state.status_bar_visible);
+    w.state.status_bar_visible = false;  // CruStatusGump::I_hideStatusGump
+    game.play_movie("1a", MovieKind::kCutscene);
+    CHECK(game.in_movie() && !w.state.status_bar_visible && !game.cursor().visible());
+    game.update(kFrameUs);  // the first frame: a key before it is not seen
+    game.key(0x01, false, true, 0, 0x1B);
+    for (int i = 0; game.in_movie() && i < 200; ++i) game.update(kFrameUs);
+    game.key(0x01, false, false, 0);
+    CHECK(!game.in_movie());
+    CHECK(w.state.status_bar_visible);
+    CHECK(!game.cursor().visible());
+}
+
 // Game_start (1030:032D): ORIGIN and ANIM01, then the menu with its palette
 // (MISC.PAL), not the black the movies leave nor the game's cycling colours.
 void test_start_up(const std::filesystem::path& data) {
@@ -339,6 +361,7 @@ int main(int argc, char** argv) {
         test_tables(data);
         test_new_game(data);
         test_saved_busy_items(data);
+        test_movie_shows_status_bar(data);
         test_start_up(data);
         test_load_screen(data);
         test_help_screen(data);

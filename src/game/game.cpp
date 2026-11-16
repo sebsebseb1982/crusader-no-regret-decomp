@@ -1115,6 +1115,10 @@ void Game::play_regret_movie(const std::string& name, bool fade) {
     const bool big = config_.big_video && upper != "ORIGIN";
     xan_movie_ = std::make_unique<XanPlayer>(std::move(*movie), std::move(subtitles), big, config_.low_res_movies,
                                              config_.movie_hicolor, fade, fonts_);
+    // WORLD_1008_0f68(0): the sounds stop, the screen sprites and the status
+    // bar go, the cursor is hidden. Not under the menu (the start-up movies
+    // and the end credits): the original plays those before opening it.
+    if (!menu_) enter_menu_mode(false);
     world_->state.cycle_paused = true;
     world_->state.screen_palette = xan_movie_->palette();
     keyboard_.reset();  // 11E8:33E3
@@ -1145,6 +1149,10 @@ void Game::end_regret_movie() {
     // Not under the start-up menu (open while the movies play): the cycling
     // would write the game's colours 1..14 over the menu palette.
     if (!menu_) world_->state.cycle_paused = false;
+    // WORLD_1008_0ff1(1): the screen sprites and the status bar come back
+    // (shown whatever their state before: the datalink hides the bar and
+    // counts on this to show it again), the cursor popped and hidden.
+    if (!menu_) leave_menu_mode();
     xan_movie_.reset();
     if (!menu_ && !end_credits_ && !end_credits_pending_) request_autosave();
     next_start_up_movie();
@@ -1760,16 +1768,20 @@ void Game::play_weasel_movie(const std::string& name) {
     weasel_movie_ = movie_ != nullptr;
 }
 
-// No Regret (1008:0F68) takes an argument: 0 (the movies) only hides the
-// cursor; the port's callers all pass 1, the No Remorse behaviour.
+// No Regret (1008:0F68) takes an argument: 0 (the movies, 1448:0B5A) only
+// hides the cursor; 1 is the No Remorse behaviour.
 // @orig 1008:0F68
-void Game::enter_menu_mode() {
+void Game::enter_menu_mode(bool show_cursor) {
     // 13E8:0E7D: the sounds stop, the screen sprites and the status bar go,
     // cursor 0x24 shown.
     if (audio_) audio_->stop_all();
     sprites_suspended_ = true;
     world_->state.status_bar_visible = false;
     apply_status_bar_mouse_range();
+    if (!show_cursor) {
+        cursor_.hide();
+        return;
+    }
     cursor_.show();
     cursor_.reset(MouseCursor::kArrow);
 }
