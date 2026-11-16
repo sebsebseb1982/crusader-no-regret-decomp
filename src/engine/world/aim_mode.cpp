@@ -320,14 +320,24 @@ void aim_at_angle(Kernel& kernel, World& world, const AnimDat& anims, double scr
         // in the mode's own slot, which entering the mode again then moves.
         // Its process, from do_anim on (the last action is noted only once it
         // starts).
-        bool side_step = false;
-        kernel.for_each_process([&](const Process& p) {
-            const auto* anim = dynamic_cast<const ActorAnimProcess*>(&p);
-            side_step |= anim && anim->owner() == id && (anim->action() == 0x1C || anim->action() == 0x1D);
+        ActorAnimProcess* side_step = nullptr;
+        kernel.for_each_process([&](Process& p) {
+            auto* anim = dynamic_cast<ActorAnimProcess*>(&p);
+            if (anim && anim->owner() == id && (anim->action() == 0x1C || anim->action() == 0x1D)) side_step = anim;
         });
         if (aim.turns != 0 && side_step) {
             aim.angle = world_angle_of_screen(screen_deg);
             place_crosshair(world, anims);
+            // Each side step goes by his own direction: one started facing
+            // elsewhere (a run, the aim swung) is turned to face the aim, or
+            // he would step across the way the stick asks.
+            const Item* npc = world.get(id);
+            const ScreenSprite* cross = world.state.screen_sprites.get(aim.crosshair);
+            if (npc && cross) {
+                const World::Point centre = npc_centre(world, *npc);
+                const int wanted = direction_16(centre.x, centre.y, cross->x, cross->y);
+                if (wanted != npc_dir(world, id)) side_step->set_direction(wanted);
+            }
             return;
         }
         drop_stick_crosshair(world);
@@ -376,7 +386,19 @@ void aim_at_angle(Kernel& kernel, World& world, const AnimDat& anims, double scr
             search_after_turn(kernel, world, anims, current);
         return;
     }
-    if (actor_busy(kernel, id)) return;
+    if (actor_busy(kernel, id)) {
+        // A strafe forward or backward (the left stick's Alt + up / down)
+        // keeps him busy step after step, each step going by his own
+        // direction: turned only once free, he would back on towards an aim
+        // swung behind him, facing away from it. The aim turns the step as it
+        // goes instead, as the arrows turn a busy animation (1148:1624).
+        ActorAnimProcess* anim = current_anim(kernel, id);
+        if (!anim || !in(anim->action(), {2, 0x24, 0x2C, 0x2D})) return;
+        anim->set_direction(wanted);
+        if (npc_dir(world, id) == current) return;  // 8 directions: already the nearest
+        if (world.state.target_designation) search_after_turn(kernel, world, anims, npc_dir(world, id));
+        return;
+    }
     do_anim(kernel, world, anims, id, kneeling(world, id) ? 0x2E : 4, wanted);
     if (world.state.target_designation) search_after_turn(kernel, world, anims, wanted);
 }

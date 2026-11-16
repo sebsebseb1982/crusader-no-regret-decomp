@@ -365,6 +365,57 @@ void test_shot_floor_mine(const std::filesystem::path& data) {
     CHECK(!after || after->shape != 0x29F);
 }
 
+// Port addition, the controller: running one way, the aim stick swung behind
+// him, the left stick still held the same way. The gamepad then sends the
+// strafe away from the aim (Alt + down, a step back), relative to the aim; a
+// step goes by his own direction. No Regret cuts the step a held key repeats
+// into and plays it again at once (1148:1A03), so he stayed busy, never
+// turned to the aim, and backed towards it facing away from it, against the
+// stick. The aim turns the steps as they go (aim_mode.cpp, aim_at_angle).
+// The arrival of a new game leaves him running south-west (direction 8,
+// keypad 1), free a few seconds before the next scene.
+void test_aim_behind_while_running(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.new_game(0);
+    World& w = game.world();
+    // The arrival: held in stasis from the first second, running in.
+    for (int i = 0; i < 300 && !w.state.avatar_in_stasis; ++i) game.update(kFrameUs);
+    for (int i = 0; i < 600 && (w.state.avatar_in_stasis || actor_busy(game.kernel(), 1)); ++i) game.update(kFrameUs);
+    CHECK(!w.state.avatar_in_stasis && (w.npc_direction(1) & 0xF) == 8);
+    // The weapon drawn (action 7, the fire key's).
+    do_anim(game.kernel(), w, game.animations(), 1, 7, kDirCurrent);
+    for (int i = 0; i < 120 && actor_busy(game.kernel(), 1); ++i) game.update(kFrameUs);
+    CHECK(game.weapon_out());
+    // Running on the way he came (keypad 1 with Shift).
+    constexpr std::uint8_t kKeypad1 = 0x4F, kDown = 0x50, kShift = 0x2A, kAltKey = 0x38;
+    game.key(kShift, false, true, kLeftShift);
+    game.key(kKeypad1, false, true, kLeftShift);
+    for (int i = 0; i < 30; ++i) game.update(kFrameUs);
+    const int run_dir = w.npc_direction(1) & 0xF;
+    const std::int32_t x0 = w.get(1)->x, y0 = w.get(1)->y;
+    // The aim swung behind him, and the stick's move becomes the step back.
+    // Direction 0, one step (0, -1) on the ground, shows as (1, -1/2) on
+    // screen: 26.6 degrees.
+    game.set_aim_stick(true, 27);
+    const std::uint16_t alt = kLeftShift | kLeftAlt | kAlt;
+    game.key(kKeypad1, false, false, kLeftShift);
+    game.key(kAltKey, false, true, alt);
+    game.key(kDown, true, true, alt);
+    for (int i = 0; i < 120; ++i) game.update(kFrameUs);
+    const std::int32_t dx = w.get(1)->x - x0, dy = w.get(1)->y - y0;
+    const int dir = w.npc_direction(1) & 0xF;
+    std::printf("aim behind a run (direction %d): faces %d, moved (%d, %d)\n", run_dir, dir, dx, dy);
+    CHECK(run_dir == 8);
+    CHECK(dir == ((run_dir + 8) & 0xF));
+    // Still going the way the stick points, the way he ran.
+    CHECK(static_cast<std::int64_t>(dx) * kDirectionDx[run_dir] + static_cast<std::int64_t>(dy) * kDirectionDy[run_dir] > 0);
+    game.key(kDown, true, false, alt);
+    game.key(kAltKey, false, false, kLeftShift);
+    game.key(kShift, false, false, 0);
+    game.set_aim_stick(false, 0);
+    CHECK(game.machine().faults().empty());
+}
+
 // Game_start (1030:032D): ORIGIN and ANIM01, then the menu with its palette
 // (MISC.PAL), not the black the movies leave nor the game's cycling colours.
 void test_start_up(const std::filesystem::path& data) {
@@ -462,6 +513,7 @@ int main(int argc, char** argv) {
         test_keypad_autosave(data);
         test_movie_shows_status_bar(data);
         test_shot_floor_mine(data);
+        test_aim_behind_while_running(data);
         test_start_up(data);
         test_load_screen(data);
         test_help_screen(data);

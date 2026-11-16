@@ -217,6 +217,7 @@ The original uses tank controls: up walks forward, left/right turn. With this op
   - towards the aim: `Alt + up`, slow forward (action `0x24`, `0x2C` with a weapon that does not keep the actions);
   - away from it: `Alt + down`, slow backward (action `2`, or `0x2D`);
   - to its left / right: **side steps**, `Alt + left / right` (actions `0x1C` / `0x1D`).
+- **The strafe faces the aim**: an Alt move goes by the NPC's own direction, but the stick gives it relative to the aim. A strafe started facing elsewhere (the aim swung behind a run, or turned during the strafe) has its animation turned to face the aim at once (`set_direction`, as the arrows turn a busy animation). Without it, No Regret, which cuts the step a held key repeats into and plays it again at once, kept the NPC busy facing its old direction: with the aim swung behind a run, it backed **towards** the aim, against the stick, and never turned.
 - Without aiming, the stick keeps the absolute directions, weapon out or not.
 - Changing between the absolute directions and the strafes releases the old key and Alt **before** pressing the new one, so no key is sent with the wrong modifier.
 
