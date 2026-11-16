@@ -15,8 +15,10 @@
 #include "engine/audio/audio.hpp"
 #include "engine/ui/gump_keys.hpp"
 #include "engine/ui/help_screen.hpp"
+#include "engine/ui/keypad_gump.hpp"
 #include "engine/ui/load_screen.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
+#include "engine/world/inventory.hpp"
 #include "game/game.hpp"
 
 #include <cstdio>
@@ -204,7 +206,9 @@ void test_new_game(const std::filesystem::path& data) {
 
 // Status 0x1000 saved while a process of the item's class ran (the
 // processes are not loaded): a security monitor (WATCHNS, WATCHEW) in use
-// gets it cleared, or use() would do nothing (SEB4); a running timer (TIMER)
+// gets it cleared, or use() would do nothing (SEB4), and so does a keypad
+// (KEYPADNS, KEYPADEW) saved during its KEYPAD script (IMPOSSIBLECODE: use()
+// did nothing, the S selection skipped it); a running timer (TIMER)
 // and a rolling roller (ROLLB_NS) get their loop started again (events 0x20
 // and 0x21), which keeps the bit. A one-shot timer (QHi bit 0 clear) clears
 // it itself once its delay is over: it runs, as it never would without.
@@ -214,26 +218,29 @@ void test_saved_busy_items(const std::filesystem::path& data) {
     game.update(kFrameUs);
     World& w = game.world();
     const UsecodeFile& uc = game.machine().usecode();
-    ObjId monitor = 0, timer = 0, roller = 0;
+    ObjId monitor = 0, timer = 0, roller = 0, keypad = 0;
     int delay = 0;
     w.for_each([&](const Item& i) {
         if (i.parent || !uc.has_class(i.shape)) return;
         const std::string cls = uc.class_name(i.shape);
         if (!monitor && (cls == "WATCHNS" || cls == "WATCHEW")) monitor = i.id;
+        if (!keypad && (cls == "KEYPADNS" || cls == "KEYPADEW")) keypad = i.id;
         // The delay: map array * 256 + NPC number (TIMER_00C0); none ends
         // at once.
         const int d = i.map_number * 256 + i.npc_number;
         if (!timer && cls == "TIMER" && d > 0 && d < 600 && !((i.quality >> 8) & 1)) timer = i.id, delay = d;
         if (!roller && (cls == "ROLLB_NS" || cls == "ROLLB_EW")) roller = i.id;
     });
-    std::printf("saved busy: monitor %u, timer %u (delay %d), roller %u\n", monitor, timer, delay, roller);
-    CHECK(monitor != 0 && timer != 0 && roller != 0);
-    if (!monitor || !timer || !roller) return;
-    for (ObjId id : {monitor, timer, roller}) w.get(id)->flags |= 0x1000;
+    std::printf("saved busy: monitor %u, keypad %u, timer %u (delay %d), roller %u\n", monitor, keypad, timer, delay,
+                roller);
+    CHECK(monitor != 0 && keypad != 0 && timer != 0 && roller != 0);
+    if (!monitor || !keypad || !timer || !roller) return;
+    for (ObjId id : {monitor, keypad, timer, roller}) w.get(id)->flags |= 0x1000;
     game.save_game(LoadScreen::kNames);
     game.load_save_file(saves_dir() / ("SAVEGAME." + std::to_string(LoadScreen::kNames)));
     World& loaded = game.world();
     CHECK(loaded.get(monitor) != nullptr && !(loaded.get(monitor)->flags & 0x1000));
+    CHECK(loaded.get(keypad) != nullptr && !(loaded.get(keypad)->flags & 0x1000));
     const auto runs = [&](ObjId id) {
         int n = 0;
         game.kernel().for_each_process([&](const Process& p) { n += p.owner() == id; });
@@ -243,6 +250,54 @@ void test_saved_busy_items(const std::filesystem::path& data) {
     CHECK(loaded.get(timer)->flags & 0x1000);
     for (int i = 0; i < 4 * delay + 60 && (loaded.get(timer)->flags & 0x1000); ++i) game.update(kFrameUs);
     CHECK(!(loaded.get(timer)->flags & 0x1000));
+}
+
+// The autosave of the right code (port addition) waits for the end of the
+// KEYPAD script: taken when the keypad closed, it held the keypad's busy
+// bit (0x1000) and a door not yet opened, so once loaded the keypad was
+// dead and the door shut for good (IMPOSSIBLECODE). Saved afterwards, the
+// keypad is solved (status 4) and free.
+void test_keypad_autosave(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.config().autosave = true;
+    game.new_game(0);
+    game.update(kFrameUs);
+    World& w = game.world();
+    const UsecodeFile& uc = game.machine().usecode();
+    ObjId keypad = 0;
+    w.for_each([&](const Item& i) {
+        if (keypad || i.parent || !uc.has_class(i.shape) || i.map_number == 0) return;
+        const std::string cls = uc.class_name(i.shape);
+        if (cls == "KEYPADNS" || cls == "KEYPADEW") keypad = i.id;
+    });
+    CHECK(keypad != 0);
+    if (!keypad) return;
+    const auto autosave = saves_dir() / ("SAVEGAME." + std::to_string(Game::kAutoSave));
+    std::filesystem::remove(autosave);
+    use_item(w, keypad);
+    for (int f = 0; f < 3; ++f) game.update(kFrameUs);
+    const auto* gump = dynamic_cast<const KeypadGump*>(game.screen());
+    CHECK(gump != nullptr);
+    if (!gump) return;
+    const int code = gump->code();
+    static constexpr std::uint8_t kDigitScancodes[10] = {0x0B, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A};
+    const auto press = [&game](std::uint8_t scancode, std::uint8_t ascii) {
+        game.key(scancode, false, true, 0, ascii);
+        game.key(scancode, false, false, 0, ascii);
+        game.update(kFrameUs);
+    };
+    for (const char c : std::to_string(code)) press(kDigitScancodes[c - '0'], static_cast<std::uint8_t>(c));
+    press(0x1C, 0x0D);
+    std::printf("keypad autosave: keypad %u, code %d, closed %d, flags %04X\n", keypad, code, game.screen() == nullptr,
+                w.get(keypad)->flags);
+    CHECK(!game.screen() && (w.get(keypad)->flags & 0x1000) && !std::filesystem::exists(autosave));
+    for (int f = 0; f < 600 && !std::filesystem::exists(autosave); ++f) game.update(kFrameUs);
+    CHECK(std::filesystem::exists(autosave));
+    if (!std::filesystem::exists(autosave)) return;
+    game.load_save(Game::kAutoSave);
+    const std::uint16_t flags = game.world().get(keypad)->flags;
+    std::printf("keypad autosave: loaded flags %04X\n", flags);
+    CHECK(!(flags & 0x1000) && (flags & 0x0004));
 }
 
 // The datalink (DATALINK use()) hides the status bar, then on some maps has
@@ -361,6 +416,7 @@ int main(int argc, char** argv) {
         test_tables(data);
         test_new_game(data);
         test_saved_busy_items(data);
+        test_keypad_autosave(data);
         test_movie_shows_status_bar(data);
         test_start_up(data);
         test_load_screen(data);

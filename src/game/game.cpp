@@ -481,6 +481,7 @@ void Game::reset_world() {
     screen_process_ = nullptr;
     sprites_suspended_ = false;
     autosave_pending_ = false;
+    autosave_after_ = 0;
 }
 
 // @orig none: port-only gamepad vibration
@@ -593,6 +594,11 @@ void Game::load_save_file(const std::filesystem::path& path) {
     //   ROLLB_EW, event 0x21) loop while it is set; their start events and
     //   enterFastArea skip them while it is: the loop is started again (the
     //   timer from the start of its delay).
+    // - A keypad (KEYPADNS, KEYPADEW) holds it while its KEYPAD script runs:
+    //   the keypad, then after the code a wait and the door's TRIGGER. use()
+    //   does nothing while it is set and the S selection skips it: the
+    //   keypad could never be used again, its door stayed shut. That run is
+    //   dropped: the code is entered again.
     // Not here: FFFLOOR / FFFLOOR2 (bit 0x1000 is the floor's lasting
     // state) and ELEVAT (a ride also holds the items on the platform).
     const UsecodeFile& usecode = machine_->usecode();
@@ -600,8 +606,8 @@ void Game::load_save_file(const std::filesystem::path& path) {
     world_->for_each([&](const Item& i) {
         if (!(i.flags & 0x1000) || i.parent || !usecode.has_class(i.shape)) return;
         const std::string cls = usecode.class_name(i.shape);
-        if (cls == "WATCHNS" || cls == "WATCHEW") {
-            if (Item* monitor = world_->get(i.id)) monitor->flags &= static_cast<std::uint16_t>(~0x1000);
+        if (cls == "WATCHNS" || cls == "WATCHEW" || cls == "KEYPADNS" || cls == "KEYPADEW") {
+            if (Item* busy = world_->get(i.id)) busy->flags &= static_cast<std::uint16_t>(~0x1000);
         } else if (cls == "TIMER") {
             restarts.emplace_back(i.id, std::uint16_t{0x20});
         } else if (cls == "ROLLB_NS" || cls == "ROLLB_EW") {
@@ -962,7 +968,9 @@ void Game::update(std::uint32_t elapsed_us) {
         left -= step;
         if (!more || in_movie() || kernel_->slice_interrupted()) break;
     }
-    if (autosave_pending_ && kernel_->ticks() >= autosave_due_ && !modal() && player_may_act(*world_)) {
+    if (autosave_after_ && !kernel_->get(autosave_after_)) autosave_after_ = 0;
+    if (autosave_pending_ && kernel_->ticks() >= autosave_due_ && !autosave_after_ && !modal() &&
+        player_may_act(*world_)) {
         autosave_pending_ = false;
         autosave();
     }
@@ -1728,8 +1736,14 @@ void Game::show_keypad(std::int16_t code, Pid pid) {
             p->set_call_result(static_cast<std::uint16_t>(screen.result()));
         }
         // Port addition: the code matched, the door or chest is about to
-        // open (autosave).
-        if (code != 0 && static_cast<std::int16_t>(screen.result()) == code) autosave();
+        // open (autosave). Not at once: the KEYPAD script still holds the
+        // keypad's busy bit (0x1000) and has yet to open the door (a wait,
+        // then TRIGGER); saved now, the door stayed shut and the keypad
+        // dead. The autosave waits until that script has ended.
+        if (code != 0 && static_cast<std::int16_t>(screen.result()) == code) {
+            request_autosave();
+            autosave_after_ = pid;
+        }
     });
 }
 
