@@ -21,7 +21,9 @@
 //   and "sang" (GameConfig::blood_marks, gore_mode): off, the wounded
 //   bleed on it, or "gore": much more;
 // - "jeu": "sauvegarde auto" (GameConfig::autosave): the game saves itself at
-//   the key moments of a mission.
+//   the key moments of a mission, and "langue" (GameConfig::language): the
+//   language of the port's texts, auto (the data's), then the others offered
+//   (language.hpp), in turn.
 //
 // Look: the screen cleared, a small red framed window (colour 0x57) in the
 // middle, the title (the page's name on a page) with the "+" icon in green,
@@ -65,7 +67,7 @@ public:
         // Effects.
         Impact, Blood,
         // Game.
-        Autosave,
+        Autosave, Language,
         // Last on every page.
         Back,
     };

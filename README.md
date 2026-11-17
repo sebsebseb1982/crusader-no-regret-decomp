@@ -93,6 +93,12 @@ data/
 ./crusader --version
 ```
 
+### 4. Language
+
+The menus the port adds and the texts the original keeps in its executable (item names, some messages) follow the game data's language. Another language can be picked in the game: **Options**, **+** (Enhancements), **Game**, **Language**: the port's English or French texts, or a file of the `languages` folder next to the executable.
+
+To translate them, copy [languages/template.txt](languages/template.txt) to `languages/<language>.txt` (for example `pt-br.txt`) and fill in the translations; the template explains the format. The texts of the game data (FLX files, movie subtitles, pictures) are translated in those files.
+
 ## Building from source
 
 Requirements: CMake 3.21 or later and a C++20 compiler (Visual Studio 2022, GCC 11+, or Clang 14+).

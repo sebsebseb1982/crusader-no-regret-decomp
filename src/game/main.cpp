@@ -170,6 +170,17 @@ int main(int argc, char** argv) {
             throw std::runtime_error("no game data in '" + data.string() +
                                      "': copy the files of an install of the game (French 1.08, US 1.23 or English 1.01) there, or its .iso image (GAME.GOG in the GOG release)");
         }
+        // The language files (port addition): the "languages" folder next to
+        // the executable, else in the current folder.
+        {
+            std::filesystem::path languages = "languages";
+            if (char* base = SDL_GetBasePath()) {
+                const std::filesystem::path beside = std::filesystem::path(base) / "languages";
+                SDL_free(base);
+                if (std::error_code error; std::filesystem::is_directory(beside, error)) languages = beside;
+            }
+            set_languages_dir(languages);
+        }
         Game game(data, {}, mod);
         // No Regret plays "xmas" as map music from 24 to 31 December (STDINT 1210:0000).
         if (Audio* audio = game.audio()) {

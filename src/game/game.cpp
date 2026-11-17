@@ -322,6 +322,8 @@ void Game::set_config(GameConfig config) {
         using Output = AsylumMixer::Output;
         audio_->mixer.set_output(!regret_ ? Output::kMono16 : config_.dma >= 4 ? Output::kStereo16 : Output::kStereo8);
     }
+    // The language of the port's texts (port addition).
+    select_language(config_.language);
 }
 
 // No Regret's reset (1030:0B6F) first shows a loading picture (CDLOAD_1030_022e:
@@ -1448,7 +1450,7 @@ void Game::open_menu(bool no_game) {
         MainMenu::Resources{&gumps_, &fonts_, &save_names_, &credits_data_, &config_, audio_.get(),
                             [this] { save_config(); },
                             port_version.empty() ? std::string() : tr("PORTAGE V", "PORT V") + port_version,
-                            tr("DONNEES DU JEU ", "GAME DATA ") +
+                            std::string(tr("DONNEES DU JEU", "GAME DATA")) + " " +
                                 (data_version_.empty() ? std::string(tr("INCONNUES", "UNKNOWN")) : "V" + data_version_) + " " +
                                 (data_language_.empty() ? std::string(tr("LANGUE INCONNUE", "UNKNOWN LANGUAGE")) : data_language_),
                             &load_pictures_,

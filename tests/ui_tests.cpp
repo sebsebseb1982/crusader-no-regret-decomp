@@ -1,6 +1,7 @@
 // Gumps and other UI pieces on synthetic shapes (no game data).
 
 #include "core/flex.hpp"
+#include "core/language.hpp"
 #include "core/shape.hpp"
 #include "core/surface.hpp"
 #include "engine/ui/enhancements_screen.hpp"
@@ -181,6 +182,15 @@ void test_enhancements_pages() {
     choose(screen, Entry::Game);
     choose(screen, Entry::Back);
     CHECK(screen.page() == Page::Main && screen.focus() == screen.row_of(Entry::Game));
+    // Language (no languages folder): auto, French, English, auto.
+    choose(screen, Entry::Game);
+    choose(screen, Entry::Language);
+    CHECK(config.language == "fr" && selected_language().id == "fr" && std::string(tr("RETOUR", "BACK")) == "RETOUR");
+    choose(screen, Entry::Language);
+    CHECK(config.language == "en" && std::string(tr("RETOUR", "BACK")) == "BACK");
+    choose(screen, Entry::Language);
+    CHECK(config.language.empty() && selected_language().id.empty());
+    screen.key(gump_key::kEscape);
     screen.key(gump_key::kEscape);
     CHECK(screen.closed());
     // The mouse: a row pressed opens it.

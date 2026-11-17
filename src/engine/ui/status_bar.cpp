@@ -1,5 +1,6 @@
 #include "engine/ui/status_bar.hpp"
 
+#include "core/language.hpp"
 #include "engine/world/inventory.hpp"
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/pickup_list.hpp"
@@ -165,7 +166,7 @@ void StatusBar::draw(Surface8& screen, const World& world) const {
                 if (const char* name = item_label(world, *it).name) {  // 11C8:08D6
                     print_right(screen, *fonts_, kNameFont, r.x1, r.y0 + 4, name);
                     if (it->frame == 1) {  // DS:36C9, DS:36D1
-                        print_right(screen, *fonts_, kNameFont, r.x1, r.y0 + 0xA, it->shape == kMessage ? "MESSAGE" : "ACTIVE");
+                        print_right(screen, *fonts_, kNameFont, r.x1, r.y0 + 0xA, it->shape == kMessage ? tr("MESSAGE", "MESSAGE") : tr("ACTIVE", "ACTIVE"));
                     }
                 }
             }

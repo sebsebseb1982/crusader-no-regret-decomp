@@ -41,6 +41,7 @@ add_library(crusader_core
   src/core/iso_image.cpp
   src/core/dtable.cpp
   src/core/language.cpp
+  src/core/translation.cpp
   src/core/typeflags.cpp
   src/core/trig.cpp
   src/core/random.cpp
@@ -148,6 +149,9 @@ target_link_libraries(crusader PRIVATE crusader_game crusader_platform)
 set(CRUSADER_VERSION "0.0.0-dev" CACHE STRING "Version reported by crusader --version")
 configure_file(src/game/version.hpp.in ${CMAKE_BINARY_DIR}/generated/crusader_version.hpp @ONLY)
 target_include_directories(crusader PRIVATE ${CMAKE_BINARY_DIR}/generated)
+# The language files (languages/), next to the executable.
+add_custom_command(TARGET crusader POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/languages $<TARGET_FILE_DIR:crusader>/languages)
 
 add_executable(shapeview src/tools/shapeview.cpp)
 target_link_libraries(shapeview PRIVATE crusader_platform)
@@ -228,6 +232,13 @@ option(CRUSADER_GAME_DATA_TESTS "Register the end-to-end tests (e2e/) that need 
 add_executable(core_tests tests/core_tests.cpp)
 target_link_libraries(core_tests PRIVATE crusader_core)
 add_test(NAME core_tests COMMAND core_tests)
+
+# languages/template.txt lists every text of the port (scripts/gen_language_template.py).
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_FOUND)
+  add_test(NAME language_template
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/gen_language_template.py --check)
+endif()
 
 add_executable(kernel_tests tests/kernel_tests.cpp)
 target_link_libraries(kernel_tests PRIVATE crusader_engine)

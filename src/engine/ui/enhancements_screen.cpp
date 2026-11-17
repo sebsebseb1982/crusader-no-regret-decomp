@@ -74,7 +74,7 @@ constexpr Entry kControlsEntries[] = {Entry::Pad,        Entry::Directional, Ent
                                       Entry::Vibration,  Entry::VibrationIntensity, Entry::Back};
 constexpr Entry kDisplayEntries[] = {Entry::Native, Entry::Zoom, Entry::Smooth, Entry::Follow, Entry::Back};
 constexpr Entry kEffectsEntries[] = {Entry::Impact, Entry::Blood, Entry::Back};
-constexpr Entry kGameEntries[] = {Entry::Autosave, Entry::Back};
+constexpr Entry kGameEntries[] = {Entry::Autosave, Entry::Language, Entry::Back};
 
 // The name of a row that opens something (a page, the controller screen,
 // "retour"), shown in its middle.
@@ -234,6 +234,10 @@ void EnhancementsScreen::draw(Surface8& screen) const {
             name = tr("SAUVEGARDE AUTO", "AUTOSAVE");
             on = config_->autosave;
             break;
+        case Entry::Language:
+            name = tr("LANGUE", "LANGUAGE");
+            value = selected_language().id.empty() ? tr("AUTO", "AUTO") : selected_language().name;
+            break;
         default: break;
         }
         if (value.empty()) value = on ? tr("MARCHE", "ON") : tr("ARRET", "OFF");
@@ -305,6 +309,15 @@ void EnhancementsScreen::activate(int row) {
         }
         break;
     case Entry::Autosave: config_->autosave = !config_->autosave; break;
+    case Entry::Language: {
+        // The next language offered, back to the data's after the last.
+        const auto choices = language_choices();
+        std::size_t i = 0;
+        while (i < choices.size() && choices[i].id != selected_language().id) ++i;
+        config_->language = choices[i + 1 < choices.size() ? i + 1 : 0].id;
+        select_language(config_->language);
+        break;
+    }
     case Entry::Back: back(); break;
     }
 }
