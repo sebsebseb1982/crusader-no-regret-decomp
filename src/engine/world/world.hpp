@@ -406,6 +406,9 @@ struct WorldHooks {
     std::function<void()> quit_game;
     // No Regret 1148:08F0: the screen saved as the first free CRU%04d.TGA.
     std::function<void()> take_picture;
+    // Port addition (impact marks, damage_marks.hpp): a shot of `fire_type`
+    // ended at (x, y, z) on `hit`, 0 when on nothing. Must not change the world.
+    std::function<void(ObjId hit, std::int32_t x, std::int32_t y, std::int32_t z, int fire_type)> shot_landed;
 };
 
 class World {

@@ -10,11 +10,11 @@ namespace crusader {
 
 namespace {
 
-// 14 rows: the panel spans almost the whole 480 lines.
+// 15 rows: the panel spans almost the whole 480 lines.
 constexpr int kPanelX0 = 100, kPanelY0 = 34, kPanelX1 = 539, kPanelY1 = 465;
 constexpr int kTitleY = 66, kIconSize = 14, kIconGap = 8;
-constexpr int kRowX0 = 130, kRowX1 = 509, kRowY0 = 90, kRowStep = 26, kRowHeight = 24;
-constexpr int kTextDrop = 17, kRowPad = 18;  // glyphs hang from their baseline
+constexpr int kRowX0 = 130, kRowX1 = 509, kRowY0 = 86, kRowStep = 25, kRowHeight = 23;
+constexpr int kTextDrop = 16, kRowPad = 18;  // glyphs hang from their baseline
 constexpr std::uint8_t kFrameColour = 0x57, kGreen = 0x0C, kDimGreen = 0x75;
 
 // Text in one colour: drawn on a scratch surface, copied in `tint`.
@@ -96,7 +96,7 @@ void EnhancementsScreen::draw(Surface8& screen) const {
         const TextWriter writer(*fonts_, kFont);
         if (row == kFollowRow || row == kDirectionalRow || row == kAimRow || row == kDrawRow ||
             row == kPreciseAimRow || row == kNativeRow ||
-            row == kZoomRow || row == kSmoothRow || row == kAutosaveRow || row == kRunRow || row == kVibrationRow ||
+            row == kZoomRow || row == kSmoothRow || row == kImpactRow || row == kAutosaveRow || row == kRunRow || row == kVibrationRow ||
             row == kVibrationIntensityRow) {
             // The name on the left, its state on the right.
             std::string name;
@@ -116,6 +116,9 @@ void EnhancementsScreen::draw(Surface8& screen) const {
             } else if (row == kSmoothRow) {
                 name = tr("LISSAGE", "SMOOTHING");
                 on = config_->smooth_scaling;
+            } else if (row == kImpactRow) {
+                name = tr("IMPACTS", "IMPACT MARKS");
+                on = config_->impact_marks;
             } else if (row == kAutosaveRow) {
                 name = tr("SAUVEGARDE AUTO", "AUTOSAVE");
                 on = config_->autosave;
@@ -167,6 +170,8 @@ void EnhancementsScreen::activate(int row) {
         config_->view_zoom_pct = GameConfig::next_view_zoom(config_->view_zoom_pct, config_->view_zoom_limit_pct);
     } else if (row == kSmoothRow) {
         config_->smooth_scaling = !config_->smooth_scaling;
+    } else if (row == kImpactRow) {
+        config_->impact_marks = !config_->impact_marks;
     } else if (row == kAutosaveRow) {
         config_->autosave = !config_->autosave;
     } else if (row == kRunRow) {

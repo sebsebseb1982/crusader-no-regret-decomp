@@ -190,6 +190,7 @@ protected:
                                                static_cast<std::int16_t>(ft->max_damage()))
                               : 0;
         if (radius != 0) splash_damage(kernel(), world_, anims_, at, radius, damage, 4, 0, 0);
+        if (world_.hooks().shot_landed) world_.hooks().shot_landed(0, at.x, at.y, at.z, 4);
         if (++count_ > 9) {
             terminate();
             return;

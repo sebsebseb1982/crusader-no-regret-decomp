@@ -121,6 +121,7 @@ GameConfig GameConfig::parse(std::string_view text) {
         else if (key == "drawonaim") c.draw_on_aim = value != "false";
         else if (key == "preciseaim") c.precise_aim = value == "true";
         else if (key == "togglerun") c.toggle_run = value == "true";
+        else if (key == "impactmarks") c.impact_marks = value == "true";
         else if (key == "vibration") c.vibration = value != "false";
         else if (key == "vibrationintensity") c.vibration_intensity = std::clamp(number(value), 0, 100);
         else if (key == "padaim") c.pad.aim = std::clamp(number(value), 1, PadSettings::kAimLevels);
@@ -182,6 +183,8 @@ std::string GameConfig::text() const {
     else out.erase("preciseaim");
     if (toggle_run) out.set("togglerun", "true");
     else out.erase("togglerun");
+    if (impact_marks) out.set("impactmarks", "true");
+    else out.erase("impactmarks");
     if (!vibration) out.set("vibration", "false");
     else out.erase("vibration");
     if (vibration_intensity != 100) out.set("vibrationintensity", std::to_string(vibration_intensity));
