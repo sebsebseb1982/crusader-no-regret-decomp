@@ -84,8 +84,8 @@ public:
     // Port addition, written only when set: "impactmarks", shots leave marks
     // on the scenery they hit (holes, burns, scorches; damage_marks.hpp).
     bool impact_marks = false;
-    // Port addition, written only when set: "bloodmarks", with the impact
-    // marks (and the violence option), the wounded bleed on the scenery.
+    // Port addition, written only when set: "bloodmarks", the wounded bleed
+    // on the scenery (damage_marks.hpp) while the violence option is on.
     bool blood_marks = false;
     // Port addition, written when not 0: "viewzoom", the largest pixel size of
     // the native view, in hundredths of a screen pixel per game pixel (100 = x1,
