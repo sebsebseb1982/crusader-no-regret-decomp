@@ -17,6 +17,7 @@ constexpr int kSearchPad = 256;    // largest footpad reach of an anchor, usecod
 constexpr std::size_t kMaxScorchHosts = 24;
 
 // splitmix32: the marks' own numbers, never the game's generators.
+// @orig none: port-only impact marks
 std::uint32_t mix(std::uint32_t v) {
     v += 0x9E3779B9u;
     v = (v ^ (v >> 16)) * 0x85EBCA6Bu;
@@ -34,6 +35,7 @@ struct Box {
 
 // The item's box, in usecode units (see render.hpp; footpads x/y are 16
 // usecode units, z 8, swapped when mirrored).
+// @orig none: port-only impact marks
 Box box_of(const Item& item, const ShapeInfo* info) {
     const bool mirrored = item.flags & kItemFlipped;
     const int fx = info ? info->footpad_x : 0, fy = info ? info->footpad_y : 0, fz = info ? info->footpad_z : 0;
@@ -54,6 +56,7 @@ World::Point nearest_in(const Box& b, const World::Point& p) {
 // same point for every item of a floor or of a wall face, so that one
 // explosion leaves one scorch over all of them. `gap` gets how far `p` is
 // from that face, `top` whether it is the top face. Inside the box: `p`.
+// @orig none: port-only impact marks
 World::Point across_face(const Box& b, const World::Point& p, double& gap, bool& top) {
     const std::int32_t out_x = p.x - b.x, out_y = p.y - b.y, out_z = p.z - b.z_top;
     World::Point s = p;
@@ -80,6 +83,7 @@ double distance(const World::Point& a, const World::Point& b) {
 
 // Scenery that can take a mark: a drawn, solid-looking item on the map, not
 // an NPC, a shot or a translucent shape.
+// @orig none: port-only impact marks
 bool can_host(const World& world, const Item& item) {
     if (is_npc_id(item.id) || item.parent != 0 || item.off_map || item.sprite_only) return false;
     if (item.flags & (kItemInvisible | kItemContained | kItemEthereal)) return false;
