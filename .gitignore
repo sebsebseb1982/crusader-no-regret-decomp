@@ -7,3 +7,8 @@ isos/
 __pycache__/
 private/
 mods/
+
+# Translated game data in the language folders: it belongs to the publisher,
+# only the port's texts (port.txt) are in the repository
+languages/*/*
+!languages/*/port.txt

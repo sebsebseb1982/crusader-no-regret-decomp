@@ -32,7 +32,7 @@ languages/
 
 - `port.txt` holds the texts the port prints itself (format below).
 - Any other file replaces the data folder's file with the same path. Files that are not there come from the data folder, so a translation only ships the files it changes. Use the same names, in the same case, as in the data folder.
-- `en/port.txt` is generated from the sources and must not be edited. `fr/port.txt` holds the texts of the French `CRUSADER.EXE` 1.08, which the French data needs, and the French texts of the port's screens. The repository only ships `port.txt` files: the game data files belong to their publisher and are not distributed with the port.
+- `en/port.txt` is generated from the sources and must not be edited. `fr/port.txt` holds the texts of the French `CRUSADER.EXE` 1.08, which the French data needs, and the French texts of the port's screens. The repository only ships `port.txt` files: the game data files belong to their publisher and are not distributed with the port. `.gitignore` keeps the other files of the language folders out of it.
 
 In the game, **Options**, **+** (Enhancements), **Game**, **Language** cycles through **AUTO** and every language folder, showing each one's name. The choice is saved in `CRUSADER.CFG` (`language=pt-br`).
 
