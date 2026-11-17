@@ -2,6 +2,7 @@
 // can cross the whole map without usecode errors while the fast area follows.
 
 #include "core/avi_movie.hpp"
+#include "core/language.hpp"
 #include "core/dtable.hpp"
 #include "core/movie_subtitles.hpp"
 #include "engine/palette_fader.hpp"
@@ -5971,6 +5972,7 @@ void test_weasel_buys_ammo_after_spent_clips(const std::filesystem::path& data) 
 }
 
 int main(int argc, char** argv) {
+    set_languages_dir(CRUSADER_LANGUAGES_DIR);  // the French texts (languages/fr.txt)
     const std::filesystem::path data = argc > 1 ? argv[1] : "data";
     if (!std::filesystem::exists(data / "STATIC/FIXED.DAT")) {
         std::printf("no game data, skipped\n");

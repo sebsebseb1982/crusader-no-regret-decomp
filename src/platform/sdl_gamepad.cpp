@@ -26,7 +26,7 @@ bool debug_enabled() {
 constexpr std::uint8_t kArrows[4] = {0x48, 0x50, 0x4B, 0x4D};  // up, down, left, right (E0)
 
 // "Menu" in No Regret's play: F1, the key that opens its menu (Escape does not).
-constexpr PadAction kPadMenuF1 = {"MENU", "MENU", 0x3B, false, 0};
+constexpr PadAction kPadMenuF1 = {"MENU", 0x3B, false, 0};
 
 // Keypad keys (not extended), by 45 degree sector counter-clockwise from east:
 // right, up-right (PgUp), up, up-left (Home), left, down-left (End), down,

@@ -366,32 +366,44 @@ void check_languages() {
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
     std::ofstream(dir / "pt-BR.txt", std::ios::binary) << "@name = PORTUGUES\nBACK = VOLTAR\n";
-    std::ofstream(dir / "template.txt", std::ios::binary) << "@name =\nBACK =\n";
+    std::ofstream(dir / "fr.txt", std::ios::binary) << "@name = FRANCAIS\nBACK = RETOUR\nON = MARCHE\n";
+    std::ofstream(dir / "en.txt", std::ios::binary) << "@name = ENGLISH\nBACK = BACK\n";
     std::ofstream(dir / "de.txt", std::ios::binary) << "ON = AN\n";
     set_languages_dir(dir);
     const std::vector<LanguageChoice> choices = language_choices();
-    check(choices.size() == 5 && choices[0].id.empty() && choices[1].id == "fr" && choices[2].id == "en" &&
-              choices[3].id == "de" && choices[3].name == "DE" && choices[4].id == "pt-br" &&
-              choices[4].name == "PORTUGUES",
-          "languages: auto, French, English, then the files but the template");
+    check(choices.size() == 5 && choices[0].id.empty() && choices[0].name == "AUTO" && choices[1].id == "de" &&
+              choices[1].name == "DE" && choices[2].id == "en" && choices[3].id == "fr" &&
+              choices[3].name == "FRANCAIS" && choices[4].id == "pt-br" && choices[4].name == "PORTUGUES",
+          "languages: auto, then the files by id");
 
+    // Auto: the file of the data's language.
     set_text_language(Language::English);
-    check(std::string(tr("RETOUR", "BACK")) == "BACK", "tr: the data's language");
-    select_language("fr");
-    check(std::string(tr("RETOUR", "BACK")) == "RETOUR", "tr: French picked");
-    select_language("PT-BR");
-    const char* back = tr("RETOUR", "BACK");
-    check(std::string(back) == "VOLTAR" && selected_language().name == "PORTUGUES", "tr: language file");
-    check(std::string(tr("MARCHE", "ON")) == "ON", "tr: missing text, the data's");
+    check(std::string(tr("BACK")) == "BACK" && std::string(tr("ON")) == "ON", "tr: auto, English data");
     set_text_language(Language::French);
-    check(std::string(tr("MARCHE", "ON")) == "MARCHE", "tr: missing text, French data");
+    check(std::string(tr("BACK")) == "RETOUR" && std::string(tr("ON")) == "MARCHE", "tr: auto, French data");
+    check(std::string(tr("OFF")) == "OFF", "tr: a text the file lacks stays in English");
+    select_language("PT-BR");
+    const char* back = tr("BACK");
+    check(std::string(back) == "VOLTAR" && selected_language().name == "PORTUGUES", "tr: language picked");
+    check(std::string(tr("ON")) == "ON", "tr: a text the file lacks stays in English, French data too");
     select_language("xx");
-    check(selected_language().id.empty() && std::string(tr("RETOUR", "BACK")) == "RETOUR", "tr: unknown language");
+    check(selected_language().id.empty() && std::string(tr("BACK")) == "RETOUR", "tr: unknown language, auto");
     check(std::string(back) == "VOLTAR", "tr: texts handed out stay valid");
+    // No folder: English.
+    set_languages_dir({});
+    check(std::string(tr("BACK")) == "BACK", "tr: no language files");
     select_language("");
+    std::filesystem::remove_all(dir);
+
+    // The files of the repository: French complete, two-text editor form.
+    set_languages_dir(CRUSADER_LANGUAGES_DIR);
+    check(std::string(tr("<MORE>")) == "-SUITE-" && std::string(tr("Credits:%ld")) == "Cr\x82" "dits :%ld",
+          "languages/fr.txt read, in code page 850");
+    set_text_language(Language::English);
+    check(std::string(tr("<MORE>")) == "<MORE>" && std::string(tr("RETOUR", "BACK")) == "BACK",
+          "languages/en.txt read; the editor's texts");
     set_text_language(Language::French);
     set_languages_dir({});
-    std::filesystem::remove_all(dir);
 
     // CRUSADER.CFG: written only when picked.
     GameConfig lang = GameConfig::parse("irq=7\r\n");

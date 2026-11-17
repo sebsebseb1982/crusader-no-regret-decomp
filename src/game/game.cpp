@@ -742,7 +742,7 @@ void Game::autosave() {
         return;
     }
     try {
-        set_save_name(kAutoSave, tr("SAUVEGARDE AUTO", "AUTOSAVE"));
+        set_save_name(kAutoSave, tr("AUTOSAVE"));
         save_game(kAutoSave);
         autosave_icon_us_ = kAutosaveIconUs;
     } catch (const std::exception& e) {
@@ -1449,10 +1449,10 @@ void Game::open_menu(bool no_game) {
     menu_ = std::make_unique<MainMenu>(
         MainMenu::Resources{&gumps_, &fonts_, &save_names_, &credits_data_, &config_, audio_.get(),
                             [this] { save_config(); },
-                            port_version.empty() ? std::string() : tr("PORTAGE V", "PORT V") + port_version,
-                            std::string(tr("DONNEES DU JEU", "GAME DATA")) + " " +
-                                (data_version_.empty() ? std::string(tr("INCONNUES", "UNKNOWN")) : "V" + data_version_) + " " +
-                                (data_language_.empty() ? std::string(tr("LANGUE INCONNUE", "UNKNOWN LANGUAGE")) : data_language_),
+                            port_version.empty() ? std::string() : tr("PORT V") + port_version,
+                            std::string(tr("GAME DATA")) + " " +
+                                (data_version_.empty() ? std::string(tr("UNKNOWN")) : "V" + data_version_) + " " +
+                                (data_language_.empty() ? std::string(tr("UNKNOWN LANGUAGE")) : data_language_),
                             &load_pictures_,
                             auto_save_name_function()},
         menu_shared_, no_game);

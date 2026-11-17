@@ -216,6 +216,8 @@ if(CRUSADER_BUILD_EDITOR)
 endif()
 
 enable_testing()
+# The tests read the language files of the sources (the French texts).
+add_compile_definitions(CRUSADER_LANGUAGES_DIR="${CMAKE_SOURCE_DIR}/languages")
 # tests/: no game data needed, run by the GitHub CI.
 # e2e/: end-to-end tests on the original game data and on saved games, none of
 # which is in the repository. The No Regret ones are registered only with
@@ -233,11 +235,11 @@ add_executable(core_tests tests/core_tests.cpp)
 target_link_libraries(core_tests PRIVATE crusader_core)
 add_test(NAME core_tests COMMAND core_tests)
 
-# languages/template.txt lists every text of the port (scripts/gen_language_template.py).
+# The language files are up to date with the sources (scripts/update_languages.py).
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_FOUND)
-  add_test(NAME language_template
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/gen_language_template.py --check)
+  add_test(NAME language_files
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/update_languages.py --check)
 endif()
 
 add_executable(kernel_tests tests/kernel_tests.cpp)

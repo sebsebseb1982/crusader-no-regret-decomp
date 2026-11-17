@@ -496,6 +496,7 @@ void test_help_screen(const std::filesystem::path& data) {
 }  // namespace
 
 int main(int argc, char** argv) {
+    set_languages_dir(CRUSADER_LANGUAGES_DIR);  // the French texts (languages/fr.txt)
     if (argc < 2 || !std::filesystem::exists(std::filesystem::path(argv[1]) / "STATIC")) {
         std::printf("regret_data_tests: no game data, skipped\n");
         return 0;

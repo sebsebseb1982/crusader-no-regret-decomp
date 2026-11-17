@@ -182,14 +182,15 @@ void test_enhancements_pages() {
     choose(screen, Entry::Game);
     choose(screen, Entry::Back);
     CHECK(screen.page() == Page::Main && screen.focus() == screen.row_of(Entry::Game));
-    // Language (no languages folder): auto, French, English, auto.
+    // Language (the repository's files, French data): auto, English, French, auto.
     choose(screen, Entry::Game);
+    CHECK(std::string(tr("BACK")) == "RETOUR");
     choose(screen, Entry::Language);
-    CHECK(config.language == "fr" && selected_language().id == "fr" && std::string(tr("RETOUR", "BACK")) == "RETOUR");
+    CHECK(config.language == "en" && selected_language().id == "en" && std::string(tr("BACK")) == "BACK");
     choose(screen, Entry::Language);
-    CHECK(config.language == "en" && std::string(tr("RETOUR", "BACK")) == "BACK");
+    CHECK(config.language == "fr" && selected_language().name == "FRANCAIS" && std::string(tr("BACK")) == "RETOUR");
     choose(screen, Entry::Language);
-    CHECK(config.language.empty() && selected_language().id.empty());
+    CHECK(config.language.empty() && selected_language().id.empty() && std::string(tr("BACK")) == "RETOUR");
     screen.key(gump_key::kEscape);
     screen.key(gump_key::kEscape);
     CHECK(screen.closed());
@@ -286,6 +287,7 @@ void test_regret_movie() {
 }  // namespace
 
 int main() {
+    set_languages_dir(CRUSADER_LANGUAGES_DIR);  // the French texts (languages/fr.txt)
     test_regret_movie();
     test_keypad_digit_spacing();
     test_vibration_settings();

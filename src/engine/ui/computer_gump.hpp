@@ -91,7 +91,7 @@ public:
     static constexpr std::uint32_t kStarPause = 44000;  // thousandths of a tick, see above
     static constexpr std::uint32_t kCharPause = 1000;
     static constexpr std::uint32_t kRegretStarPause = 16390, kRegretCharPause = 273;
-    static const char* more() { return tr("-SUITE-", "<MORE>"); }  // DS:55AB (US: DS:557F)
+    static const char* more() { return tr("<MORE>"); }  // DS:55AB (US: DS:557F)
 
     // `play_sfx` restarts a sound (dsfx_stop_if, then AudioProcess_I_playSFX).
     ComputerGump(ShapeCache& gumps, const FontSet& fonts, const std::string& text, std::function<void(int)> play_sfx,

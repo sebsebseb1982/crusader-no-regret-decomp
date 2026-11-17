@@ -1,18 +1,19 @@
 #pragma once
 // Language files (port addition): the texts the port prints itself (its own
 // screens, and the texts the original keeps in its executable: item names,
-// messages, Weasel's shop...) in another language than the game data's. The
-// data's own texts (FLX files, movie subtitles, pictures) are not concerned:
-// a translation changes those files.
+// messages, Weasel's shop...), written in English in the code, in the other
+// languages (fr.txt: the French executable's). The data's own texts (FLX
+// files, movie subtitles, pictures) are not concerned: a translation changes
+// those files. docs/TRANSLATING.md describes the process.
 //
 // One file per language in the "languages" folder, UTF-8 text:
 //   - lines starting with '#' are comments, blank lines are skipped;
 //   - "@name = <name>": the language's name, shown by the enhancements window
 //     (the file's name when missing);
-//   - "<English text> = <translation>": the English text of the port (see
-//     languages/template.txt for the list), then its translation. "\n" in
-//     either is a line break, "\\" a backslash. An empty translation keeps
-//     the original text.
+//   - "<English text> = <translation>": a text of the port as the code
+//     writes it (languages/en.txt lists them all), then its translation.
+//     "\n" in either is a line break, "\\" a backslash. An empty
+//     translation keeps the English text.
 // Spaces around the texts are dropped. The translations are converted to
 // code page 850, the fonts' (characters out of it become '?'), and must keep
 // the "%" conversions of their English text, in order (else they are dropped,

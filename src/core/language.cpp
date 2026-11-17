@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <map>
 #include <memory>
 #include <system_error>
 
@@ -17,12 +18,10 @@ bool g_regret = false;
 
 std::filesystem::path g_languages_dir;
 LanguageChoice g_choice{"", "AUTO"};
-// The translations read, kept so that the texts handed out stay valid; the
-// last one is in use when a file is picked.
-std::vector<std::unique_ptr<Translation>> g_translations;
-const Translation* g_translation = nullptr;
-
-constexpr std::string_view kTemplate = "template";
+// The files read, by id (null: none or unreadable). Every translation read is
+// kept in g_read so that the texts handed out stay valid.
+std::map<std::string, const Translation*, std::less<>> g_loaded;
+std::vector<std::unique_ptr<Translation>> g_read;
 
 // @orig none: language files of the port
 std::string lower(std::string_view s) {
@@ -40,9 +39,7 @@ std::vector<std::pair<std::string, std::filesystem::path>> language_files() {
     for (const auto& entry : std::filesystem::directory_iterator(g_languages_dir, error)) {
         const auto& path = entry.path();
         if (!entry.is_regular_file(error) || lower(path.extension().string()) != ".txt") continue;
-        std::string id = lower(path.stem().string());
-        if (id == kTemplate || id == "fr" || id == "en") continue;
-        files.emplace_back(std::move(id), path);
+        files.emplace_back(lower(path.stem().string()), path);
     }
     std::sort(files.begin(), files.end());
     return files;
@@ -56,6 +53,27 @@ std::string name_of(const std::string& id, const Translation& t) {
     return name;
 }
 
+// The file of `id`, read on first use; null when there is none.
+// @orig none: language files of the port
+const Translation* translation(std::string_view id) {
+    if (const auto it = g_loaded.find(id); it != g_loaded.end()) return it->second;
+    const Translation* found = nullptr;
+    for (const auto& [file_id, path] : language_files()) {
+        if (file_id != id) continue;
+        try {
+            std::vector<std::string> warnings;
+            g_read.push_back(std::make_unique<Translation>(Translation::load(path, &warnings)));
+            for (const std::string& w : warnings) std::fprintf(stderr, "%s: %s\n", path.string().c_str(), w.c_str());
+            found = g_read.back().get();
+        } catch (const std::exception& e) {
+            std::fprintf(stderr, "%s\n", e.what());
+        }
+        break;
+    }
+    g_loaded.emplace(std::string(id), found);
+    return found;
+}
+
 }  // namespace
 
 Language text_language() { return g_language; }
@@ -63,25 +81,28 @@ Language text_language() { return g_language; }
 void set_text_language(Language language) { g_language = language; }
 
 // @orig none: language files of the port
-const char* tr(const char* french, const char* english) {
-    if (g_translation) {
-        if (const char* text = g_translation->find(english)) return text;
+const char* tr(const char* english) {
+    const std::string_view id = !g_choice.id.empty()                ? std::string_view(g_choice.id)
+                                : g_language == Language::English ? std::string_view("en")
+                                                                  : std::string_view("fr");
+    if (const Translation* t = translation(id)) {
+        if (const char* text = t->find(english)) return text;
     }
-    const Language language = g_choice.id == "fr"   ? Language::French
-                              : g_choice.id == "en" ? Language::English
-                                                    : g_language;
-    return language == Language::English ? english : french;
+    return english;
 }
 
 bool regret_data() { return g_regret; }
 
 void set_regret_data(bool regret) { g_regret = regret; }
 
-void set_languages_dir(const std::filesystem::path& dir) { g_languages_dir = dir; }
+void set_languages_dir(const std::filesystem::path& dir) {
+    g_languages_dir = dir;
+    g_loaded.clear();
+}
 
 // @orig none: language files of the port
 std::vector<LanguageChoice> language_choices() {
-    std::vector<LanguageChoice> choices = {{"", "AUTO"}, {"fr", "FRANCAIS"}, {"en", "ENGLISH"}};
+    std::vector<LanguageChoice> choices = {{"", "AUTO"}};
     for (const auto& [id, path] : language_files()) {
         try {
             choices.push_back({id, name_of(id, Translation::load(path))});
@@ -94,29 +115,15 @@ std::vector<LanguageChoice> language_choices() {
 
 // @orig none: language files of the port
 void select_language(std::string_view id) {
-    const std::string wanted = lower(id);
-    g_translation = nullptr;
+    g_loaded.clear();
     g_choice = {"", "AUTO"};
+    const std::string wanted = lower(id);
     if (wanted.empty()) return;
-    if (wanted == "fr" || wanted == "en") {
-        g_choice = {wanted, wanted == "fr" ? "FRANCAIS" : "ENGLISH"};
-        return;
+    if (const Translation* t = translation(wanted)) {
+        g_choice = {wanted, name_of(wanted, *t)};
+    } else {
+        std::fprintf(stderr, "language '%s' not found in '%s'\n", wanted.c_str(), g_languages_dir.string().c_str());
     }
-    for (const auto& [file_id, path] : language_files()) {
-        if (file_id != wanted) continue;
-        try {
-            std::vector<std::string> warnings;
-            auto t = std::make_unique<Translation>(Translation::load(path, &warnings));
-            for (const std::string& w : warnings) std::fprintf(stderr, "%s: %s\n", path.string().c_str(), w.c_str());
-            g_choice = {file_id, name_of(file_id, *t)};
-            g_translation = t.get();
-            g_translations.push_back(std::move(t));
-        } catch (const std::exception& e) {
-            std::fprintf(stderr, "%s\n", e.what());
-        }
-        return;
-    }
-    std::fprintf(stderr, "language '%s' not found in '%s'\n", wanted.c_str(), g_languages_dir.string().c_str());
 }
 
 const LanguageChoice& selected_language() { return g_choice; }

@@ -18,8 +18,8 @@ constexpr std::uint32_t kTicksPerSecond = 60;
 // @orig 11A0:070F
 // @orig 11C8:000C
 ItemLabel item_label(const World& world, const Item& item) {
-    if (item.shape == kKeycard) return {tr("PASSE", "KEYCARD"), 5, static_cast<std::uint16_t>(item.frame + 13)};
-    if (item.shape == credits_shape(world)) return {tr("CREDITS", "CREDITS"), 3, 13};
+    if (item.shape == kKeycard) return {tr("KEYCARD"), 5, static_cast<std::uint16_t>(item.frame + 13)};
+    if (item.shape == credits_shape(world)) return {tr("CREDITS"), 3, 13};
     switch (world.family_of(item.shape)) {
     case 10: return {dtable::weapon_name(item.shape), 3, dtable::weapon_icon(item.shape)};
     case 11: return {dtable::ammo_name(item.shape), 5, dtable::ammo_icon(item.shape)};
