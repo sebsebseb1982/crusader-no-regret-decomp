@@ -90,9 +90,9 @@ public:
     // Port addition, written only when set: "goremode", with the blood, much
     // more of it (DamageMarks::bleed).
     bool gore_mode = false;
-    // Port addition, written only when set: "language", the language of the
-    // port's texts (language.hpp): "fr", "en" or the name of a file of the
-    // languages folder without ".txt" (no spaces); empty for the data's.
+    // Port addition, written only when set: "language", the language picked
+    // (language.hpp): the name of a folder of the languages folder, in lower
+    // case ("fr", "en", "pt-br"...); empty for AUTO (the data's).
     std::string language;
     // Port addition, written when not 0: "viewzoom", the largest pixel size of
     // the native view, in hundredths of a screen pixel per game pixel (100 = x1,

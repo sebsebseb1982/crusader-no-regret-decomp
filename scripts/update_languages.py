@@ -106,6 +106,9 @@ def sections():
     dtable = (root / 'src/core/dtable.cpp').read_text(encoding='utf-8')
     for title, tables in (('item names, No Regret', ('kRegretItemNames', 'kRegretAmmoNames', 'kRegretFamily12Names')),
                           ('item names, No Remorse', ('kItemNames', 'kAmmoNames', 'kFamily12Names'))):
+        # The No Remorse port has no No Regret tables.
+        if not re.search(rf'\b{tables[0]}\s*=', dtable):
+            continue
         texts = [c_string(m) for table in tables for m in re.findall(LIT, string_array(dtable, table))]
         found.append((f'{title} (src/core/dtable.cpp)', texts))
 
