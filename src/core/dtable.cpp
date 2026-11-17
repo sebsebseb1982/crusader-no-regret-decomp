@@ -67,7 +67,7 @@ constexpr std::array<std::uint16_t, 6> kAmmoIcons = {0, 8, 10, 9, 11, 12};
 // The name pointer tables: DS:2350 .. DS:23F3 of the French CRUSADER.EXE,
 // DS:22EE .. DS:2391 of the US one, which also names family-12 records 2..4
 // ("INVALID" in the French one). The weapon names are the same in both; the
-// others are the US ones, the French ones are in languages/fr.txt.
+// others are the US ones, the French ones are in languages/fr/port.txt.
 constexpr std::array<const char*, 14> kWeaponNames = {
     "INVALID", "BA-40", "BA-41", "PA-21", "EM-4", "SG-A1", "RP-22",
     "RP-32",   "AR-7",  "GL-303", "PA-31", "PL-1", "AC-88", "UV-9",

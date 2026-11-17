@@ -287,7 +287,7 @@ void test_regret_movie() {
 }  // namespace
 
 int main() {
-    set_languages_dir(CRUSADER_LANGUAGES_DIR);  // the French texts (languages/fr.txt)
+    set_languages_dir(CRUSADER_LANGUAGES_DIR);  // the French texts (languages/fr/port.txt)
     test_regret_movie();
     test_keypad_digit_spacing();
     test_vibration_settings();

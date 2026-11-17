@@ -1,6 +1,7 @@
 // Game configuration parsing and writing, data detection, language files (no
 // game data).
 
+#include "core/data_files.hpp"
 #include "core/data_info.hpp"
 #include "core/game_config.hpp"
 #include "core/iso_image.hpp"
@@ -365,16 +366,20 @@ void check_languages() {
     const auto dir = std::filesystem::temp_directory_path() / "crusader_core_tests_languages";
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
-    std::ofstream(dir / "pt-BR.txt", std::ios::binary) << "@name = PORTUGUES\nBACK = VOLTAR\n";
-    std::ofstream(dir / "fr.txt", std::ios::binary) << "@name = FRANCAIS\nBACK = RETOUR\nON = MARCHE\n";
-    std::ofstream(dir / "en.txt", std::ios::binary) << "@name = ENGLISH\nBACK = BACK\n";
-    std::ofstream(dir / "de.txt", std::ios::binary) << "ON = AN\n";
+    // A folder per language: port.txt, and data files in subfolders.
+    for (const char* id : {"pt-BR/STATIC", "fr", "en", "de"}) std::filesystem::create_directories(dir / id);
+    std::ofstream(dir / "pt-BR/port.txt", std::ios::binary) << "@name = PORTUGUES\nBACK = VOLTAR\n";
+    std::ofstream(dir / "pt-BR/STATIC/FONTS.FLX", std::ios::binary) << "x";
+    std::ofstream(dir / "fr/port.txt", std::ios::binary) << "@name = FRANCAIS\nBACK = RETOUR\nON = MARCHE\n";
+    std::ofstream(dir / "en/port.txt", std::ios::binary) << "@name = ENGLISH\nBACK = BACK\n";
+    std::ofstream(dir / "not-a-folder.txt", std::ios::binary) << "ON = AN\n";
     set_languages_dir(dir);
     const std::vector<LanguageChoice> choices = language_choices();
     check(choices.size() == 5 && choices[0].id.empty() && choices[0].name == "AUTO" && choices[1].id == "de" &&
               choices[1].name == "DE" && choices[2].id == "en" && choices[3].id == "fr" &&
-              choices[3].name == "FRANCAIS" && choices[4].id == "pt-br" && choices[4].name == "PORTUGUES",
-          "languages: auto, then the files by id");
+              choices[3].name == "FRANCAIS" && !choices[3].data_files && choices[4].id == "pt-br" &&
+              choices[4].name == "PORTUGUES" && choices[4].data_files,
+          "languages: auto, then the folders by id");
 
     // Auto: the file of the data's language.
     set_text_language(Language::English);
@@ -389,19 +394,36 @@ void check_languages() {
     select_language("xx");
     check(selected_language().id.empty() && std::string(tr("BACK")) == "RETOUR", "tr: unknown language, auto");
     check(std::string(back) == "VOLTAR", "tr: texts handed out stay valid");
+    // Data files: read at start-up, a restart for another language's.
+    check(language_data_folder("PT-BR") == dir / "pt-BR" && language_data_folder("fr").empty() &&
+              language_data_folder("").empty(),
+          "languages: the folder of the data files");
+    set_loaded_data_language("");
+    select_language("fr");
+    check(!language_needs_restart(), "languages: no data files, no restart");
+    select_language("pt-br");
+    check(language_needs_restart(), "languages: data files picked, restart");
+    set_loaded_data_language("pt-br");
+    check(!language_needs_restart(), "languages: data files read");
+    select_language("");
+    check(language_needs_restart(), "languages: back to auto, restart");
+    set_loaded_data_language("");
+    const DataFiles files(dir / "data", dir / "mod", language_data_folder("pt-br"));
+    check(files.find("STATIC/FONTS.FLX") == dir / "pt-BR/STATIC/FONTS.FLX" &&
+              files.find("STATIC/GUMPS.FLX") == dir / "data/STATIC/GUMPS.FLX",
+          "data files: the language's copy, else the data's");
     // No folder: English.
     set_languages_dir({});
     check(std::string(tr("BACK")) == "BACK", "tr: no language files");
-    select_language("");
     std::filesystem::remove_all(dir);
 
     // The files of the repository: French complete, two-text editor form.
     set_languages_dir(CRUSADER_LANGUAGES_DIR);
     check(std::string(tr("<MORE>")) == "-SUITE-" && std::string(tr("Credits:%ld")) == "Cr\x82" "dits :%ld",
-          "languages/fr.txt read, in code page 850");
+          "languages/fr/port.txt read, in code page 850");
     set_text_language(Language::English);
     check(std::string(tr("<MORE>")) == "<MORE>" && std::string(tr("RETOUR", "BACK")) == "BACK",
-          "languages/en.txt read; the editor's texts");
+          "languages/en/port.txt read; the editor's texts");
     set_text_language(Language::French);
     set_languages_dir({});
 

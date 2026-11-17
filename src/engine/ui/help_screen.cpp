@@ -22,12 +22,12 @@ constexpr int kSounds[] = {0xB8, 0x62, 0x67, 0xA, 0xB};
 }  // namespace
 
 // @orig 1008:3B08 (No Regret's "static/help1.bmp" .. "help5.bmp", DS:0206..022E)
-HelpScreen::Pictures HelpScreen::Pictures::load(const std::filesystem::path& static_dir) {
+HelpScreen::Pictures HelpScreen::Pictures::load(const DataFiles& files) {
     Pictures p;
-    const bool bmp = std::filesystem::exists(static_dir / "HELP1.BMP");
+    const bool bmp = std::filesystem::exists(files.find("STATIC/HELP1.BMP"));
     for (int i = 0; i < (bmp ? kRegretPages : 3); ++i) {
         try {
-            const auto file = read_file(static_dir / ("HELP" + std::to_string(i + 1) + (bmp ? ".BMP" : ".DAT")));
+            const auto file = read_file(files.find("STATIC/HELP" + std::to_string(i + 1) + (bmp ? ".BMP" : ".DAT")));
             p.pages[i] = Page{read_bmp8(file), read_bmp_palette(file)};
         } catch (const std::exception&) {
             // missing or unreadable: the page stays black

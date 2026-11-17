@@ -54,6 +54,7 @@
 // gives it, Escape (B) leaves the slot as it was, and a keyboard plugged in
 // can still edit it.
 
+#include "core/data_files.hpp"
 #include "core/font.hpp"
 #include "core/palette.hpp"
 #include "core/surface.hpp"
@@ -91,7 +92,7 @@ public:
     };
     struct Pictures {
         std::array<std::optional<Page>, 2> pages;
-        static Pictures load(const std::filesystem::path& static_dir);
+        static Pictures load(const DataFiles& files);
     };
 
     struct Rect {

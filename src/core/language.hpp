@@ -6,10 +6,12 @@
 //
 // Port addition: those texts, and the ones of the port's own screens, are
 // written in English in the code (tr("BACK")) and translated by the language
-// files of the "languages" folder (translation.hpp; docs/TRANSLATING.md):
-// fr.txt holds the French executable's texts. The player picks the language
-// in the enhancements window ("language" in CRUSADER.CFG): AUTO, the default,
-// takes the data's (fr.txt or en.txt). The data's language still places the
+// folders of the "languages" folder (docs/TRANSLATING.md): languages/<id>/
+// holds port.txt, the texts (translation.hpp; fr/port.txt: the French
+// executable's), and may hold data files that replace the data's
+// (data_files.hpp). The player picks the language in the enhancements window
+// ("language" in CRUSADER.CFG): AUTO, the default, takes the texts of the
+// data's (fr or en) and no data files. The data's language still places the
 // buttons (us_version).
 
 #include <filesystem>
@@ -44,18 +46,26 @@ inline bool us_version() { return text_language() == Language::English; }
 bool regret_data();
 void set_regret_data(bool regret);
 
-// The languages offered: "" (AUTO, the data's), then the files of the
-// languages folder ("<id>.txt", ids in lower case), by id.
+// The languages offered: "" (AUTO, the data's), then the folders of the
+// languages folder (ids: their names in lower case), by id.
 struct LanguageChoice {
-    std::string id;    // as written in CRUSADER.CFG
-    std::string name;  // as shown (code page 850): the file's "@name"
+    std::string id;           // as written in CRUSADER.CFG
+    std::string name;         // as shown (code page 850): port.txt's "@name"
+    bool data_files = false;  // the folder has data files (a subfolder)
 };
 void set_languages_dir(const std::filesystem::path& dir);
 std::vector<LanguageChoice> language_choices();
-// Picks a language by id (any case); an unknown one, or a file that cannot be
-// read, gives AUTO (with a message on stderr). The files are read again after
-// each pick, so a translator sees the changes.
+// Picks a language by id (any case); an unknown one, or a port.txt that
+// cannot be read, gives AUTO (with a message on stderr). The texts change at
+// once, and are read again after each pick, so a translator sees the changes.
 void select_language(std::string_view id);
 const LanguageChoice& selected_language();
+
+// The folder of language `id` when it has data files, else empty. The game
+// reads them at start-up (Game's constructor), and says which it read: a
+// language picked afterwards needs a restart for its data files.
+std::filesystem::path language_data_folder(std::string_view id);
+void set_loaded_data_language(std::string_view id);
+bool language_needs_restart();
 
 }  // namespace crusader

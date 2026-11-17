@@ -244,6 +244,13 @@ void EnhancementsScreen::draw(Surface8& screen) const {
         print_tinted(screen, *fonts_, r.x0 + kRowPad, r.y0 + kTextDrop, name, tint);
         print_tinted(screen, *fonts_, r.x1 + 1 - kRowPad - writer.measure(value).width, r.y0 + kTextDrop, value, tint);
     }
+    // The language's data files (pictures, scripts, subtitles...) are read at
+    // start-up: under the window, a note when the one picked differs.
+    if (page_ == Page::Game && language_needs_restart()) {
+        const std::string note = tr("RESTART TO LOAD ITS GAME FILES");
+        const int width = TextWriter(*fonts_, kFont).measure(note).width;
+        print_tinted(screen, *fonts_, (screen.width - width) / 2, panel_y1 + 30, note, kDimGreen);
+    }
 }
 
 // @orig none: port-only enhancements window

@@ -38,6 +38,7 @@
 // other key turns to the next page. No hidden page and no sounds (No
 // Remorse's 13E8:3EC8 has no counterpart).
 
+#include "core/data_files.hpp"
 #include "core/palette.hpp"
 #include "engine/ui/modal_gump.hpp"
 #include "engine/ui/shape_dialog.hpp"
@@ -65,7 +66,7 @@ public:
     // HELP1.BMP .. HELP5.BMP when HELP1.BMP is there (No Regret).
     struct Pictures {
         std::array<std::optional<Page>, kRegretPages> pages;
-        static Pictures load(const std::filesystem::path& static_dir);
+        static Pictures load(const DataFiles& files);
     };
 
     // `random(n)` draws 0 .. n - 1 (random_range); `play_sfx` plays a sound.

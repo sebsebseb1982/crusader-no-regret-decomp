@@ -442,7 +442,7 @@ void test_load_screen(const std::filesystem::path& data) {
     const auto flex = FlexArchive::open(data / "STATIC/GUMPS.FLX");
     ShapeCache gumps(flex, ShapeLayout::Flat2D);
     const auto fonts = FontSet::load(data / "STATIC/FONTS.FLX");
-    const auto pictures = LoadScreen::Pictures::load(data / "STATIC");
+    const auto pictures = LoadScreen::Pictures::load(DataFiles(data));
     CHECK(pictures.pages[0] && pictures.pages[1]);
     LoadScreen::Names names{};
     names[1] = "TEST";
@@ -476,7 +476,7 @@ void test_help_screen(const std::filesystem::path& data) {
     set_regret_data(true);
     const auto flex = FlexArchive::open(data / "STATIC/GUMPS.FLX");
     ShapeCache gumps(flex, ShapeLayout::Flat2D);
-    const auto pictures = HelpScreen::Pictures::load(data / "STATIC");
+    const auto pictures = HelpScreen::Pictures::load(DataFiles(data));
     for (const auto& page : pictures.pages) CHECK(page && page->picture.width == 640 && page->picture.height == 480);
     std::vector<int> sounds;
     HelpScreen help(gumps, pictures, [](int) { return 0; }, [&sounds](int sfx) { sounds.push_back(sfx); });
@@ -496,7 +496,7 @@ void test_help_screen(const std::filesystem::path& data) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    set_languages_dir(CRUSADER_LANGUAGES_DIR);  // the French texts (languages/fr.txt)
+    set_languages_dir(CRUSADER_LANGUAGES_DIR);  // the French texts (languages/fr/port.txt)
     if (argc < 2 || !std::filesystem::exists(std::filesystem::path(argv[1]) / "STATIC")) {
         std::printf("regret_data_tests: no game data, skipped\n");
         return 0;

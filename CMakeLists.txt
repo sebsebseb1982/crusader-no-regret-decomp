@@ -42,6 +42,7 @@ add_library(crusader_core
   src/core/dtable.cpp
   src/core/language.cpp
   src/core/translation.cpp
+  src/core/data_files.cpp
   src/core/typeflags.cpp
   src/core/trig.cpp
   src/core/random.cpp

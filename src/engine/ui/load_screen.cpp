@@ -45,12 +45,12 @@ LoadScreen::Names LoadScreen::read_names(const std::filesystem::path& savegame_d
 }
 
 // @orig 13C0:000E
-LoadScreen::Pictures LoadScreen::Pictures::load(const std::filesystem::path& static_dir) {
+LoadScreen::Pictures LoadScreen::Pictures::load(const DataFiles& files) {
     Pictures p;
-    const char* const files[] = {"SAVE.BMP", "LOAD.BMP"};
+    const char* const names[] = {"SAVE.BMP", "LOAD.BMP"};
     for (int i = 0; i < 2; ++i) {
         try {
-            const auto file = read_file(static_dir / files[i]);
+            const auto file = read_file(files.find(std::string("STATIC/") + names[i]));
             Page page{read_bmp8(file), read_bmp_palette(file)};
             // 13C0:024E: entries 0 and 255 black before palette_write_hw.
             page.palette.colors[0] = Rgb{0, 0, 0};

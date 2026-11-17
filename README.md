@@ -95,9 +95,9 @@ data/
 
 ### 4. Language
 
-The menus the port adds and the texts the original keeps in its executable (item names, some messages) come from the files of the `languages` folder next to the executable, one per language (`en.txt`, `fr.txt`...). By default (AUTO) they follow the game data's language. Another one can be picked in the game: **Options**, **+** (Enhancements), **Game**, **Language**.
+The `languages` folder next to the executable holds one folder per language (`en`, `fr`...). Each one has the texts the port prints itself (`port.txt`: its menus, and the texts the original keeps in its executable), and may hold translated game data files (pictures, fonts, subtitles, terminal texts) that replace the data's. By default (AUTO) the game follows the data's language. Another one can be picked in the game: **Options**, **+** (Enhancements), **Game**, **Language**.
 
-To add a language, see [docs/TRANSLATING.md](docs/TRANSLATING.md): it also explains which texts are in the game data (subtitles, computer terminals, menu pictures) and how they are translated.
+To translate the game, see [docs/TRANSLATING.md](docs/TRANSLATING.md).
 
 ## Building from source
 
