@@ -87,6 +87,9 @@ public:
     // Port addition, written only when set: "bloodmarks", the wounded bleed
     // on the scenery (damage_marks.hpp) while the violence option is on.
     bool blood_marks = false;
+    // Port addition, written only when set: "goremode", with the blood, much
+    // more of it (DamageMarks::bleed).
+    bool gore_mode = false;
     // Port addition, written when not 0: "viewzoom", the largest pixel size of
     // the native view, in hundredths of a screen pixel per game pixel (100 = x1,
     // 150 = x1.5, 200 = x2...); written as "1", "1.5", "2". 0 takes the biggest
