@@ -25,6 +25,7 @@
 #include "core/language.hpp"
 #include "core/png_writer.hpp"
 #include "crusader_version.hpp"
+#include "engine/ui/christmas_hat.hpp"
 #include "engine/world/inventory.hpp"
 #include "engine/audio/audio.hpp"
 #include "game/game.hpp"
@@ -182,12 +183,19 @@ int main(int argc, char** argv) {
             set_languages_dir(languages);
         }
         Game game(data, {}, mod);
-        // No Regret plays "xmas" as map music from 24 to 31 December (STDINT 1210:0000).
-        if (Audio* audio = game.audio()) {
+        // No Regret plays "xmas" as map music from 24 to 31 December (STDINT
+        // 1210:0000); the port's menu hat of both games takes the same dates.
+        {
             const std::time_t now = std::time(nullptr);
-            if (const std::tm* date = std::localtime(&now)) {
-                audio->music.set_christmas(date->tm_mon == 11 && date->tm_mday >= 24);
-            }
+            std::tm date{};
+#ifdef _WIN32
+            const bool known = localtime_s(&date, &now) == 0;
+#else
+            const bool known = localtime_r(&now, &date) != nullptr;
+#endif
+            const bool christmas = known && is_christmas(date);
+            if (Audio* audio = game.audio()) audio->music.set_christmas(christmas);
+            game.set_christmas(christmas);
         }
         game.set_port_version(CRUSADER_VERSION);
         game.set_auto_save_names(auto_save_names);

@@ -53,6 +53,9 @@ public:
     // 0 once Ctrl+M stepped the tracks).
     void force_christmas(bool forced) { christmas_forced_ = forced; }
     void allow_christmas(bool allowed) { christmas_allowed_ = allowed; }
+    // Also the port's Christmas mode of both games: the menu's hat
+    // (christmas_hat.hpp), gone once Ctrl+M cleared it.
+    bool christmas_allowed() const { return christmas_allowed_; }
     // 1210:0000.
     bool christmas() const { return christmas_forced_ || christmas_; }
     // I_playMusic of No Regret (1210:01A2): `track`, or the player's map's
