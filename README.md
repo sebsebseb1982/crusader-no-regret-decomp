@@ -4,6 +4,8 @@
 
 A C++20/SDL2 reimplementation of the *Crusader: No Regret* (Origin, 1996) engine for Windows and Linux. The project is an **early work in progress: the game is not fully playable yet** (see [Status](#status)).
 
+> **Sister project:** the first game, *Crusader: No Remorse*, has its own port, playable from start to finish, in [crusader-no-remorse-decomp](https://github.com/sebsebseb1982/crusader-no-remorse-decomp). This port starts from it.
+
 ![First map of No Regret drawn by the port](docs/images/screenshot.png)
 
 This repository contains **no game files**: you need your own copy of the original game. The following version is currently supported:
