@@ -18,8 +18,9 @@
 //   bilinear filtering, and "suivi camera" (GameConfig::follow_player): the
 //   controlled NPC stays at the centre of the screen;
 // - "effets": "impacts" (GameConfig::impact_marks): shots mark the scenery,
-//   and "sang" (GameConfig::blood_marks, gore_mode): off, the wounded
-//   bleed on it, or "gore": much more;
+//   "sang" (GameConfig::blood_marks, gore_mode): off, the wounded
+//   bleed on it, or "gore": much more, and "douilles" (GameConfig::casings):
+//   firearms eject casings that stay on the floor (casings.hpp);
 // - "jeu": "sauvegarde auto" (GameConfig::autosave): the game saves itself at
 //   the key moments of a mission, and "langue" (GameConfig::language): the
 //   language of the port's texts, auto (the data's), then the others offered
@@ -68,7 +69,7 @@ public:
         // Display.
         Native, Zoom, Smooth, Follow,
         // Effects.
-        Impact, Blood,
+        Impact, Blood, Casings,
         // Game.
         Autosave, Language,
         // Cheats.
