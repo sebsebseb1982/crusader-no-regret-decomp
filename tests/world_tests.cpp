@@ -1611,6 +1611,9 @@ void test_casings() {
     CHECK(ejection_of(0xB) == Ejection::Casing && ejection_of(1) == Ejection::Casing);
     CHECK(ejection_of(2) == Ejection::Shell && ejection_of(0xD) == Ejection::Shell);
     CHECK(ejection_of(0xA) == Ejection::None && ejection_of(3) == Ejection::None && ejection_of(6) == Ejection::None);
+    // No Regret: BK-16 (0x10) and LNR-81 (0x11) eject casings, XP-5 (0x14) nothing.
+    CHECK(ejection_of(0x10) == Ejection::Casing && ejection_of(0x11) == Ejection::Casing);
+    CHECK(ejection_of(0x14) == Ejection::None);
     // Lying: a casing of two brass pixels, a shell of three (its head
     // brass), each with a pixel of shadow.
     for (std::uint32_t seed = 0; seed < 4; ++seed) {

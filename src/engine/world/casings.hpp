@@ -9,8 +9,9 @@
 // The weapons that eject are those firing bullets (fire types 1, 2, 0xB,
 // 0xD, as mark_kind): BA-40, BA-41 (0xB), RP-22, RP-32 (1) eject casings, the
 // SG-A1 (2) and the AC-88 (0xD), which fire several pellets, shells. Whoever
-// fires them ejects: the player, an NPC, a robot. No Regret's new weapons
-// (BK-16, LNR-81, XP-5: fire types 0x10, 0x11, 0x14) eject nothing. The
+// fires them ejects: the player, an NPC, a robot. Of No Regret's new
+// weapons, the BK-16 and LNR-81 (fire types 0x10, 0x11), which fire from
+// clips, eject casings too; the XP-5 (0x14), an energy weapon, nothing. The
 // flight starts at the muzzle pulled back towards the shooter, at its
 // height, and lands at the
 // height of the shooter's feet when it fired: on the floor there, if any

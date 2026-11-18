@@ -29,6 +29,9 @@ int screen_y(double x, double y, double z) { return static_cast<int>(std::floor(
 
 // @orig none: port-only casings
 Ejection ejection_of(int fire_type) {
+    // No Regret's BK-16 (0x10) and LNR-81 (0x11) fire cartridges from clips
+    // too, though their shots leave no bullet hole.
+    if (fire_type == 0x10 || fire_type == 0x11) return Ejection::Casing;
     if (mark_kind(fire_type) != MarkKind::Bullet) return Ejection::None;
     const dtable::FireType* ft = dtable::fire_type(fire_type);
     return ft && ft->projectiles() > 1 ? Ejection::Shell : Ejection::Casing;

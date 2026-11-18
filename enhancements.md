@@ -398,7 +398,8 @@ The original ejects nothing. With this option every shot of a firearm throws out
 
 **Which weapons**
 - The weapons that fire bullets (fire types 1, 2, 0xB, 0xD, the same as the bullet holes of section 7b). BA-40, BA-41 (type 0xB), RP-22 and RP-32 (type 1) eject a brass casing. SG-A1 (type 2) and AC-88 (type 0xD) fire several pellets and eject a red shell with a brass head.
-- Energy weapons and explosives (PA-21, EM-4, PL-1, PA-31, UV-9, AR-7, GL-303, and No Regret's BK-16, LNR-81 and XP-5: fire types 0x10, 0x11, 0x14) eject nothing.
+- No Regret's BK-16 and LNR-81 (fire types 0x10 and 0x11), which fire from clips, eject a brass casing too, though their shots leave no bullet hole.
+- Energy weapons and explosives (PA-21, EM-4, PL-1, PA-31, UV-9, AR-7, GL-303, and No Regret's XP-5, fire type 0x14) eject nothing.
 - Whoever fires ejects: the player, an NPC or a robot. The pump of the SG-A1 is not shown: its shell flies out with the shot.
 
 **Flight**
