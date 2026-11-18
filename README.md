@@ -8,9 +8,10 @@ A C++20/SDL2 reimplementation of the *Crusader: No Regret* (Origin, 1996) engine
 
 ![First map of No Regret drawn by the port](docs/images/screenshot.png)
 
-This repository contains **no game files**: you need your own copy of the original game. The following version is currently supported:
+This repository contains **no game files**: you need your own copy of the original game. The following versions are currently supported:
 
 - The **English version 1.06** (CD) — ISO SHA-256: `8EBA7BB0956D539AA841E5D483A6F39222DD6615BA78478544FA516FD7467EBF`
+- The **German version 1.07** (CD) — BIN/CUE image, `.bin` SHA-256: `680E9A5EBEF821C869001C419C68DF961C9D822B70EDB4921C83DD3AFAEEAB53`. Its `REGRET.EXE` is the English one translated; the game itself is not cut (same scripts, maps and tables), only its pictures, voices, movies and texts are German. As in the original, the violence (burning and blown-apart deaths, death cries) is off unless `CRUSADER.CFG` says `violence=true`, as the German installer writes when asked.
 
 ## How this port is made
 
@@ -27,7 +28,7 @@ This repository contains **no game files**: you need your own copy of the origin
 
 | Area | State |
 |---|---|
-| Game data recognised (`REGRET.EXE`, 1.06) | done |
+| Game data recognised (`REGRET.EXE`, English 1.06 and German 1.07) | done |
 | Usecode: the 350 intrinsics numbered; 336 share a routine with No Remorse | done |
 | Intrinsics that exist only in No Regret | 14 of 14 bound |
 | NPC records (45 equipment slots), weapon, item and fire type tables of `REGRET.EXE` | done |
@@ -69,7 +70,7 @@ Download the archive for your system (Windows, Linux or PortMaster) from the [la
 
 ### 2. Provide the game data
 
-Copy the **entire contents** of the No Regret CD (English 1.06) into `data/`:
+Copy the **entire contents** of the No Regret CD (English 1.06 or German 1.07) into `data/`, or put the CD image there (see below):
 
 ```
 crusader(.exe)
@@ -83,7 +84,9 @@ data/
 └── SAVEGAME/           saved games (optional for a new game)
 ```
 
-`XANDRV32.DLL` and `ASYLUM.DLL` are not needed: the port rewrites the movie decoder and the sound driver. Installing from the CD image (`.iso`), as the No Remorse port does, is not checked on No Regret yet.
+`XANDRV32.DLL` and `ASYLUM.DLL` are not needed: the port rewrites the movie decoder and the sound driver.
+
+Instead of the files, `data/` may hold the image of the CD (`.iso`, or `.bin` with its `.cue` sheet), or the image can be given on the command line (`./crusader data "Crusader - No Regret (Germany).cue"`): when `data/` has no `STATIC/` folder, the game extracts the image into it on its first launch.
 
 ### 3. Launch
 
@@ -97,7 +100,7 @@ data/
 
 ### 4. Language
 
-The `languages` folder next to the executable holds one folder per language (`en`, `fr`...). Each one has the texts the port prints itself (`port.txt`: its menus, and the texts the original keeps in its executable), and may hold translated game data files (pictures, fonts, subtitles, terminal texts) that replace the data's. By default (AUTO) the game follows the data's language. Another one can be picked in the game: **Options**, **+** (Enhancements), **Game**, **Language**.
+The `languages` folder next to the executable holds one folder per language (`en`, `fr`, `de`...). Each one has the texts the port prints itself (`port.txt`: its menus, and the texts the original keeps in its executable), and may hold translated game data files (pictures, fonts, subtitles, terminal texts) that replace the data's. By default (AUTO) the game follows the data's language. Another one can be picked in the game: **Options**, **+** (Enhancements), **Game**, **Language**.
 
 To translate the game, see [docs/TRANSLATING.md](docs/TRANSLATING.md).
 
@@ -119,6 +122,7 @@ The tests come in three groups:
 
 - `tests/`: no game data needed.
 - `e2e/regret_data_tests`: the No Regret data (`-DCRUSADER_DATA_DIR=…`; defaults to `data/`), registered only when it is found.
+- `e2e/regret_de_data_tests`: the German No Regret data (`-DCRUSADER_DE_DATA_DIR=…`; defaults to `data_de/`), registered only when it is found.
 - The other `e2e/` tests come from the No Remorse port and need the No Remorse data (French 1.08) and saved games: `-DCRUSADER_REMORSE_DATA_DIR=…` (defaults to `data_remorse/`) and `-DCRUSADER_TEST_SAVES_DIR=…`. They are registered as `remorse_*` and guard the code both games share.
 
 In addition to `crusader`, the build produces several tools: `shapeview` (shape viewer), `mapview` (map viewer), `ucsmoke` and `useprobe` (script execution), `diffcheck` (comparison with the original), and the level editor `crusader-editor`.

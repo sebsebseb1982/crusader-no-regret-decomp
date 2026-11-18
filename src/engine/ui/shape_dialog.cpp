@@ -17,9 +17,10 @@ struct YesNo {
 // World_on_key gives the places: in the French executable the quit question
 // has its own (13E8:159A), the quick load and save ones share theirs
 // (13E8:1ACD, 1BAB); the US one uses the same for the three, and No Regret
-// (1008:1565) its own for the three, lower.
+// (1008:1565) its own for the three, lower; the German No Regret moves "no"
+// left for its German pictures.
 YesNo yes_no_places(std::uint16_t shape) {
-    if (regret_data()) return {44, 99, 78};
+    if (regret_data()) return {44, german_version() ? 85 : 99, 78};
     if (us_version()) return {55, 135, kButtonY};
     if (shape == ShapeDialog::kQuitQuestion) return {57, 125, kButtonY};
     return {49, 121, kButtonY};
@@ -99,7 +100,9 @@ ShapeDialog::ShapeDialog(ShapeCache& gumps, std::uint16_t shape, bool question)
         buttons_.buttons.emplace_back(gumps, kYesShape, 1, x + p.yes_x, y + p.y);
         buttons_.buttons.emplace_back(gumps, kNoShape, 0, x + p.no_x, y + p.y);
     } else if (regret_data()) {
-        buttons_.buttons.emplace_back(gumps, kOkShape, 1, x + 74, y + 64);  // No Regret (1008:1565)
+        // No Regret (1008:1565); the German one at (63, 78).
+        if (german_version()) buttons_.buttons.emplace_back(gumps, kOkShape, 1, x + 63, y + 78);
+        else buttons_.buttons.emplace_back(gumps, kOkShape, 1, x + 74, y + 64);
     } else {
         buttons_.buttons.emplace_back(gumps, kOkShape, 1, x + kOkX, y + kButtonY);
     }

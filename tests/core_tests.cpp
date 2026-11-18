@@ -67,6 +67,10 @@ void check_config() {
           "config violence");
     check(GameConfig::parse("violence=no\r\n").text().find("violence=false\r\n") != std::string::npos,
           "config violence written");
+    // Whether the file has the key (the German data's violence is off without it).
+    check(GameConfig::parse("VIOLENCE=1\r\n").has("violence") &&
+              !GameConfig::parse("irq=7\r\n# violence=1\r\n").has("violence"),
+          "config has a key");
 
     // No Regret's "moviehicolor": "true", "1" or "yes"; written either way.
     check(GameConfig::parse("moviehicolor=true\r\n").movie_hicolor && GameConfig::parse("moviehicolor=1\r\n").movie_hicolor &&
@@ -246,9 +250,25 @@ void check_iso() {
     // The GOG release's image is GAME.GOG: an ISO under another extension.
     fs::create_directories(dir / "gog");
     fs::copy_file(dir / "t.iso", dir / "gog/GAME.GOG");
-    check(is_disc_image("GAME.GOG") && is_disc_image("x.Iso") && !is_disc_image("x.bin"), "disc images by extension");
+    check(is_disc_image("GAME.GOG") && is_disc_image("x.Iso") && is_disc_image("x.bin") && is_disc_image("x.CUE") &&
+              !is_disc_image("x.img"),
+          "disc images by extension");
     prepare_game_data(dir / "gog");
     check(fs::exists(dir / "gog/D/B.BIN"), "prepare_game_data extracts the GAME.GOG of data/");
+    // A .bin of raw 2352-byte sectors (sync and header, 2048 bytes of data,
+    // error codes), opened through its .cue sheet (the German CD's image).
+    {
+        std::vector<char> raw(24 * 2352, 0);
+        for (std::size_t s = 0; s < 24; ++s) std::memcpy(&raw[s * 2352 + 16], &img[s * 2048], 2048);
+        fs::create_directories(dir / "cue");
+        std::ofstream(dir / "cue/Game (Disc).bin", std::ios::binary).write(raw.data(), raw.size());
+        std::ofstream(dir / "cue/Game (Disc).cue") << "FILE \"Game (Disc).bin\" BINARY\n  TRACK 01 MODE1/2352\n";
+        const IsoImage iso = IsoImage::open(dir / "cue/Game (Disc).cue");
+        iso.extract(dir / "cue/out", {});
+        std::string a;
+        std::ifstream(dir / "cue/out/A.TXT") >> a;
+        check(iso.files().size() == 2 && a == "hello", "a .cue sheet opens its raw .bin image");
+    }
     prepare_game_data(dir / "fresh");
     check(fs::exists(dir / "fresh/PUT_GAME_DATA_HERE.txt"), "prepare_game_data creates data/ with its note");
     std::error_code ignored;
@@ -275,8 +295,20 @@ void check_data_info() {
     check(info.version == "1.08" && info.language == "FR", "French 1.08 told by its banner and message");
     info = exe("CRUSADER:  No Remorse V2.00");
     check(info.version == "2.00" && !info.known(), "an executable without a known text is unknown");
-
     fs::remove(dir / "CRUSADER.EXE");
+
+    // No Regret: REGRET.EXE, its version string, the joystick's message.
+    const auto regret = [&](const std::string& text) {
+        std::ofstream(dir / "REGRET.EXE", std::ios::binary) << text;
+        return detect_data_info(dir);
+    };
+    info = regret(std::string("CRUSADER:  No Regret %s\0V1.06\0", 30) + "[Press any key to continue.]");
+    check(info.regret && info.version == "1.06" && info.us() && info.text_language() == Language::English,
+          "No Regret 1.06 told by its version and message");
+    info = regret(std::string("CRUSADER:  No Regret %s\0V1.07\0", 30) + "[Beliebige Knopf pressen, um fortzufahren.]");
+    check(info.regret && info.version == "1.07" && info.german() && info.text_language() == Language::German,
+          "German No Regret 1.07 told by its version and message");
+    fs::remove(dir / "REGRET.EXE");
     const auto table = [&](std::size_t entries) {
         std::ofstream(dir / "USECODE/UNKCOFF.DAT", std::ios::binary) << std::string(entries * 4, '\0');
         return detect_data_info(dir);
@@ -289,6 +321,16 @@ void check_data_info() {
     check(info.language == "FR" && info.version.empty(), "without the executable, 309 intrinsics: French");
     info = table(300);
     check(!info.known(), "without the executable, another table size is unknown");
+    info = table(350);
+    check(info.regret && info.us(), "without the executable, 350 intrinsics: No Regret");
+    {
+        std::string german(350 * 4, '\0');
+        german[319 * 4] = 0x73;  // 13F0:0073 I_numToStr, segment 127
+        german[319 * 4 + 2] = 127;
+        std::ofstream(dir / "USECODE/UNKCOFF.DAT", std::ios::binary) << german;
+        info = detect_data_info(dir);
+        check(info.regret && info.german(), "without the executable, entry 319 tells the German No Regret table");
+    }
     fs::remove(dir / "USECODE/UNKCOFF.DAT");
     check(!detect_data_info(dir).known(), "no executable and no usecode: unknown");
     std::error_code ignored;
@@ -340,6 +382,11 @@ void check_xan() {
     const std::vector<RegretSubtitle> subs = parse_regret_movie_subtitles(iff);
     check(subs.size() == 2 && subs[0].frame == 5 && subs[0].text == "Hi" && subs[1].frame == 9 && subs[1].text.empty(),
           "regret subtitles: the English entries");
+    // The German executable reads the "GERM" chunk (as the original, the entries
+    // run on past the chunk, to a negative frame); a missing chunk gives none.
+    const std::vector<RegretSubtitle> fren = parse_regret_movie_subtitles(iff, "FREN");
+    check(!fren.empty() && fren[0].frame == 5 && fren[0].text == "X", "regret subtitles: another language's chunk");
+    check(parse_regret_movie_subtitles(iff, "GERM").empty(), "regret subtitles: no such chunk");
 }
 
 // Language files (port addition): parsing, code page 850, picking a language.

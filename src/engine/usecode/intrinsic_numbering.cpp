@@ -1,6 +1,7 @@
 #include "engine/usecode/intrinsic_numbering.hpp"
 
 #include "engine/usecode/regret_intrinsic_numbering.hpp"
+#include "engine/usecode/usecode_file.hpp"
 #include "engine/usecode/v101_intrinsic_numbering.hpp"
 
 #include <array>
@@ -325,6 +326,19 @@ constexpr std::array<std::uint16_t, 311> kUsToFrench = {
     0x134,  // 136 0
 };
 
+// The German No Regret usecode (1.07): the English table but for the entry of
+// I_numToStr (English 0x153) moved to 0x13F, English 0x13F..0x152 moved one
+// place up (USECODE/UNKCOFF.DAT of the two releases).
+constexpr std::uint16_t kGermanNumToStr = 0x13F, kEnglishNumToStr = 0x153;
+// @orig none: the German usecode's numbers, from the English ones
+constexpr std::array<std::uint16_t, 350> german_regret_numbering() {
+    std::array<std::uint16_t, 350> out = kRegretToFrench;
+    out[kGermanNumToStr] = kRegretToFrench[kEnglishNumToStr];
+    for (std::uint16_t n = kGermanNumToStr + 1; n <= kEnglishNumToStr; ++n) out[n] = kRegretToFrench[n - 1];
+    return out;
+}
+constexpr std::array<std::uint16_t, 350> kGermanRegretToFrench = german_regret_numbering();
+
 }  // namespace
 
 // @orig none: the US usecode calls the routines of UNKCOFF.DAT under its own numbers
@@ -336,9 +350,15 @@ std::span<const std::uint16_t> v101_intrinsic_numbering() { return kV101ToFrench
 // @orig none: the No Regret usecode, likewise
 std::span<const std::uint16_t> regret_intrinsic_numbering() { return kRegretToFrench; }
 
+// @orig none: the German No Regret usecode, likewise
+std::span<const std::uint16_t> german_regret_intrinsic_numbering() { return kGermanRegretToFrench; }
+
+// @orig none: class 0x0A1D is TEXTFIL3 in the German usecode, FREE in the English one
+bool german_regret_usecode(const UsecodeFile& usecode) { return usecode.class_name(0x0A1D) == "TEXTFIL3"; }
+
 // @orig none: port-only choice of the numbering
 std::span<const std::uint16_t> intrinsic_numbering(const DataInfo& info) {
-    if (info.regret) return regret_intrinsic_numbering();
+    if (info.regret) return info.german() ? german_regret_intrinsic_numbering() : regret_intrinsic_numbering();
     if (info.v101()) return v101_intrinsic_numbering();
     if (info.us()) return us_intrinsic_numbering();
     return {};

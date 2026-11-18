@@ -250,7 +250,7 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     // played with the French numbers, other data calls the wrong routines.
     if (!info.known()) {
         throw std::runtime_error("unrecognised game data in '" + data.string() +
-                                 "': supported versions are French 1.08, US 1.23 and English 1.01");
+                                 "': supported versions are No Regret English 1.06 and German 1.07 (No Remorse: French 1.08, US 1.23 and English 1.01)");
     }
     data_version_ = info.version;
     data_language_ = info.language;
@@ -260,6 +260,14 @@ Game::Game(const std::filesystem::path& data, const std::filesystem::path& saves
     if (audio_) audio_->sources.set_max_sfx(regret_ ? 0x400 : 0x200);
     if (audio_) audio_->music.set_remorse(!regret_);
     intrinsic_numbering_ = intrinsic_numbering(info);
+    // No Regret: the numbering of the usecode in use, which a language
+    // folder may have replaced by another release's.
+    if (regret_) {
+        intrinsic_numbering_ = german_regret_usecode(usecode_) ? german_regret_intrinsic_numbering()
+                                                               : regret_intrinsic_numbering();
+    }
+    // "VIOLENCE=0" in the German executable (game_config.hpp).
+    if (regret_ && info.german() && !config_.has("violence")) config_.violence = false;
     set_text_language(info.text_language());
     set_regret_data(regret_);
     // The language whose data files were read (port addition).
@@ -1176,7 +1184,11 @@ void Game::play_regret_movie(const std::string& name, bool fade) {
         return;  // DSFXMAN_12d8_020a: no such movie, nothing happens
     }
     std::vector<RegretSubtitle> subtitles;
-    if (config_.subtitles) subtitles = load_regret_movie_subtitles(iff);
+    // The German executable reads the "GERM" texts (1448:008B). A language
+    // folder's subtitles are read from "ENGL" whatever the data (TRANSLATING.md).
+    const bool from_language = !files_.language().empty() && iff.parent_path().parent_path() == files_.language();
+    const std::string_view chunk = german_version() && !from_language ? "GERM" : "ENGL";
+    if (config_.subtitles) subtitles = load_regret_movie_subtitles(iff, chunk);
     std::string upper = name;
     for (char& c : upper) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     const bool big = config_.big_video && upper != "ORIGIN";

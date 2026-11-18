@@ -29,6 +29,17 @@ std::span<const std::uint16_t> v101_intrinsic_numbering();
 // REGRET.EXE with the French CRUSADER.EXE).
 std::span<const std::uint16_t> regret_intrinsic_numbering();
 
+// The same for the German No Regret usecode (1.07): the English numbers but
+// for I_numToStr (English 0x153) at 0x13F and English 0x13F..0x152 one place
+// up (data_info.hpp).
+std::span<const std::uint16_t> german_regret_intrinsic_numbering();
+
+// The No Regret usecode is the German one (its numbering above): its class
+// 0x0A1D is TEXTFIL3, the English one's FREE (the two classes swapped
+// numbers). Told from the usecode in use, as a language folder may replace it.
+class UsecodeFile;
+bool german_regret_usecode(const UsecodeFile& usecode);
+
 // The numbering of the usecode of the data `info` describes; empty for the
 // French data (its own numbers).
 std::span<const std::uint16_t> intrinsic_numbering(const DataInfo& info);

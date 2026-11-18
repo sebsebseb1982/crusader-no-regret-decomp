@@ -44,13 +44,16 @@ std::vector<MovieSubtitle> load_movie_subtitles(const std::filesystem::path& pat
 // the entries 8 bytes further: u32 frame, u8 length, then the text (with its
 // NUL). The entries go by increasing frame; the end of the file (the buffer
 // is filled with 0xFF past it, a negative frame) or a negative frame ends
-// them. An empty text clears the line. Only English is ever shown.
+// them. An empty text clears the line. The English executable only shows
+// English, the German one (1.07) only German: it looks for "GERM" (`chunk`).
 struct RegretSubtitle {
     std::int32_t frame = 0;
     std::string text;
 };
 
-std::vector<RegretSubtitle> parse_regret_movie_subtitles(std::span<const std::uint8_t> file);
-std::vector<RegretSubtitle> load_regret_movie_subtitles(const std::filesystem::path& path);
+std::vector<RegretSubtitle> parse_regret_movie_subtitles(std::span<const std::uint8_t> file,
+                                                         std::string_view chunk = "ENGL");
+std::vector<RegretSubtitle> load_regret_movie_subtitles(const std::filesystem::path& path,
+                                                        std::string_view chunk = "ENGL");
 
 }  // namespace crusader

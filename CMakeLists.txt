@@ -300,6 +300,15 @@ if(CRUSADER_GAME_DATA_TESTS)
     add_test(NAME regret_data_tests COMMAND regret_data_tests ${CRUSADER_DATA_DIR})
 endif()
 
+# The German No Regret data (v1.07), when found: the English executable
+# translated, its usecode numbering the intrinsics another way.
+set(CRUSADER_DE_DATA_DIR "${CMAKE_SOURCE_DIR}/data_de" CACHE PATH "German No Regret game data used by regret_de_data_tests")
+add_executable(regret_de_data_tests e2e/regret_de_data_tests.cpp)
+target_link_libraries(regret_de_data_tests PRIVATE crusader_game)
+if(EXISTS "${CRUSADER_DE_DATA_DIR}/STATIC")
+    add_test(NAME regret_de_data_tests COMMAND regret_de_data_tests ${CRUSADER_DE_DATA_DIR})
+endif()
+
 # The tests inherited from the No Remorse port check that engine with the No
 # Remorse data (French 1.08) and saved games. They guard the code both games
 # share, and are registered as remorse_* when that data is found.

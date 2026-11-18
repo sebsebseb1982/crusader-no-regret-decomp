@@ -56,9 +56,21 @@ constexpr std::array<Placement, OptionsScreen::kWidgets> kPlacementsRegret = {{
     {W::kMouseDown, 49, 435, 249},   {W::kMouseUp, 50, 597, 249},
     {W::kQuit, 43, 551, 318},
 }};
+// The German No Regret (13B8:0F53): "small" of the video line at x 126.
+constexpr std::array<Placement, OptionsScreen::kWidgets> kPlacementsRegretDe = {{
+    {W::kAnimationOn, 31, 35, 163},  {W::kAnimationOff, 32, 95, 163},
+    {W::kFrameSkipOn, 33, 35, 203},  {W::kFrameSkipOff, 34, 95, 203},
+    {W::kBlastsOn, 37, 35, 283},     {W::kBlastsOff, 38, 95, 283},
+    {W::kFilterOn, 39, 35, 323},     {W::kFilterOff, 40, 95, 323},
+    {W::kVideoBig, 35, 35, 243},     {W::kVideoSmall, 36, 126, 243},
+    {W::kSoundDown, 49, 435, 146},   {W::kSoundUp, 50, 597, 146},
+    {W::kMusicDown, 49, 435, 197},   {W::kMusicUp, 50, 597, 197},
+    {W::kMouseDown, 49, 435, 249},   {W::kMouseUp, 50, 597, 249},
+    {W::kQuit, 43, 551, 318},
+}};
 
 const std::array<Placement, OptionsScreen::kWidgets>& placements() {
-    if (regret_data()) return kPlacementsRegret;
+    if (regret_data()) return german_version() ? kPlacementsRegretDe : kPlacementsRegret;
     return us_version() ? kPlacementsUs : kPlacements;
 }
 
@@ -89,6 +101,11 @@ constexpr std::array<OptionsScreen::Rect, OptionsScreen::kQuitLine> kLineRects =
 constexpr std::array<OptionsScreen::Rect, OptionsScreen::kQuitLine> kLineRectsUs = {{
     {22, 145, 198, 176}, {22, 185, 202, 216}, {22, 225, 225, 256}, {22, 265, 232, 296},
     {22, 305, 284, 336}, {432, 144, 614, 191}, {432, 194, 614, 242}, {432, 247, 614, 294},
+}};
+// The German No Regret (13B8:20C3): where its German labels end.
+constexpr std::array<OptionsScreen::Rect, OptionsScreen::kQuitLine> kLineRectsRegretDe = {{
+    {22, 145, 217, 176}, {22, 185, 315, 216}, {22, 225, 197, 259}, {22, 265, 362, 296},
+    {22, 305, 281, 336}, {432, 144, 614, 191}, {432, 194, 614, 242}, {432, 247, 614, 294},
 }};
 // Widgets acted on by left / '4' and right / '6', by line (tables at 13D0:234C
 // and 233C; No Regret 13B8:25AD and 259D, the same).
@@ -202,10 +219,13 @@ void OptionsScreen::draw(Surface8& screen) const {
         draw_shape(screen, static_cast<std::uint16_t>(kFirstBackground + q), 0, kBackgroundCorners[q].x,
                    kBackgroundCorners[q].y);
     }
-    draw_shape(screen, 41, 0, 468, 146);
-    draw_shape(screen, 42, 0, us_version() || regret ? 465 : 459, 196);  // 13D0:17C5: "music volume"
+    // "sound volume" and "music volume" (13D0:17C5); the German No Regret
+    // (13B8:1851) has them at x 458 and 457.
+    const bool german = regret && german_version();
+    draw_shape(screen, 41, 0, german ? 458 : 468, 146);
+    draw_shape(screen, 42, 0, german ? 457 : us_version() || regret ? 465 : 459, 196);
     if (*focus_ >= 0 && *focus_ < kQuitLine) {
-        const Rect& r = (us_version() || regret ? kLineRectsUs : kLineRects)[*focus_];
+        const Rect& r = (german ? kLineRectsRegretDe : us_version() || regret ? kLineRectsUs : kLineRects)[*focus_];
         outline(screen, r.x0, r.y0, r.x1, r.y1, regret ? kFocusColourRegret : kFocusColour);
     }
     // Mouse speed: 0x2164 per notch in 16.16, the last notch pulled back.

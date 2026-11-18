@@ -46,7 +46,9 @@ public:
     bool movie_hicolor = false;
     // No Regret: "violence" ("true", "1" or "yes"; character 9 of "VIOLENCE=1",
     // DS:0AE1, always written). Read by UCMachine::I_true 0x06D (1058:00A1):
-    // the burning, melting and blown-apart deaths, the death cries.
+    // the burning, melting and blown-apart deaths, the death cries. The
+    // German executable's string is "VIOLENCE=0": without the key, the German
+    // data plays without (Game sets it; its installer writes the key).
     bool violence = true;
     // No Remorse's "noweasel" (no movies in Weasel's shop): No Regret neither
     // reads nor writes it, so it stays false.
@@ -133,6 +135,8 @@ public:
     static GameConfig parse(std::string_view text);
 
     std::string text() const;
+    // The file has a line for `key` (in lower case).
+    bool has(std::string_view key) const;
     // Throws std::runtime_error when the file cannot be written.
     void save(const std::filesystem::path& path) const;
 

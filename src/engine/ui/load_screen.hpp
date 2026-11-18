@@ -46,7 +46,10 @@
 // frame 0 (not drawn: the slot bands are in the picture); each gets an
 // outline, colour 0x6F for the selected one and 0xFD for the others; the
 // name is written as in No Remorse. The autosave row (port addition) follows
-// at y = 407. Names take the US characters (13C0:07D5).
+// at y = 407. Names take the US characters (13C0:07D5); the German one turns
+// QWERTY into QWERTZ, its umlaut keys giving A O U umlauts, and takes no
+// quotes, : or ; (they were the umlaut keys); the port takes the umlauts from
+// the player's layout.
 //
 // Port addition, for consoles without a keyboard (the PortMaster build, see
 // set_auto_name): choosing a slot to save proposes a name made by the caller

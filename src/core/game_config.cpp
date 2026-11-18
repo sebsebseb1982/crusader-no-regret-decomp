@@ -249,4 +249,9 @@ void GameConfig::erase(std::string_view key) {
     std::erase_if(lines_, [key](const std::string& l) { return entry_of(l).key == key; });
 }
 
+// @orig 1020:0000
+bool GameConfig::has(std::string_view key) const {
+    return std::any_of(lines_.begin(), lines_.end(), [key](const std::string& l) { return entry_of(l).key == key; });
+}
+
 }  // namespace crusader

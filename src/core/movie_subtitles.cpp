@@ -70,11 +70,12 @@ std::vector<MovieSubtitle> load_movie_subtitles(const std::filesystem::path& pat
 }
 
 // @orig 1448:008B 1440:0732
-std::vector<RegretSubtitle> parse_regret_movie_subtitles(std::span<const std::uint8_t> file) {
+std::vector<RegretSubtitle> parse_regret_movie_subtitles(std::span<const std::uint8_t> file, std::string_view chunk) {
     std::vector<RegretSubtitle> out;
+    if (chunk.size() != 4) return out;
     std::size_t p = 0;
     for (; p + 4 <= file.size(); ++p) {
-        if (file[p] == 'E' && file[p + 1] == 'N' && file[p + 2] == 'G' && file[p + 3] == 'L') break;
+        if (file[p] == chunk[0] && file[p + 1] == chunk[1] && file[p + 2] == chunk[2] && file[p + 3] == chunk[3]) break;
     }
     if (p + 4 > file.size()) return out;
     p += 8;
@@ -95,11 +96,11 @@ std::vector<RegretSubtitle> parse_regret_movie_subtitles(std::span<const std::ui
 }
 
 // @orig 1448:0B5A
-std::vector<RegretSubtitle> load_regret_movie_subtitles(const std::filesystem::path& path) {
+std::vector<RegretSubtitle> load_regret_movie_subtitles(const std::filesystem::path& path, std::string_view chunk) {
     std::ifstream in(path, std::ios::binary);
     if (!in) return {};
     const std::vector<std::uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    return parse_regret_movie_subtitles(bytes);
+    return parse_regret_movie_subtitles(bytes, chunk);
 }
 
 }  // namespace crusader

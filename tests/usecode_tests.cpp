@@ -213,6 +213,21 @@ void test_v101_numbering() {
     CHECK(intrinsic_numbering(DataInfo{"1.08", "FR"}).empty());
 }
 
+// The German No Regret table: the English one but for I_numToStr (English
+// 0x153) at 0x13F and English 0x13F..0x152 one place up.
+void test_german_regret_numbering() {
+    const auto en = regret_intrinsic_numbering();
+    const auto de = german_regret_intrinsic_numbering();
+    CHECK(de.size() == en.size() && de.size() == 350);
+    CHECK(de[0x13F] == en[0x153]);
+    for (std::size_t n = 0; n < de.size(); ++n) {
+        if (n > 0x13F && n <= 0x153) CHECK(de[n] == en[n - 1]);
+        else if (n != 0x13F) CHECK(de[n] == en[n]);
+    }
+    CHECK(intrinsic_numbering(DataInfo{"1.07", "DE", true}).data() == de.data());
+    CHECK(intrinsic_numbering(DataInfo{"1.06", "US", true}).data() == en.data());
+}
+
 void test_spawn_implies_result() {
     // parent: child = spawn fn 1; implies(self waits for child); suspend;
     //         return the child's result
@@ -294,6 +309,7 @@ int main() {
     test_list_foreach();
     test_intrinsic();
     test_intrinsic_numbering();
+    test_german_regret_numbering();
     test_v101_numbering();
     test_spawn_implies_result();
     test_result_register_shared();
