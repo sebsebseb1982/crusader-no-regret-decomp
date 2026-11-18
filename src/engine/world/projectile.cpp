@@ -11,6 +11,7 @@
 #include "engine/world/sprite_process.hpp"
 #include "engine/world/pathfind.hpp"
 #include "engine/world/collision.hpp"
+#include "engine/world/death_loot.hpp"
 #include "engine/world/gravity.hpp"
 
 #include <algorithm>
@@ -702,6 +703,7 @@ void damage_npc_regret(Kernel& kernel, World& world, const AnimDat& anims, ObjId
     if (!item) return;
     world.set_broken(*item);  // Actor::I_setDead
     record[npc::kFlags13] |= 0x01;
+    note_death_loot(kernel, world, anims, target, shape);  // port addition
     // The last NPC of shape 0x5B1 of map 0xE6 (a search of the whole map,
     // "@ % 0x5B1 = $") ends the game.
     const Item* player = world.get(1);
@@ -883,6 +885,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     }
     // Special deaths of humans (not the robot shapes), with VIOLENCE=1 (the
     // option string DS:0953 of the executable) where noted.
+    const std::uint16_t alive_shape = item->shape;  // port addition (death_loot.hpp)
     const bool human = takes_full_bullet_damage(world, item->shape);
     if (human && (fire_type == 3 || fire_type == 4 || fire_type == 10 || fire_type == 12)) {
         // Blown apart when the damage reaches a fraction of a damage roll of
@@ -912,6 +915,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
                 // Its screams come from the special frames of shape 0x576 (special_frame).
                 world.set_broken(*item);
                 record[npc::kFlags13] |= 0x01;
+                note_death_loot(kernel, world, anims, target, alive_shape);  // port addition
                 return;
             }
         }
@@ -961,6 +965,7 @@ void apply_damage(Kernel& kernel, World& world, const AnimDat& anims, ObjId targ
     }
     world.set_broken(*item);  // Item::I_setBroken
     record[npc::kFlags13] |= 0x01;  // Actor::I_setDead
+    note_death_loot(kernel, world, anims, target, alive_shape);  // port addition
 }
 
 // @orig 1150:077F 1150:0973

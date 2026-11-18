@@ -27,9 +27,11 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <map>
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -424,6 +426,12 @@ struct WorldHooks {
     // Port addition (blood marks): an NPC lost hit points to a shot or a
     // blast (report_wound). Must not change the world.
     std::function<void(const Wound& wound)> npc_wounded;
+    // Port addition (loot from remains, death_loot.hpp): function `event` of
+    // the usecode class named `class_name` runs on `item` with `args`, at once
+    // until it first yields. False when the class has no such function.
+    std::function<bool(std::string_view class_name, std::uint16_t event, ObjId item,
+                       std::span<const std::uint8_t> args)>
+        call_class_event;
 };
 
 class World {
@@ -698,6 +706,13 @@ public:
     // line of fire (find_target, designate).
     void set_precise_aim(bool on) { precise_aim_ = on; }
     bool precise_aim() const { return precise_aim_; }
+    // Port addition, the cheat "butin des restes" (death_loot.hpp): an enemy
+    // left without a body drops its loot beside its remains.
+    void set_remains_loot(bool on) { remains_loot_ = on; }
+    bool remains_loot() const { return remains_loot_; }
+    // The NPCs dead without a body whose loot has yet to drop, with the shape
+    // each had alive (death_loot.hpp). Not saved.
+    std::map<ObjId, std::uint16_t>& death_loot() { return death_loot_; }
     // The view is put on another target: the follow's goal, the old target's
     // place, is dropped. Following resumes when the new target moves.
     void stop_following() { follow_active_ = false; }
@@ -847,6 +862,8 @@ private:
     void set_camera_view(std::int32_t x, std::int32_t y, std::int32_t z, int left, int top);
     bool follow_player_ = false;
     bool precise_aim_ = false;
+    bool remains_loot_ = false;
+    std::map<ObjId, std::uint16_t> death_loot_;
     bool follow_active_ = false;  // follow_goal_ is set
     std::int32_t follow_goal_[3] = {0, 0, 0};
     struct FollowSample {

@@ -25,10 +25,13 @@
 #include "game/game.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <memory>
 #include <set>
+#include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -416,6 +419,74 @@ void test_aim_behind_while_running(const std::filesystem::path& data) {
     CHECK(game.machine().faults().empty());
 }
 
+// Port addition, the cheat "loot from remains" (death_loot.hpp, GitHub
+// issue #2): the humans of the first map's fast area burnt by plasma (fire
+// type 6, shape 0x58F). NPCDEATH makes them no body, so BOOTY gives them no
+// loot. With the cheat, at the end of each death BOOTY's function 0x20 draws
+// the loot of the shape the NPC had alive, into a box that is no body, and
+// all of it drops on the floor beside the NPC. What BOOTY draws is random
+// (often nothing at this difficulty): the test adds a clip to each box.
+void test_remains_loot(const std::filesystem::path& data) {
+    for (const bool cheat : {false, true}) {
+        Game game(data, saves_dir());
+        game.config().remains_loot = cheat;
+        game.new_game(0);
+        for (int i = 0; i < 300 && game.in_movie(); ++i) game.update(kFrameUs);
+        game.update(kFrameUs);
+        World& w = game.world();
+        CHECK(w.remains_loot() == cheat);
+
+        std::vector<std::uint16_t> called_with;  // the NPC's shape during each call
+        std::vector<ObjId> boxed;                // what the boxes held
+        WorldHooks hooks = w.hooks();
+        hooks.call_class_event = [&w, call = hooks.call_class_event, &called_with, &boxed](
+                                     std::string_view name, std::uint16_t event, ObjId npc,
+                                     std::span<const std::uint8_t> args) {
+            CHECK(name == "BOOTY" && event == 0x20 && args.size() == 2);
+            const bool ok = call(name, event, npc, args);
+            called_with.push_back(w.get(npc)->shape);
+            const auto box = static_cast<ObjId>(args[0] | args[1] << 8);
+            if (w.create(0x55F, 0)) w.pop_to_container(box);
+            for (ObjId id : w.get(box)->contents) boxed.push_back(id);
+            return ok;
+        };
+        w.set_hooks(hooks);
+
+        std::vector<std::uint16_t> alive;
+        std::vector<World::Point> burnt;
+        for (ObjId id = 2; id < 256; ++id) {
+            const Item* npc = w.get(id);
+            if (!npc || npc->off_map || !(npc->flags & kItemFastArea) || w.is_dead(id) ||
+                !takes_full_bullet_damage(w, npc->shape))
+                continue;
+            const std::uint16_t shape = npc->shape;
+            apply_damage(game.kernel(), w, game.animations(), id, 1, 0, 250, 6, nullptr);
+            npc = w.get(id);
+            if (!npc || npc->shape != 0x58F) continue;
+            alive.push_back(shape);
+            burnt.push_back({npc->x, npc->y, npc->z});
+        }
+        CHECK(burnt.size() == 2);
+        CHECK(w.death_loot().size() == (cheat ? burnt.size() : 0));
+        // The loot drops at the end of the death animations.
+        for (int i = 0; i < 600; ++i) game.update(kFrameUs);
+        std::printf("remains loot (cheat %s): %zu burnt, %zu items dropped\n", cheat ? "on" : "off", burnt.size(),
+                    boxed.size());
+        CHECK(called_with == (cheat ? alive : std::vector<std::uint16_t>{}));
+        CHECK(boxed.size() >= (cheat ? burnt.size() : 0));
+        for (ObjId id : boxed) {
+            const Item* item = w.get(id);
+            bool near = false;
+            for (const World::Point& at : burnt)
+                near = near || (item && std::abs(item->x - at.x) <= 96 && std::abs(item->y - at.y) <= 96);
+            CHECK(item && item->parent == 0 && !(item->flags & kItemEthereal) && near);
+        }
+        CHECK(w.death_loot().empty());
+        CHECK(w.pending_count() == 0);
+        CHECK(game.machine().faults().empty());
+    }
+}
+
 // Game_start (1030:032D): ORIGIN and ANIM01, then the menu with its palette
 // (MISC.PAL), not the black the movies leave nor the game's cycling colours.
 void test_start_up(const std::filesystem::path& data) {
@@ -515,6 +586,7 @@ int main(int argc, char** argv) {
         test_movie_shows_status_bar(data);
         test_shot_floor_mine(data);
         test_aim_behind_while_running(data);
+        test_remains_loot(data);
         test_start_up(data);
         test_load_screen(data);
         test_help_screen(data);
