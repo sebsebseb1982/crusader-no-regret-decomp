@@ -37,6 +37,11 @@
 //   T / t   (cheats enabled) the player is used (Item::I_use);
 //   f       (cheats enabled) the player leaves stasis, and the bounding boxes
 //           of the items (DS:2D7C) flip;
+//   H / h   (cheats enabled, typed code) the "hack mover" (DS:5FFA) on / off:
+//           "HACK MOVER ON", the cursor shown (frame 0x24), / "HACK MOVER
+//           OFF", the cursor hidden; items are moved with the mouse
+//           (world_mouse.hpp). Leaving the menu mode (13E8:0EF9) and a new
+//           view (13E8:0F77, a new game or a load) turn it off;
 //   Ctrl+Q  (cheats enabled) "CD TRANSFER DISPLAY ACTIVE." / "INACTIVE.";
 //   Ctrl+L  (always) the player's coordinates: "X: %u\nY: %u\nZ: %u";
 //   Ctrl+M  (always) the next music track: 0x11 skipped, back to 0 after
@@ -46,7 +51,6 @@
 //   - the bounding boxes of f (DLIST_11A0_02E4), the grid of F7 (DS:2C54),
 //     the outlines of Alt+F7 (DS:2C53, CRUSYS_1060_0814) and the egg ranges
 //     of Ctrl+F7 (DS:0F88): the port draws none of them;
-//   - H, the "hack mover" (DS:5FFA): items moved with the mouse;
 //   - Ctrl+V, the version and memory status box (its figures are those of
 //     the DOS memory manager);
 //   - with no NPC controlled (0), F10 fails the processes of every owner in
@@ -71,7 +75,8 @@
 // shield 0x530, full energy, the weapons of DS:2F5F, stacks of 0x560, 0x39A,
 // 0x55F, 0x351, 0x4ED (one), 0x52D (one), 0x582, 0x11E, 0x61C, 0x63E, 0x616,
 // 0x191, 0x613 and full clips of 0x33F, 0x340, 0x341, 0x33E, 0x615, 0x614;
-// no credits. Of the keys of the game view only f and Ctrl+M remain.
+// no credits. Of the keys of the game view only f, H (the hack mover, allowed
+// by LOOSECANNON16: DS:84D4, DS:00A0) and Ctrl+M remain.
 
 #include "core/dtable.hpp"
 #include "engine/input/keyboard.hpp"

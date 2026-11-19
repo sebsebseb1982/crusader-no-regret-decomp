@@ -487,6 +487,101 @@ void test_remains_loot(const std::filesystem::path& data) {
     }
 }
 
+// The hack mover (H, GitHub issue #22 of No Remorse): LOOSECANNON16 allows
+// it (DS:84D4) and H (1008:1565) turns it on; the left button then drags the
+// item under the cursor (world_mouse.hpp).
+void test_hack_mover(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.new_game(0);
+    World& w = game.world();
+    auto run = [&](int frames) {
+        for (int i = 0; i < frames; ++i) game.update(kFrameUs);
+    };
+    for (int i = 0; i < 300 && !w.state.avatar_in_stasis; ++i) run(1);
+    for (int i = 0; i < 600 && (w.state.avatar_in_stasis || actor_busy(game.kernel(), 1)); ++i) run(1);
+    Surface8 screen(640, 480);
+    game.render(screen);
+    const auto press = [&](std::uint8_t scancode, std::uint8_t ascii) {
+        game.key(scancode, false, true, 0, ascii);
+        game.key(scancode, false, false, 0, ascii);
+        run(1);
+    };
+    const GameState::Cheats& c = w.state.cheats;
+    press(0x23, 'h');  // no cheats: nothing
+    CHECK(!c.hack_mover && !game.message());
+    static constexpr std::uint8_t kLooseCannon[] = {0x26, 0x18, 0x18, 0x1F, 0x12, 0x2E, 0x1E,
+                                                    0x31, 0x31, 0x18, 0x31, 0x02, 0x07};
+    for (const std::uint8_t s : kLooseCannon) press(s, 0);
+    CHECK(c.enabled && c.hack_mover_allowed && game.message());
+    press(0x1C, 0x0D);  // the message closed
+    if (w.state.selection.active) press(0x01, 0x1B);  // started by the S of the code
+    press(0x23, 'h');
+    CHECK(c.hack_mover && game.message() && game.message()->text() == "HACK MOVER ON");
+    press(0x1C, 0x0D);
+    CHECK(game.cursor().visible() && game.cursor().frame() == MouseCursor::kArrow);
+
+    // A loose item that falls, drawn on top at a point of the screen.
+    const GameState& s = w.state;
+    const auto list = build_display_list(w, game.shapes(), View{s.view_left, s.view_top}, s.screen_right + 1,
+                                         s.screen_bottom + 1);
+    ObjId id = 0;
+    int mx = 0, my = 0;
+    for (std::size_t i = list.size(); i-- > 0 && id == 0;) {
+        const Item& item = *list[i].item;
+        const ShapeInfo* info = w.shape_info(item.shape);
+        if (item.id < 256 || !info || info->is(ShapeInfo::kFixed) || info->weight == 0 || info->family == 2 ||
+            info->family == 9) {
+            continue;
+        }
+        for (int y = std::max(list[i].top, 60); y < std::min(list[i].bottom, 380) && id == 0; ++y) {
+            for (int x = std::max(list[i].left, 60); x < std::min(list[i].right, 580) && id == 0; ++x) {
+                const auto hits = pick(list, x, y);
+                if (!hits.empty() && hits.back() == i) {
+                    id = item.id;
+                    mx = x;
+                    my = y;
+                }
+            }
+        }
+    }
+    CHECK(id != 0);
+    if (id == 0) return;
+    const Item* item = w.get(id);
+    std::printf("hack mover: item %d shape 0x%X at (%d, %d, %d), mouse (%d, %d)\n", id, item->shape, item->x, item->y,
+                item->z, mx, my);
+    const int dir = w.npc_direction(1);
+    game.mouse_move(mx, my);
+    run(1);
+    CHECK(game.cursor().x() == mx && game.cursor().y() == my && w.npc_direction(1) == dir);
+    game.mouse_button(1, true, mx, my);
+    run(MouseQueue::kClickDelay + 1);
+    CHECK(game.world_mouse().dragging() && game.world_mouse().held() == id);
+    int moves = 0;
+    for (const auto [dx, dy] : {std::pair{16, 8}, std::pair{-16, 8}, std::pair{16, -8}, std::pair{-16, -8}}) {
+        const std::int32_t x0 = item->x, y0 = item->y, z0 = item->z;
+        mx += dx;
+        my += dy;
+        game.mouse_move(mx, my);
+        run(1);
+        std::printf("hack mover: mouse (%d, %d), item (%d, %d, %d) -> (%d, %d, %d)\n", mx, my, x0, y0, z0, item->x,
+                    item->y, item->z);
+        if (item->x == x0 && item->y == y0 && item->z == z0) continue;
+        ++moves;
+        if (item->z == z0) {
+            CHECK(std::abs(item->x - x0 - (dx + 2 * dy)) <= 1 && std::abs(item->y - y0 - (2 * dy - dx)) <= 1);
+        }
+    }
+    CHECK(moves > 0 && w.cells_consistent());
+    game.mouse_button(1, false, mx, my);
+    run(1);
+    CHECK(!game.world_mouse().dragging() && w.pending_count() == 0);
+    press(0x23, 'h');
+    CHECK(!c.hack_mover && game.message() && game.message()->text() == "HACK MOVER OFF");
+    press(0x1C, 0x0D);
+    CHECK(!game.cursor().visible());
+    CHECK(game.machine().faults().empty());
+}
+
 // Game_start (1030:032D): ORIGIN and ANIM01, then the menu with its palette
 // (MISC.PAL), not the black the movies leave nor the game's cycling colours.
 void test_start_up(const std::filesystem::path& data) {
@@ -587,6 +682,7 @@ int main(int argc, char** argv) {
         test_shot_floor_mine(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
+        test_hack_mover(data);
         test_start_up(data);
         test_load_screen(data);
         test_help_screen(data);

@@ -42,6 +42,17 @@ void say(World& world, const std::string& text) {
     if (world.hooks().show_message) world.hooks().show_message(text);
 }
 
+// H: the hack mover on / off, the same in both games (No Remorse DS:5FFA,
+// No Regret DS:00A0). The mouse cursor (shown, frame 0x24, or hidden) is
+// the game's.
+// @orig 13E8:14B4 1008:1565
+void toggle_hack_mover(World& world) {
+    GameState::Cheats& c = world.state.cheats;
+    if (!c.hack_mover_allowed || !c.enabled) return;
+    c.hack_mover = !c.hack_mover;
+    say(world, c.hack_mover ? "HACK MOVER ON" : "HACK MOVER OFF");
+}
+
 // Item::I_setQuality (10A8:0CEE): only for family 1.
 void set_quality(World& world, ObjId id, std::uint16_t quality) {
     Item* item = world.get(id);
@@ -335,6 +346,10 @@ bool cheat_f10(Kernel& kernel, World& world, const dtable::NpcTypes& types, cons
 bool cheat_command(World& world, std::uint16_t code, bool us_123) {
     GameState::Cheats& c = world.state.cheats;
     if (!world.remorse()) {
+        if (code == 'H' || code == 'h') {
+            toggle_hack_mover(world);
+            return true;
+        }
         if (code == 'f') {
             if (!c.enabled) return true;
             world.state.avatar_in_stasis = false;
@@ -366,6 +381,9 @@ bool cheat_command(World& world, std::uint16_t code, bool us_123) {
         if (!c.enabled) return true;
         world.state.avatar_in_stasis = false;  // Ultima8Engine_I_setAvatarInStasis(0)
         c.bounding_boxes = !c.bounding_boxes;
+        return true;
+    case 'H': case 'h':
+        toggle_hack_mover(world);
         return true;
     case 0x410:  // Ctrl+Q
         if (!c.enabled) return true;

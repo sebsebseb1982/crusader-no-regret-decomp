@@ -196,6 +196,7 @@ public:
     // menu opens with F1 (1008:1664), so the controller's "menu" sends F1.
     bool menu_key_is_f1() const;
     const WorldMouse& world_mouse() const { return *world_mouse_; }
+    ShapeCache& shapes() { return shapes_; }
 
     // In-game menu (Escape, WORLD_13e8_10c3). Closing it with "quit" sets
     // quit_requested(); with a slot chosen in "load", that game is loaded at
