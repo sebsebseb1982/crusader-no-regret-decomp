@@ -50,7 +50,7 @@ Everything the No Remorse port adds is in the code and is brought back as the ga
 - Gamepad support with vibration (in No Regret's play, the pad's menu button opens the menu, as F1 does).
 - An **Enhancements** menu: gamepad remapping, a camera that follows the player, directional movement and aiming with the sticks, native resolution, zoom, autosave.
 - Fullscreen toggle with **Alt+Enter**.
-- The level editor (`crusader-editor`), built but not yet adapted to No Regret's maps.
+- The level editor (`crusader-no-regret-editor`), built but not yet adapted to No Regret's maps.
 
 ## Planned improvements
 
@@ -73,7 +73,7 @@ Download the archive for your system (Windows, Linux or PortMaster) from the [la
 Copy the **entire contents** of the No Regret CD (English 1.06 or German 1.07) into `data/`, or put the CD image there (see below):
 
 ```
-crusader(.exe)
+crusader-no-regret(.exe)
 data/
 ├── REGRET.EXE          the original executable (identifies the version; its tables are read)
 ├── CRUSADER.CFG        settings
@@ -86,16 +86,16 @@ data/
 
 `XANDRV32.DLL` and `ASYLUM.DLL` are not needed: the port rewrites the movie decoder and the sound driver.
 
-Instead of the files, `data/` may hold the image of the CD (`.iso`, or `.bin` with its `.cue` sheet), or the image can be given on the command line (`./crusader data "Crusader - No Regret (Germany).cue"`): when `data/` has no `STATIC/` folder, the game extracts the image into it on its first launch.
+Instead of the files, `data/` may hold the image of the CD (`.iso`, or `.bin` with its `.cue` sheet), or the image can be given on the command line (`./crusader-no-regret data "Crusader - No Regret (Germany).cue"`): when `data/` has no `STATIC/` folder, the game extracts the image into it on its first launch.
 
 ### 3. Launch
 
 ```sh
-./crusader data                   # the start-up movies, then the menu   (Windows: crusader.exe data)
-./crusader data --new-game        # starts a new game at once
-./crusader data --save 1          # resumes SAVEGAME.1 from the data folder
-./crusader data --movie 01A       # plays one movie
-./crusader --version
+./crusader-no-regret data                   # the start-up movies, then the menu   (Windows: crusader-no-regret.exe data)
+./crusader-no-regret data --new-game        # starts a new game at once
+./crusader-no-regret data --save 1          # resumes SAVEGAME.1 from the data folder
+./crusader-no-regret data --movie 01A       # plays one movie
+./crusader-no-regret --version
 ```
 
 ### 4. Language
@@ -116,7 +116,7 @@ ctest --test-dir build -C Release --output-on-failure
 
 If SDL2 is installed on your system, the build uses it (`libsdl2-dev` on Linux). Otherwise, SDL2 is downloaded and built automatically.
 
-The executable is `build/Release/crusader` on Windows and `build/crusader` on Linux.
+The executable is `build/Release/crusader-no-regret.exe` on Windows and `build/crusader-no-regret` on Linux.
 
 The tests come in three groups:
 
@@ -125,7 +125,7 @@ The tests come in three groups:
 - `e2e/regret_de_data_tests`: the German No Regret data (`-DCRUSADER_DE_DATA_DIR=…`; defaults to `data_de/`), registered only when it is found.
 - The other `e2e/` tests come from the No Remorse port and need the No Remorse data (French 1.08) and saved games: `-DCRUSADER_REMORSE_DATA_DIR=…` (defaults to `data_remorse/`) and `-DCRUSADER_TEST_SAVES_DIR=…`. They are registered as `remorse_*` and guard the code both games share.
 
-In addition to `crusader`, the build produces several tools: `shapeview` (shape viewer), `mapview` (map viewer), `ucsmoke` and `useprobe` (script execution), `diffcheck` (comparison with the original), and the level editor `crusader-editor`.
+In addition to the game (`crusader-no-regret`), the build produces several tools: `shapeview` (shape viewer), `mapview` (map viewer), `ucsmoke` and `useprobe` (script execution), `diffcheck` (comparison with the original), and the level editor `crusader-no-regret-editor`.
 
 ## Versioning
 

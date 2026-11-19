@@ -1,5 +1,5 @@
 #!/bin/bash
-# PORTMASTER: crusader.zip, Crusader.sh
+# PORTMASTER: crusader-no-regret.zip, Crusader No Regret.sh
 
 XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
 
@@ -17,7 +17,7 @@ source $controlfolder/control.txt
 [ -f "${controlfolder}/mod_${CFW_NAME}.txt" ] && source "${controlfolder}/mod_${CFW_NAME}.txt"
 get_controls
 
-GAMEDIR=/$directory/ports/crusader
+GAMEDIR=/$directory/ports/crusader-no-regret
 CONFDIR="$GAMEDIR/conf"
 
 mkdir -p "$GAMEDIR/data" "$CONFDIR"
@@ -29,9 +29,11 @@ export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 # The game reads ./data (STATIC, USECODE, SOUND, FLICS... or the CD .iso, which it
 # extracts on first launch) and writes its saves and CRUSADER.CFG there.
 if [ ! -d "$GAMEDIR/data/STATIC" ] && ! ls "$GAMEDIR"/data/*.[iI][sS][oO] >/dev/null 2>&1; then
-  echo "Game data missing: copy the files of Crusader: No Remorse (or the .iso) to $GAMEDIR/data"
+  echo "Game data missing: copy the files of Crusader: No Regret (or the .iso) to $GAMEDIR/data"
+  # Older versions lived in ports/crusader: their data and saves move here.
+  [ -d "/$directory/ports/crusader/data" ] && echo "An older version kept them in /$directory/ports/crusader/data: move that folder's contents to $GAMEDIR/data"
   if command -v pm_message >/dev/null 2>&1; then
-    pm_message "Game data missing: put Crusader: No Remorse files (or the .iso) in ports/crusader/data"
+    pm_message "Game data missing: put Crusader: No Regret files (or the .iso) in ports/crusader-no-regret/data"
     sleep 5
   fi
   pm_finish
