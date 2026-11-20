@@ -26,4 +26,7 @@ namespace crusader {
 // 12C8: 640 x 480, 8 bits). False when the file cannot be written.
 bool write_tga(const std::filesystem::path& path, const Surface8& surface, const Palette& palette);
 
+// Writes `rgb` (width * height * 3 bytes, rows top to bottom) as an 8-bit RGB PNG.
+void write_png_rgb(const std::filesystem::path& path, int width, int height, const std::uint8_t* rgb);
+
 }  // namespace crusader
