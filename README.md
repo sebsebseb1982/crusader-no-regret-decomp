@@ -6,7 +6,7 @@ A C++20/SDL2 reimplementation of the *Crusader: No Regret* (Origin, 1996) engine
 
 > **Sister project:** the first game, *Crusader: No Remorse*, has its own port, playable from start to finish, in [crusader-no-remorse-decomp](https://github.com/sebsebseb1982/crusader-no-remorse-decomp). This port starts from it.
 
-![First map of No Regret drawn by the port](docs/images/screenshot.png)
+![No Regret drawn by the port with the 3D lighting: the Silencer's flashlight beside a lit staircase](docs/images/screenshot.png)
 
 This repository contains **no game files**: you need your own copy of the original game. The following versions are currently supported:
 
@@ -49,6 +49,7 @@ Everything the No Remorse port adds is in the code and is brought back as the ga
 
 - Gamepad support with vibration (in No Regret's play, the pad's menu button opens the menu, as F1 does).
 - An **Enhancements** menu: gamepad remapping, a camera that follows the player, directional movement and aiming with the sticks, native resolution, zoom, autosave.
+- **3D lighting** (Enhancements menu, **Display** page, or `--lighting` for one run; off by default): the world is lit in true colour, with no new art. Lamps, screens, force fields and lasers light their surroundings in their own colour, explosions and shots flash, and items cast shadows cut to their sprites' outlines; explosions and shots leave volumetric smoke. The Silencer carries a flashlight (**L**, or **LT** on the controller), and the ambient light sets how dark the scene gets where no lamp reaches. It runs on the GPU (OpenGL 3.3 or ES 3.0), or on the processor without one, and only changes the picture, never how the game plays.
 - Fullscreen toggle with **Alt+Enter**.
 - The level editor (`crusader-no-regret-editor`), built but not yet adapted to No Regret's maps.
 
