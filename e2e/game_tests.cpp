@@ -2580,6 +2580,43 @@ void test_keypad_door_after_reload(const std::filesystem::path& data) {
     }
 }
 
+// Issue #26: the reporter's save (map 40, the base) was made with the player
+// in the range of TRIGEGG 7516 (55, by the teleporter room), its door 433
+// (0x4D8) open, raised to z 114. TRIGGER toggles the door, on the egg's
+// hatch (event 7) as on its way out (0x15). The original saves the
+// EggHatcher with its "hatched" field (+0x50, 1098:0718); the port, which
+// rebuilds the fast area instead, hatched the egg a second time on load:
+// the door shut by the player, then opened as he went away. It stays open
+// now, shuts when he leaves and opens when he comes back.
+void test_egg_hatched_before_save(const std::filesystem::path& data) {
+    constexpr ObjId kEgg = 7516, kDoor = 433;
+    Game game(data, test_saves(data));
+    game.load_save_file(test_saves(data) / "issue26-porte-teleporteur-inversee.sav");
+    World& w = game.world();
+    const Item* door = w.get(kDoor);
+    const Item* player = w.get(1);
+    CHECK(w.current_map() == 40 && w.get(kEgg) && door && door->shape == 0x4D8);
+    if (!door || !player) return;
+    const std::int32_t px = player->x, py = player->y, pz = player->z;
+    auto run = [&](int frames) {
+        for (int f = 0; f < frames; ++f) game.update(kFrameUs);
+    };
+    // Open: last frame, raised (saved on its way up, at z 114; 150 at the top).
+    auto open = [&] { return door->frame == 9 && door->z >= 114; };
+    run(120);
+    const bool open_on_load = open();
+    w.move_item(1, px - 400, py, pz);  // out of the egg's 160 units
+    run(120);
+    const bool shut_away = door->z == 16 && door->frame == 0;
+    w.move_item(1, px, py, pz);
+    run(120);
+    const bool open_back = open();
+    std::printf("egg hatched before the save: door open on load %d, shut away %d, open back %d (z %d)\n",
+                open_on_load, shut_away, open_back, door->z);
+    CHECK(open_on_load && shut_away && open_back);
+    CHECK(game.machine().faults().empty());
+}
+
 // The autosave (port addition): SAVEGAME.12 is written when a keypad's code
 // matches, a keycard is picked up, a mission starts or a movie ends, only when
 // GameConfig::autosave is on, and F6 loads it back. The keypad's waits for
@@ -4633,9 +4670,17 @@ void test_turrets(const std::filesystem::path& data) {
         std::printf("turrets: in the band, drawn %d, in zone %d, %d shots, %zu frames\n", drawn, fights, shots,
                     frames.size());
         CHECK(drawn && !fights && shots == 0 && frames.size() > 2);
-        // Back in the combat zone, it shoots.
+        // Back in the combat zone, it shoots: its first shot within 30 s
+        // (its sweep and waits are random: 8 to 12 s from this save), then
+        // at least 5 in the next 15 s.
         w.set_camera(gun->x, gun->y, gun->z & 0xFF);
-        CHECK(count_shots(game, 900) >= 5);
+        int first = -1;
+        for (int f = 0; f < 1800 && first < 0; ++f) {
+            if (count_shots(game, 1) > 0) first = f;
+        }
+        const int burst = first < 0 ? 0 : count_shots(game, 900);  // the first one still flies: counted
+        std::printf("turrets: back in the zone, first shot after %d frames, %d shots in 15 s\n", first, burst);
+        CHECK(first >= 0 && burst >= 5);
         CHECK(game.machine().faults().empty() && game.machine().unbound_intrinsic_calls().empty());
     }
 }
@@ -6305,6 +6350,10 @@ int main(int argc, char** argv) {
         std::printf(failures ? "%d failure(s)\n" : "all checks passed\n", failures);
         return failures ? 1 : 0;
     }
+    if (argc > 2 && std::string(argv[2]) == "--egg-hatched") {
+        test_egg_hatched_before_save(data);
+        return failures ? 1 : 0;
+    }
     if (argc > 2 && std::string(argv[2]) == "--blinking-scenery") {
         test_processes_end_with_their_item(data);
         return failures ? 1 : 0;
@@ -6435,6 +6484,7 @@ int main(int argc, char** argv) {
     test_keypad(data);
     test_autosave(data);
     test_keypad_door_after_reload(data);
+    test_egg_hatched_before_save(data);
     test_monitor(data);
     test_security_camera(data);
     test_energy_walls(data);
