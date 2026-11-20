@@ -34,6 +34,9 @@ public:
     // An RGB565 frame (No Regret's movies with "moviehicolor=true"), with
     // the same gamma.
     void present(const Surface16& frame);
+    // A true-colour frame (0xAARRGGBB, width x height): the lit world
+    // (GameConfig::lighting).
+    void present_argb(const std::uint32_t* frame, int width, int height);
     void maximize();
     // Desktop fullscreen on / off (Alt+Enter).
     void toggle_fullscreen();

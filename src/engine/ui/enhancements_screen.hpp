@@ -67,7 +67,7 @@ public:
         // Controls.
         Pad, Directional, Aim, Draw, PreciseAim, Run, Vibration, VibrationIntensity,
         // Display.
-        Native, Zoom, Smooth, Follow,
+        Native, Zoom, Smooth, Follow, Lighting,
         // Effects.
         Impact, Blood, Casings,
         // Game.
