@@ -21,6 +21,8 @@
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/collision.hpp"
 #include "engine/world/inventory.hpp"
+#include "engine/world/lighting.hpp"
+#include "engine/world/render.hpp"
 #include "engine/world/projectile.hpp"
 #include "game/game.hpp"
 
@@ -368,6 +370,43 @@ void test_shot_floor_mine(const std::filesystem::path& data) {
     CHECK(!after || after->shape != 0x29F);
 }
 
+// Port lighting: No Regret's lantern (wall lamp 0x2A0 frame 8; 0..9 whole,
+// 10..19 broken) put by the player in a new game lights from its bulb, and
+// goes out once broken (frame 18).
+void test_fixture_lights(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.new_game(0);
+    for (int i = 0; i < 300 && game.in_movie(); ++i) game.update(kFrameUs);
+    World& w = game.world();
+    CHECK(!w.remorse());
+    const Item* player = w.get(1);
+    const ObjId lamp = w.create(0x2A0, 8);
+    CHECK(lamp != 0 && player);
+    if (!lamp || !player) return;
+    w.move_item(lamp, player->x + 64, player->y + 64, player->z + 40);
+    const auto xform = XformTable::load(data / "STATIC/XFORMPAL.DAT");
+    WorldLighting lighting(game.shapes(), xform);
+    auto lamp_lights = [&] {
+        const Camera camera{world_from_usecode(player->x), world_from_usecode(player->y), player->z};
+        const int left = ((camera.x - camera.y) >> 2) - 320, top = (((camera.x + camera.y) >> 3) - camera.z) - 240;
+        const auto list = build_display_list(w, game.shapes(), View{left, top}, 640, 480);
+        Surface8 screen(640, 480);
+        draw_display_list(screen, list, &xform);
+        const LightingOptions opt;
+        lighting.capture(w, list, screen, left, top, game.palette(), opt, 0);
+        std::vector<std::uint32_t> argb(640 * 480);
+        lighting.shade(w, screen, game.palette(), opt, {}, argb.data());
+        int n = 0;
+        for (const PointLight& l : lighting.lights()) n += l.owner == lamp;
+        return n;
+    };
+    const int lit = lamp_lights();
+    w.get(lamp)->frame = 18;  // broken
+    const int broken = lamp_lights();
+    std::printf("lantern: %d light(s) whole, %d broken\n", lit, broken);
+    CHECK(lit == 1 && broken == 0);
+}
+
 // Port addition, the controller: running one way, the aim stick swung behind
 // him, the left stick still held the same way. The gamepad then sends the
 // strafe away from the aim (Alt + down, a step back), relative to the aim; a
@@ -680,6 +719,7 @@ int main(int argc, char** argv) {
         test_keypad_autosave(data);
         test_movie_shows_status_bar(data);
         test_shot_floor_mine(data);
+        test_fixture_lights(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
         test_hack_mover(data);
