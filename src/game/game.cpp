@@ -1440,7 +1440,7 @@ void Game::on_key(const GameKeyEvent& e) {
     // cheat code, which sees every key (Shift too).
     cheat_code_key(*kernel_, *world_, npc_types_, e);
     // Port addition (GameConfig::flashlight): with the 3D lighting, L (no
-    // Ctrl or Alt: Ctrl+L is a cheat) switches the Silencer's lamp, the same
+    // Ctrl or Alt: Ctrl+L drops the weapon) switches the Silencer's lamp, the same
     // setting as the option. The original gives L nothing to do.
     if (config_.lighting && e.scancode == 0x26 && !e.extended && !(e.flags & (kCtrl | kAlt))) {
         if (e.pressed && e.count <= 1) {

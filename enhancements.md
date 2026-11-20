@@ -459,9 +459,9 @@ The original draws flat sprites under a fixed light. With this option the world 
 - It follows the game's clock: it stops with the game (menus, pause), goes on a map change. It only reads the world and uses its own numbers, never the game's random generators.
 
 **Liquids**
-- The green liquids (the pools, their strips and edges, ripples and bubbles: shapes 0x150, 0x59E, 0x227, 0x228, 0x5A2, 0x55A, 0x56D, 0x56E, 0x1D6, 0x539, 0x54C, 0x580; no TYPEFLAG bit marks them) glow a faint radioactive green, in slow patches that drift and breathe.
+- The puddles of toxic sludge (green 0x15D, yellow 0x15E, grey 0x15F; no TYPEFLAG bit marks them) glow a faint radioactive green, in slow patches that drift and breathe. The clear blue water of the pools (0x2DC) is left as it is.
 - They light what stands around them (walls, rims, floors, machines, pillars, people at the edge) in green, with one light for each 1024 x 1024 cell of liquid, high over it so that it falls on the floors past the rims and reaches 1600 units; it does not light the liquid itself.
-- The pools give off a thin steam: wisps that rise from the surface, drift and fade out over seven to eleven seconds, faintly green. They need no memory (each comes back from the game's clock and the pool's place), so they are there as soon as a pool is in view; they go with the smoke (VOLUMETRIC SMOKE option).
+- The puddles give off a thin steam: wisps that rise from the surface, drift and fade out over seven to eleven seconds, faintly green. They need no memory (each comes back from the game's clock and the puddle's place), so they are there as soon as a puddle is in view; they go with the smoke (VOLUMETRIC SMOKE option).
 
 **What is not lit**
 - Everything drawn over the world: the status bar, the aiming sprites, the cursor, menus, screens and cutscenes, shown in their palette colours. Palette fades and colour cycling still apply.

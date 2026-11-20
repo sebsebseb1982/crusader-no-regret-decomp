@@ -56,29 +56,20 @@ bool is_actor(const Item& item, const ShapeInfo* info) {
 }
 
 // A rocket in flight: the projectile's frames 0x11..0x20, by direction, for
-// fire types 3, 9 (guided) and 10 (projectile.cpp, projectile_frame).
+// fire types 3, 9 (guided), 10 and 0x16 (projectile.cpp, projectile_frame).
 // @orig none: port lighting
 bool is_rocket(const Item& item) {
     return item.shape == kProjectileShape && item.frame >= 0x11 && item.frame <= 0x20;
 }
 
-// Liquid surfaces (SHAPES.FLX; no TYPEFLAG bit marks them): the pools 0x150
-// and 0x59E (16 x 16), their strips 0x227, 0x228, 0x5A2, thin edges 0x55A,
-// 0x56D, 0x56E, ripples and bubbles 0x1D6, 0x539, 0x54C, 0x580.
+// Liquid surfaces (No Regret's SHAPES.FLX; no TYPEFLAG bit marks them): the
+// bubbling puddles of toxic sludge, green 0x15D, yellow 0x15E and grey 0x15F
+// (12 x 9, animated). The clear blue water of the pools (0x2DC) is left as
+// it is: a radioactive glow would not suit it.
 // @orig none: port lighting (liquids)
-bool is_liquid(std::uint16_t shape) {
-    switch (shape) {
-    case 0x150: case 0x59E: case 0x227: case 0x228: case 0x5A2: case 0x55A: case 0x56D: case 0x56E:
-    case 0x1D6: case 0x539: case 0x54C: case 0x580:
-        return true;
-    default:
-        return false;
-    }
-}
-// The pools and their strips give off steam.
-bool steams(std::uint16_t shape) {
-    return shape == 0x150 || shape == 0x59E || shape == 0x227 || shape == 0x228 || shape == 0x5A2;
-}
+bool is_liquid(std::uint16_t shape) { return shape >= 0x15D && shape <= 0x15F; }
+// All of them give off steam.
+bool steams(std::uint16_t shape) { return is_liquid(shape); }
 
 // The liquids' radioactive green, and how much of their own colour they glow
 // with (times liquid_glow), so that they show but stay a background.
