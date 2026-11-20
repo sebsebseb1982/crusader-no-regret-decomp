@@ -12,8 +12,8 @@ The zip contains:
 | In the zip | Copy it to (on the SD card holding your ports) | Role |
 |---|---|---|
 | `Crusader No Regret.sh` | `ROMS/Ports/Crusader No Regret.sh` (muOS, Knulli, ROCKNIX, ArkOS: your `roms/ports` folder) | Launcher shown in the Ports menu |
-| `crusader-no-regret/` (whole folder) | `ports/crusader-no-regret/` | Binary, licenses and game data |
-| `port.json`, `gameinfo.xml`, `README.md`, `screenshot.png` | nowhere | PortMaster metadata, not needed on the console |
+| `crusader-no-regret/` (whole folder) | `ports/crusader-no-regret/` | Binary, licenses, artwork and game data |
+| `port.json`, `gameinfo.xml`, `README.md`, `cover.png`, `screenshot.png` | nowhere | PortMaster metadata, not needed on the console |
 
 Installing through PortMaster does this for you. Manual install (USB / SD card reader), for example
 on a muOS console (RG40XX-H) where the ports live on the SD2 card:
@@ -32,6 +32,11 @@ SD2/
 
 If your ports are on SD1 instead of SD2, use the same layout on SD1. Restart the frontend
 if the Crusader No Regret entry does not show up in the Ports list.
+
+Artwork in the Ports list (muOS): PortMaster installs it. After a manual install, copy
+`crusader-no-regret/cover.png` to `MUOS/info/catalogue/External - Ports/box/Crusader No Regret.png`
+and `crusader-no-regret/screenshot.png` to `MUOS/info/catalogue/External - Ports/preview/Crusader No Regret.png`
+(on the card holding the `MUOS` folder, usually SD1).
 
 ## Game data
 
