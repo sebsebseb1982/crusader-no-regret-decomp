@@ -579,6 +579,36 @@ void test_arcs_and_fires(const std::filesystem::path& data) {
     CHECK(lit.size() == 1 && broken.empty());
 }
 
+// Port lighting (smoke): No Regret's own machines smoulder once broken, its
+// gas tanks leak. On map 1, the machine BMPC at 41182, 57022 (0x18C: 0 whole,
+// 1 broken) and the computer at 24190, 15518 (0x3E4: 2 whole, 3 broken)
+// give off a wisp (puffs of size 9); on map 3, the tank at 47038, 9918 (0x520:
+// 1 whole, 2 broken) steam (size 7).
+void test_regret_machines_smoulder(const std::filesystem::path& data) {
+    struct Machine {
+        std::size_t map;
+        std::uint16_t shape;
+        std::int32_t x, y;
+        std::uint16_t broken;
+        float puff;
+    };
+    const Machine machines[] = {
+        {1, 0x18C, 41182, 57022, 1, 9}, {1, 0x3E4, 24190, 15518, 3, 9}, {3, 0x520, 47038, 9918, 2, 7}};
+    for (const Machine& k : machines) {
+        LitMap m(data, k.map);
+        const ObjId id = m.find(k.shape, k.x, k.y);
+        CHECK(id != 0);
+        if (!id) continue;
+        m.lights_of(id, 120);
+        const int whole = puffs_of_size(m, k.puff);
+        m.w.get(id)->frame = k.broken;
+        m.lights_of(id, 120);
+        const int broken = puffs_of_size(m, k.puff);
+        std::printf("machine 0x%X: %d puffs whole, %d broken\n", k.shape, whole, broken);
+        CHECK(whole == 0 && broken >= 2);
+    }
+}
+
 // Port addition, the controller: running one way, the aim stick swung behind
 // him, the left stick still held the same way. The gamepad then sends the
 // strafe away from the aim (Alt + down, a step back), relative to the aim; a
@@ -895,6 +925,7 @@ int main(int argc, char** argv) {
         test_wall_lamps_and_alarms(data);
         test_regret_lamps(data);
         test_arcs_and_fires(data);
+        test_regret_machines_smoulder(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
         test_hack_mover(data);
