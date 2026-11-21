@@ -497,6 +497,31 @@ void test_wall_lamps_and_alarms(const std::filesystem::path& data) {
     if (beacon_lit.size() == 1) CHECK(beacon_lit[0].color.x > 4 * beacon_lit[0].color.y);
 }
 
+// Port lighting: No Regret's own lamps light, and go out when broken: the
+// egg-shaped lamp of map 19, the standard lamp and the desk lamp of map 6,
+// the red globe of map 5.
+void test_regret_lamps(const std::filesystem::path& data) {
+    struct Lamp {
+        std::size_t map;
+        std::uint16_t shape;
+        std::int32_t x, y;
+        std::uint16_t broken;
+    };
+    const Lamp lamps[] = {
+        {19, 0x0BE, 54334, 53246, 2}, {6, 0x407, 5214, 5726, 3}, {6, 0x414, 4094, 13310, 3}, {5, 0x493, 30014, 22558, 2}};
+    for (const Lamp& l : lamps) {
+        LitMap m(data, l.map);
+        const ObjId id = m.find(l.shape, l.x, l.y);
+        CHECK(id != 0);
+        if (!id) continue;
+        const std::size_t lit = m.lights_of(id).size();
+        m.w.get(id)->frame = l.broken;
+        const std::size_t broken = m.lights_of(id).size();
+        std::printf("lamp 0x%X: %zu light(s) whole, %zu broken\n", l.shape, lit, broken);
+        CHECK(lit == 1 && broken == 0);
+    }
+}
+
 // Port addition, the controller: running one way, the aim stick swung behind
 // him, the left stick still held the same way. The gamepad then sends the
 // strafe away from the aim (Alt + down, a step back), relative to the aim; a
@@ -811,6 +836,7 @@ int main(int argc, char** argv) {
         test_shot_floor_mine(data);
         test_fixture_lights(data);
         test_wall_lamps_and_alarms(data);
+        test_regret_lamps(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
         test_hack_mover(data);

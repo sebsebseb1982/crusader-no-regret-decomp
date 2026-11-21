@@ -170,6 +170,13 @@ const Fixture kRegretFixtures[] = {
     {0x477, 0x0C, kAlarmLight, 0.8f, 320, true, true, 30},
     {0x660, 0x3F, kAlarmLight, 1.4f, 520, true, false, 40},
     {0x661, 0x3F, kAlarmLight, 1.4f, 520, true, false, 40},
+    // Its own lamps: an egg-shaped lamp on a stand (0, 1; 2, 3 broken),
+    // standard lamps (oval shades 0, 1, a bowl 2; 3..5 broken), desk lamps
+    // (0..2; 3..5 broken) and a red globe on the wall (0, 1; 2 broken).
+    {0x0BE, 0x03, kWarmLight, 1.2f, 600, true, false, 40},
+    {0x407, 0x07, kWarmLight, 1.3f, 650, true, false, 44},
+    {0x414, 0x07, kWarmLight, 0.9f, 380, true, false, 30},
+    {0x493, 0x03, kRedLight, 1.1f, 460, true, false, 36},
     {0x269, 0x01, kWarmLight, 1.3f, 650, true, false, 48},
     {0x4EB, 0x03, kTubeLight, 1.2f, 620, true, false, 44},
     {0x519, 0x03, kTubeLight, 1.2f, 620, true, false, 44},
