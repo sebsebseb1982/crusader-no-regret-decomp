@@ -9,15 +9,18 @@
 #include "core/flex.hpp"
 #include "core/font.hpp"
 #include "core/language.hpp"
+#include "core/palette.hpp"
 #include "core/png_writer.hpp"
 #include "core/shape.hpp"
 #include "core/typeflags.hpp"
+#include "core/xform.hpp"
 #include "engine/audio/audio.hpp"
 #include "engine/ui/gump_keys.hpp"
 #include "engine/ui/help_screen.hpp"
 #include "engine/ui/keypad_gump.hpp"
 #include "engine/ui/load_screen.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
+#include "engine/usecode/world_intrinsics.hpp"
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/collision.hpp"
 #include "engine/world/inventory.hpp"
@@ -407,6 +410,93 @@ void test_fixture_lights(const std::filesystem::path& data) {
     CHECK(lit == 1 && broken == 0);
 }
 
+// A map of FIXED.DAT as the lighting sees it, without the game: its items
+// found by shape and place (world units, as the map editor shows them).
+struct LitMap {
+    std::vector<ShapeInfo> typeflags;
+    World w;
+    FlexArchive shapes_flex;
+    ShapeCache shapes;
+    XformTable xform;
+    Palette palette;
+    WorldLighting lighting;
+
+    LitMap(const std::filesystem::path& data, std::size_t map)
+        : typeflags(load_typeflags(data / "STATIC/TYPEFLAG.DAT")),
+          w(typeflags),
+          shapes_flex(FlexArchive::open(data / "STATIC/SHAPES.FLX")),
+          shapes(shapes_flex, ShapeLayout::World),
+          xform(XformTable::load(data / "STATIC/XFORMPAL.DAT")),
+          palette(Palette::load(data / "STATIC/GAMEPAL.PAL")),
+          lighting(shapes, xform) {
+        w.load_fixed_map(FlexArchive::open(data / "STATIC/FIXED.DAT"), map);
+        w.expand_glob_eggs(FlexArchive::open(data / "STATIC/GLOB.FLX"));
+    }
+
+    ObjId find(std::uint16_t shape, std::int32_t x, std::int32_t y) const {
+        ObjId found = 0;
+        w.for_each([&](const Item& i) {
+            if (i.shape == shape && world_from_usecode(i.x) == x && world_from_usecode(i.y) == y) found = i.id;
+        });
+        return found;
+    }
+
+    // The lights of item `id`, and the puffs in view, on a 640x480 view
+    // centred on it at game tick `ticks`.
+    std::vector<PointLight> lights_of(ObjId id, std::uint32_t ticks = 0) {
+        const Item& item = *w.get(id);
+        const Camera camera{world_from_usecode(item.x), world_from_usecode(item.y), item.z};
+        const int left = ((camera.x - camera.y) >> 2) - 320, top = (((camera.x + camera.y) >> 3) - camera.z) - 240;
+        const auto list = build_display_list(w, shapes, View{left, top}, 640, 480);
+        Surface8 screen(640, 480);
+        draw_display_list(screen, list, &xform);
+        const LightingOptions opt;
+        lighting.capture(w, list, screen, left, top, palette, opt, ticks);
+        std::vector<std::uint32_t> argb(640 * 480);
+        lighting.shade(w, screen, palette, opt, {}, argb.data());
+        std::vector<PointLight> out;
+        for (const PointLight& l : lighting.lights())
+            if (l.owner == id) out.push_back(l);
+        return out;
+    }
+};
+
+// Port lighting: No Regret has No Remorse's wall lamps 0xBC (map 2: the
+// floodlight at 48062, 49246, frame 0; 1, 4 caged red lamps, 2, 5 red
+// lanterns, 6..11 broken) and its alarm lights, and adds alert beacons. On
+// map 1, the alarm box at 31038, 12286 (0x477, frame 1) is dark until an
+// alert (frame 3), and so is the beacon at 20574, 12350 (0x663, frame 1),
+// which an alert turns into the sweeping red one (0x660).
+void test_wall_lamps_and_alarms(const std::filesystem::path& data) {
+    {
+        LitMap m(data, 2);
+        const ObjId flood = m.find(0x0BC, 48062, 49246);
+        CHECK(flood != 0);
+        if (!flood) return;
+        const auto white = m.lights_of(flood);
+        m.w.get(flood)->frame = 1;
+        const auto red = m.lights_of(flood);
+        m.w.get(flood)->frame = 6;
+        const auto broken = m.lights_of(flood);
+        std::printf("wall lamp 0xBC: %zu light(s) as a floodlight, %zu as a red lamp, %zu broken\n", white.size(),
+                    red.size(), broken.size());
+        CHECK(white.size() == 1 && red.size() == 1 && broken.empty());
+        if (white.size() == 1) CHECK(white[0].color.z >= white[0].color.x);
+        if (red.size() == 1) CHECK(red[0].color.x > 2 * red[0].color.z);
+    }
+    LitMap m(data, 1);
+    const ObjId box = m.find(0x477, 31038, 12286), beacon = m.find(0x663, 20574, 12350);
+    CHECK(box != 0 && beacon != 0);
+    if (!box || !beacon) return;
+    CHECK(m.lights_of(box).empty() && m.lights_of(beacon).empty());
+    set_alert(m.w, true);
+    CHECK(m.w.get(box)->frame == 3 && m.w.get(beacon)->shape == 0x660);
+    const auto box_lit = m.lights_of(box, 8), beacon_lit = m.lights_of(beacon, 8);
+    std::printf("alert: alarm box %zu light(s), beacon %zu\n", box_lit.size(), beacon_lit.size());
+    CHECK(box_lit.size() == 1 && beacon_lit.size() == 1);
+    if (beacon_lit.size() == 1) CHECK(beacon_lit[0].color.x > 4 * beacon_lit[0].color.y);
+}
+
 // Port addition, the controller: running one way, the aim stick swung behind
 // him, the left stick still held the same way. The gamepad then sends the
 // strafe away from the aim (Alt + down, a step back), relative to the aim; a
@@ -720,6 +810,7 @@ int main(int argc, char** argv) {
         test_movie_shows_status_bar(data);
         test_shot_floor_mine(data);
         test_fixture_lights(data);
+        test_wall_lamps_and_alarms(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
         test_hack_mover(data);

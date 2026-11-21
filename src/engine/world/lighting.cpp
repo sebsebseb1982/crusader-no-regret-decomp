@@ -155,10 +155,21 @@ const Fixture kRemorseFixtures[] = {
 };
 // No Regret's: the same, but its wall lamps 0x2A0 have 20 frames (domes,
 // side views, gilded frames, gilded domes, lanterns: 0..9 whole, 10..19
-// broken), and the hanging lamp 0x4A (frame 0; 2 broken).
+// broken), and the hanging lamp 0x4A (frame 0; 2 broken). Its alert also
+// turns on the beacons: 0x663 and 0x662 (dark) become 0x660 and 0x661, a red
+// light sweeping round (6 frames, animated; set_alert).
 const Fixture kRegretFixtures[] = {
     {0x2A0, 0x3FF, kWarmLight, 1.3f, 620, true, false, 44},
     {0x04A, 0x01, kWarmLight, 1.4f, 700, true, false, 48},
+    {0x0BC, 0x09, kTubeLight, 2.6f, 800, true, false, 30, 0.6f},
+    {0x0BC, 0x36, kRedLight, 1.4f, 520, true, false, 40},
+    {0x021, 0x02, kAlarmLight, 1.2f, 460, true, true, 40},
+    {0x049, 0x02, kAlarmLight, 1.2f, 460, true, true, 40},
+    {0x174, 0x02, kAlarmLight, 1.4f, 520, true, true, 44},
+    {0x271, 0x02, kAlarmLight, 1.4f, 520, true, true, 44},
+    {0x477, 0x0C, kAlarmLight, 0.8f, 320, true, true, 30},
+    {0x660, 0x3F, kAlarmLight, 1.4f, 520, true, false, 40},
+    {0x661, 0x3F, kAlarmLight, 1.4f, 520, true, false, 40},
     {0x269, 0x01, kWarmLight, 1.3f, 650, true, false, 48},
     {0x4EB, 0x03, kTubeLight, 1.2f, 620, true, false, 44},
     {0x519, 0x03, kTubeLight, 1.2f, 620, true, false, 44},
