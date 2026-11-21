@@ -96,6 +96,10 @@ constexpr std::size_t kMaxSteam = 128;
 // fades, twice a second (the alarm lights, whose lit frames are those of an
 // alert: set_alert, world_intrinsics.hpp). `halo`: the glow round the bulb
 // (PointLight::halo), lamps only: a screen's light comes from its whole face.
+// `face`: a machine lit from inside behind its glass (vending machines, a
+// drinks fridge), its glass on the box's +x (1) or +y (2) face: the light
+// sits just in front of the glass and shines out of it, a spot, so the wall
+// behind the machine stays dark.
 struct Fixture {
     std::uint16_t shape;
     std::uint32_t lit_frames;  // bit n: frame n gives light
@@ -105,12 +109,19 @@ struct Fixture {
     bool pulse = false;
     float halo = 0;
     float halo_gain = 1;
+    std::uint8_t face = 0;
 };
 const Vec3 kWarmLight{1.0f, 0.86f, 0.66f};
 const Vec3 kTubeLight{0.85f, 0.95f, 1.0f};
 const Vec3 kScreenLight{0.55f, 0.75f, 1.0f};
 const Vec3 kRedLight{1.0f, 0.38f, 0.25f};
 const Vec3 kAlarmLight{1.0f, 0.15f, 0.08f};
+const Vec3 kVendingLight{0.75f, 0.88f, 1.0f};
+// How far in front of its glass a lit machine's light is, how high up its
+// box (0 floor, 1 top), and its cone round the face's normal.
+constexpr float kFaceOut = 20;
+constexpr float kFaceHeight = 0.55f;
+constexpr float kFaceCosInner = 0.35f, kFaceCosOuter = -0.15f;
 // No Remorse's shapes.
 const Fixture kRemorseFixtures[] = {
     {0x2A0, 0x0F, kWarmLight, 1.3f, 620, true, false, 44},  // wall lamp, a dome (4..7 broken)
@@ -130,6 +141,11 @@ const Fixture kRemorseFixtures[] = {
     {0x174, 0x02, kAlarmLight, 1.4f, 520, true, true, 44},  // alarm lights (0 off, 1 on, 2 broken)
     {0x271, 0x02, kAlarmLight, 1.4f, 520, true, true, 44},
     {0x477, 0x0C, kAlarmLight, 0.8f, 320, true, true, 30},  // alarm box: 2, 3 its frames 0, 1 on
+    // Vending machines (PEPSIEW +x, PEPSINS +y; frames 0..2, shot: replaced
+    // by 0x39F, 0x3A0) and a drinks fridge (+x; 1 broken, DAMAGE.FLX).
+    {0x094, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 1},
+    {0x09A, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 2},
+    {0x40B, 0x01, kTubeLight, 0.8f, 360, false, false, 56, 0.3f, 1},
 };
 // No Regret's: the same, but its wall lamps 0x2A0 have 20 frames (domes,
 // side views, gilded frames, gilded domes, lanterns: 0..9 whole, 10..19
@@ -146,6 +162,9 @@ const Fixture kRegretFixtures[] = {
     {0x165, 0x01, kScreenLight, 0.45f, 300, false},
     {0x130, 0x01, Vec3{1.0f, 0.75f, 0.35f}, 0.6f, 420, false},
     {0x1A3, 0x01, Vec3{1.0f, 0.75f, 0.35f}, 0.6f, 420, false},
+    {0x094, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 1},
+    {0x09A, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 2},
+    {0x40B, 0x01, kTubeLight, 0.8f, 360, false, false, 56, 0.3f, 1},
 };
 
 // The fixtures' light against the ambient light (LightingOptions::ambient):
@@ -178,6 +197,7 @@ const Smoulder kRemorseSmoulders[] = {
     {0x431, 0xFFFF00},             // server cabinets (8..23)
     {0x409, 0xF0},                 // arcade cabinets
     {0x39F, 0x01}, {0x3A0, 0x01},  // vending machines, broken (PEPSIEW, PEPSINS replaced)
+    {0x40B, 0x02},                 // drinks fridge
     // Fans: shot, they are replaced by these shapes, frame 0.
     {0x3CE, 0x01, true}, {0x3D3, 0x01, true},  // RFANBADE, RFANBADN (RFANEW, RFANNS)
     {0x32C, 0x03, true}, {0x32D, 0x03, true},  // MFAN_EW, MFAN_NS broken
@@ -202,7 +222,7 @@ const Smoulder kRegretSmoulders[] = {
     {0x0E8, 0x0C}, {0x185, 0x0C}, {0x3D9, 0x38}, {0x446, 0x38}, {0x257, 0x08}, {0x258, 0x08},
     {0x1B0, 0x08}, {0x1B1, 0x08}, {0x1B2, 0x02}, {0x1B3, 0x02}, {0x1EF, 0x30}, {0x1F8, 0x30},
     {0x25B, 0x60}, {0x25C, 0x60}, {0x25D, 0x02}, {0x25E, 0x02}, {0x26A, 0x02}, {0x26B, 0x02},
-    {0x3BF, 0xF0}, {0x3C0, 0xF0}, {0x431, 0xFFFF00}, {0x409, 0xF0}, {0x39F, 0x01}, {0x3A0, 0x01},
+    {0x3BF, 0xF0}, {0x3C0, 0xF0}, {0x431, 0xFFFF00}, {0x409, 0xF0}, {0x39F, 0x01}, {0x3A0, 0x01}, {0x40B, 0x02},
     {0x3CE, 0x01, true}, {0x3D3, 0x01, true}, {0x32C, 0x03, true}, {0x32D, 0x03, true},
     {0x3E7, 0x0C}, {0x3E8, 0x0C},
     {0x136, 0x04}, {0x15A, 0x04},  // recharge booth (RE_SIDE, RE_BOOTH)
@@ -1052,8 +1072,15 @@ void WorldLighting::gather_lights(const World& world, const LightingOptions& opt
                         v = float(d.top) + sv / bright - float(d.sy);
                     }
                 }
-                Vec3 at;
-                if (bright > 0) {
+                Vec3 at, dir;
+                if (fx->face) {
+                    // Mirrored, the glass shows on the other face.
+                    const bool on_x = (fx->face == 1) != d.mirrored;
+                    const float z = (d.z + (d.z_top - d.z) * kFaceHeight) * kLightZScale;
+                    at = on_x ? Vec3{d.x + kFaceOut, (d.y + d.y_far) * 0.5f, z}
+                              : Vec3{(d.x + d.x_left) * 0.5f, d.y + kFaceOut, z};
+                    dir = on_x ? Vec3{1, 0, 0} : Vec3{0, 1, 0};
+                } else if (bright > 0) {
                     const float depth = (d.x_left - d.x + d.y_far - d.y) * 0.5f;
                     at = Vec3{d.x + 2 * u + depth * 0.5f, d.y - 2 * u + depth * 0.5f,
                               (d.z - v + depth / 8) * kLightZScale} +
@@ -1067,6 +1094,11 @@ void WorldLighting::gather_lights(const World& world, const LightingOptions& opt
                 PointLight light{at, fx->colour * strength, fx->radius, d.item->id};
                 light.halo = fx->halo;
                 light.halo_gain = fx->halo_gain;
+                if (fx->face) {
+                    light.dir = dir;
+                    light.cos_inner = kFaceCosInner;
+                    light.cos_outer = kFaceCosOuter;
+                }
                 lights.push_back(light);
                 continue;  // in place of the light of its colour-cycled pixels (the alarms')
             }
