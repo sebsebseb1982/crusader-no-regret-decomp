@@ -17,12 +17,13 @@ constexpr double kGravity = 0.25;     // usecode units a tick per tick, the jet'
 constexpr double kJet = 0.65;         // jet speed, units a tick, per square root of the head
 constexpr double kDrain = 0.006;      // level fall a tick per hole, per square root of the head
 constexpr double kFull = 0.9;         // a whole barrel's level, of its height
-constexpr double kThickness = 1.6;    // a pool's depth: its area is the fuel run out over it
-constexpr double kMaxLand = 90, kMaxFoot = 40, kMaxLeft = 70;  // lobe radii, usecode units
+constexpr double kThickness = 0.7;    // a pool's depth: its area is the fuel run out over it
+constexpr double kMaxLand = 150, kMaxFoot = 60, kMaxLeft = 110;  // lobe radii, usecode units
 constexpr double kDribble = 0.5;      // below this jet speed, the fuel runs down the side
 constexpr double kSpread = 2.5;       // the fire's spread over a pool, units a tick
-constexpr std::size_t kMaxFlames = 160;
+constexpr float kFlameHeight = 64;    // pixels, the tallest flames
 constexpr int kHeight = 2;            // a floor this close to a pool's level takes it
+constexpr int kPad = 256;             // largest footpad reach of an anchor
 
 // The leaks' own numbers (splitmix32), never the game's generators.
 // @orig none: port-only barrel leaks
@@ -50,6 +51,31 @@ double noise(double x, double y, std::uint32_t seed) {
     const double a = unit(mix(seed, ix, iy)), b = unit(mix(seed, ix + 1, iy));
     const double c = unit(mix(seed, ix, iy + 1)), d = unit(mix(seed, ix + 1, iy + 1));
     return (a + (b - a) * tx) + ((c + (d - c) * tx) - (a + (b - a) * tx)) * ty;
+}
+
+// The same, faster (a table of 256 values), for the fire's pixels.
+// @orig none: port-only barrel leaks
+float fast_noise(float x, float y, std::uint32_t seed) {
+    static const auto table = [] {
+        std::array<float, 256> t{};
+        std::array<std::uint8_t, 256> perm{};
+        for (int i = 0; i < 256; ++i) {
+            t[i] = static_cast<float>(unit(mix(static_cast<std::uint32_t>(i) * 0x9E3779B9u + 1)));
+            perm[i] = static_cast<std::uint8_t>(mix(static_cast<std::uint32_t>(i) + 77) & 0xFF);
+        }
+        return std::pair{t, perm};
+    }();
+    const float fx = std::floor(x), fy = std::floor(y);
+    const int ix = static_cast<int>(fx), iy = static_cast<int>(fy);
+    float tx = x - fx, ty = y - fy;
+    tx = tx * tx * (3 - 2 * tx);
+    ty = ty * ty * (3 - 2 * ty);
+    const auto at = [&](int i, int j) {
+        return table.first[table.second[(table.second[(i + static_cast<int>(seed)) & 0xFF] + j) & 0xFF]];
+    };
+    const float a = at(ix, iy), b = at(ix + 1, iy), c = at(ix, iy + 1), d = at(ix + 1, iy + 1);
+    const float top = a + (b - a) * tx, bottom = c + (d - c) * tx;
+    return top + (bottom - top) * ty;
 }
 
 int screen_x(double x, double y) { return static_cast<int>(std::floor((x - y) / 2)); }
@@ -81,15 +107,16 @@ Bounds bounds_of(const BarrelLeaks::Pool& p) {
 
 double depth_of(double field) { return std::clamp((field - 1) / 2, 0.0, 1.0); }
 
-// The top of the floor under (x, y): the highest scenery whose box holds it
-// with its top at most 16 below z (a barrel stands a little above the flat
-// floor tiles); z itself when there is none.
+// Scenery around: what a pool lies on or is stopped by.
+struct Solid {
+    std::int32_t x_left, x, y_far, y, z, z_top;
+};
+
 // @orig none: port-only barrel leaks
-std::int32_t floor_top(const World& world, std::int32_t x, std::int32_t y, std::int32_t z) {
-    constexpr int kPad = 256;  // largest footpad reach of an anchor
-    std::int32_t top = z;
-    bool found = false;
-    for (ObjId id : world.rect_search(x - kPad, y - kPad, x + kPad, y + kPad)) {
+std::vector<Solid> solids_around(const World& world, std::int32_t x0, std::int32_t y0, std::int32_t x1,
+                                 std::int32_t y1) {
+    std::vector<Solid> out;
+    for (ObjId id : world.rect_search(x0 - kPad, y0 - kPad, x1 + kPad, y1 + kPad)) {
         const Item* item = world.get(id);
         if (!item || is_npc_id(item->id) || item->parent != 0 || item->off_map || item->sprite_only ||
             is_fuel_barrel(item->shape) || (item->flags & (kItemInvisible | kItemContained | kItemEthereal)))
@@ -97,11 +124,23 @@ std::int32_t floor_top(const World& world, std::int32_t x, std::int32_t y, std::
         const ShapeInfo* info = world.shape_info(item->shape);
         if (!info || info->is(ShapeInfo::kEditor) || info->is(ShapeInfo::kTranslucent)) continue;
         const bool mirrored = item->flags & kItemFlipped;
-        const std::int32_t x_left = item->x - (mirrored ? info->footpad_y : info->footpad_x) * 16;
-        const std::int32_t y_far = item->y - (mirrored ? info->footpad_x : info->footpad_y) * 16;
-        const std::int32_t z_top = item->z + info->footpad_z * 8;
-        if (x < x_left || x > item->x || y < y_far || y > item->y || z_top > z + kHeight || z_top < z - 16) continue;
-        if (!found || z_top > top) top = z_top;
+        out.push_back({item->x - (mirrored ? info->footpad_y : info->footpad_x) * 16, item->x,
+                       item->y - (mirrored ? info->footpad_x : info->footpad_y) * 16, item->y, item->z,
+                       item->z + info->footpad_z * 8});
+    }
+    return out;
+}
+
+// The top of the floor under (x, y): the highest scenery whose box holds it
+// with its top at most 16 below z (a barrel stands a little above the flat
+// floor tiles); z itself when there is none.
+// @orig none: port-only barrel leaks
+std::int32_t floor_top(const std::vector<Solid>& solids, std::int32_t x, std::int32_t y, std::int32_t z) {
+    std::int32_t top = z;
+    bool found = false;
+    for (const Solid& s : solids) {
+        if (x < s.x_left || x > s.x || y < s.y_far || y > s.y || s.z_top > z + kHeight || s.z_top < z - 16) continue;
+        if (!found || s.z_top > top) top = s.z_top;
         found = true;
     }
     return top;
@@ -110,31 +149,28 @@ std::int32_t floor_top(const World& world, std::int32_t x, std::int32_t y, std::
 // A pool at level z lies at (x, y): a floor there at that level, nothing
 // standing on it (the barrel that leaked aside).
 // @orig none: port-only barrel leaks
-bool on_floor(const World& world, double x, double y, std::int32_t z) {
+bool on_floor(const std::vector<Solid>& solids, double x, double y, std::int32_t z) {
     const auto ix = static_cast<std::int32_t>(std::lround(x)), iy = static_cast<std::int32_t>(std::lround(y));
-    if (floor_top(world, ix, iy, z + kHeight) != z) return false;
-    constexpr int kPad = 256;
-    for (ObjId id : world.rect_search(ix - kPad, iy - kPad, ix + kPad, iy + kPad)) {
-        const Item* item = world.get(id);
-        if (!item || is_npc_id(item->id) || item->parent != 0 || item->off_map || item->sprite_only ||
-            is_fuel_barrel(item->shape) || (item->flags & (kItemInvisible | kItemContained | kItemEthereal)))
-            continue;
-        const ShapeInfo* info = world.shape_info(item->shape);
-        if (!info || info->is(ShapeInfo::kEditor) || !info->footpad_z) continue;
-        const bool mirrored = item->flags & kItemFlipped;
-        const std::int32_t x_left = item->x - (mirrored ? info->footpad_y : info->footpad_x) * 16;
-        const std::int32_t y_far = item->y - (mirrored ? info->footpad_x : info->footpad_y) * 16;
-        const std::int32_t z_top = item->z + info->footpad_z * 8;
-        if (ix >= x_left && ix <= item->x && iy >= y_far && iy <= item->y && item->z <= z + 1 && z_top > z + kHeight)
-            return false;
+    bool floor = false;
+    for (const Solid& s : solids) {
+        if (ix < s.x_left || ix > s.x || iy < s.y_far || iy > s.y) continue;
+        if (std::abs(s.z_top - z) <= kHeight) floor = true;
+        else if (s.z_top > z + kHeight && s.z <= z + 16) return false;  // standing there
     }
-    return true;
+    return floor;
 }
 
 }  // namespace
 
 // @orig none: port-only barrel leaks
 bool is_fuel_barrel(std::uint16_t shape) { return shape == 0xAA || (shape >= 0x151 && shape <= 0x155); }
+
+// @orig none: port-only barrel leaks
+int barrel_bullet_damage(std::uint16_t shape, int damage, int fire_type) {
+    const bool bullet = mark_kind(fire_type) == MarkKind::Bullet || ejection_of(fire_type) != Ejection::None;
+    if (!is_fuel_barrel(shape) || !bullet) return damage;
+    return std::max(1, damage * 3 / 5);
+}
 
 // @orig none: port-only barrel leaks
 double BarrelLeaks::field(const Pool& p, double x, double y) {
@@ -160,6 +196,10 @@ BarrelLeaks::Pool* BarrelLeaks::pool_of(std::uint32_t serial) {
     return nullptr;
 }
 
+bool BarrelLeaks::on_fire(ObjId id) const {
+    return std::any_of(burning_.begin(), burning_.end(), [&](const Burning& b) { return b.id == id; });
+}
+
 // @orig none: port-only barrel leaks
 void BarrelLeaks::shot(const World& world, ObjId hit, World::Point at, int fire_type, std::uint32_t now) {
     if (world.current_map() != map_) {
@@ -173,7 +213,7 @@ void BarrelLeaks::shot(const World& world, ObjId hit, World::Point at, int fire_
         const dtable::FireType* ft = dtable::fire_type(fire_type);
         const double reach = kind == MarkKind::Scorch ? (ft ? ft->splash() : 0) * 16.0 + 8 : 0;
         for (Pool& p : pools_) {
-            if (p.burning || p.burnt || std::abs(at.z - p.z) > (kind == MarkKind::Scorch ? 48 : 8)) continue;
+            if (p.burning || p.burnt || std::abs(at.z - p.z) > (kind == MarkKind::Scorch ? 48 : 16)) continue;
             bool near = field(p, at.x, at.y) >= 1;
             for (const Lobe& l : p.lobes) {
                 const double dx = at.x - l.x, dy = at.y - l.y;
@@ -205,8 +245,9 @@ void BarrelLeaks::shot(const World& world, ObjId hit, World::Point at, int fire_
         b.height = info->footpad_z * 8.0;
         b.radius = upright(b.shape) ? std::min(b.length_x, b.length_y) / 2 : b.height / 2;
         b.level = b.height * kFull;
-        b.floor = floor_top(world, static_cast<std::int32_t>(b.x - b.length_x / 2),
-                            static_cast<std::int32_t>(b.y - b.length_y / 2), b.z);
+        const auto cx = static_cast<std::int32_t>(b.x - b.length_x / 2);
+        const auto cy = static_cast<std::int32_t>(b.y - b.length_y / 2);
+        b.floor = floor_top(solids_around(world, cx, cy, cx, cy), cx, cy, b.z);
         barrels_.push_back(b);
         found = barrels_.end() - 1;
     }
@@ -262,6 +303,13 @@ void BarrelLeaks::advance(const World& world, std::uint32_t now) {
     if (now - from > 600) from = now - 600;
     for (std::uint32_t t = from + 1; t <= now && t != 0; ++t) step(world, t);
     now_ = now;
+}
+
+// @orig none: port-only barrel leaks
+std::vector<ObjId> BarrelLeaks::take_burns() {
+    std::vector<ObjId> out;
+    out.swap(burns_);
+    return out;
 }
 
 // @orig none: port-only barrel leaks
@@ -326,9 +374,9 @@ void BarrelLeaks::step(const World& world, std::uint32_t tick) {
         if (tick - p.lit_at >= p.burn_ticks) {
             p.burning = false;
             p.burnt = true;
-            p.flames.clear();
             continue;
         }
+        catch_fire(world, p, tick);
         // A burning pool lights the pools it touches.
         if ((tick - p.lit_at) % 8 != 0 || tick - p.lit_at < 16) continue;
         for (Pool& q : pools_) {
@@ -341,6 +389,46 @@ void BarrelLeaks::step(const World& world, std::uint32_t tick) {
                 }
             }
         }
+    }
+    // The people on fire burn, every kBurnEvery ticks, until they are out.
+    for (std::size_t i = 0; i < burning_.size();) {
+        Burning& b = burning_[i];
+        const Item* item = world.get(b.id);
+        if (!item || world.is_dead(b.id) || tick >= b.until) {
+            burning_.erase(burning_.begin() + static_cast<std::ptrdiff_t>(i));
+            continue;
+        }
+        if (tick >= b.next) {
+            burns_.push_back(b.id);
+            b.next = tick + kBurnEvery;
+        }
+        ++i;
+    }
+}
+
+// Whoever stands in the fire of `p` catches fire.
+// @orig none: port-only barrel leaks
+void BarrelLeaks::catch_fire(const World& world, const Pool& p, std::uint32_t tick) {
+    const Bounds bb = bounds_of(p);
+    if (bb.x1 < bb.x0) return;
+    const auto x0 = static_cast<std::int32_t>(bb.x0), y0 = static_cast<std::int32_t>(bb.y0);
+    const auto x1 = static_cast<std::int32_t>(bb.x1), y1 = static_cast<std::int32_t>(bb.y1);
+    for (ObjId id : world.rect_search(x0, y0, x1 + kPad, y1 + kPad)) {
+        if (!is_npc_id(id)) continue;
+        const Item* item = world.get(id);
+        if (!item || item->off_map || item->parent != 0 || world.is_dead(id)) continue;
+        if (item->z < p.z - kHeight || item->z > p.z + 16) continue;
+        const ShapeInfo* info = world.shape_info(item->shape);
+        const double cx = item->x - (info ? info->footpad_x : 0) * 8.0;
+        const double cy = item->y - (info ? info->footpad_y : 0) * 8.0;
+        // The feet: the middle and four points around it.
+        double hottest = fire_at(p, cx, cy, tick);
+        static constexpr int kAround[4][2] = {{6, 0}, {-6, 0}, {0, 6}, {0, -6}};
+        for (const auto& a : kAround) hottest = std::max(hottest, fire_at(p, cx + a[0], cy + a[1], tick));
+        if (hottest < 0.25) continue;
+        auto found = std::find_if(burning_.begin(), burning_.end(), [&](const Burning& b) { return b.id == id; });
+        if (found == burning_.end()) burning_.push_back({id, tick + kAfterBurn, tick + 4});
+        else found->until = tick + kAfterBurn;
     }
 }
 
@@ -382,30 +470,32 @@ void BarrelLeaks::ignite(const World& world, Pool& p, double x, double y, std::u
     p.lit_at = tick;
     p.fire_x = x;
     p.fire_y = y;
-    p.burn_ticks = static_cast<std::uint32_t>(std::clamp(240.0 + 6 * extent, 240.0, 900.0));
-    // Flames over the pool, on a jittered grid, coarser for a big pool.
+    p.burn_ticks = static_cast<std::uint32_t>(std::clamp(240.0 + 5 * extent, 240.0, 900.0));
+    // The fuel, cell by cell, where it lies on the floor; the patches that
+    // hold some.
     const Bounds bb = bounds_of(p);
-    for (double step = 7;; step += 1) {
-        p.flames.clear();
-        int gx = 0;
-        for (double fx = bb.x0; fx <= bb.x1; fx += step, ++gx) {
-            int gy = 0;
-            for (double fy = bb.y0; fy <= bb.y1; fy += step, ++gy) {
-                const std::uint32_t h = mix(p.seed, gx, gy);
-                const double jx = fx + (unit(h) - 0.5) * step * 0.8, jy = fy + (unit(h >> 8) - 0.5) * step * 0.8;
-                const double s = field(p, jx, jy);
-                if (s < 1.1 || !on_floor(world, jx, jy, p.z)) continue;
-                Flame f;
-                f.x = jx;
-                f.y = jy;
-                f.depth = static_cast<float>(depth_of(s));
-                f.phase = static_cast<float>(unit(mix(h)));
-                f.size = static_cast<float>(0.7 + 0.6 * unit(mix(h, 1, 2)));
-                f.from = std::sqrt((jx - x) * (jx - x) + (jy - y) * (jy - y));
-                p.flames.push_back(f);
+    p.grid_x = std::floor(bb.x0 / kGrid) * kGrid;
+    p.grid_y = std::floor(bb.y0 / kGrid) * kGrid;
+    p.grid_w = static_cast<int>(std::ceil((bb.x1 - p.grid_x) / kGrid)) + 1;
+    p.grid_h = static_cast<int>(std::ceil((bb.y1 - p.grid_y) / kGrid)) + 1;
+    p.fuel.assign(static_cast<std::size_t>(p.grid_w) * p.grid_h, -1.0f);
+    const auto solids = solids_around(world, static_cast<std::int32_t>(bb.x0), static_cast<std::int32_t>(bb.y0),
+                                      static_cast<std::int32_t>(bb.x1), static_cast<std::int32_t>(bb.y1));
+    p.patches.clear();
+    for (int pj = 0; pj < p.grid_h; pj += kPatch) {
+        for (int pi = 0; pi < p.grid_w; pi += kPatch) {
+            bool any = false;
+            for (int j = pj; j < std::min(pj + kPatch, p.grid_h); ++j) {
+                for (int i = pi; i < std::min(pi + kPatch, p.grid_w); ++i) {
+                    const double cx = p.grid_x + (i + 0.5) * kGrid, cy = p.grid_y + (j + 0.5) * kGrid;
+                    const double s = field(p, cx, cy);
+                    if (s < 1 || !on_floor(solids, cx, cy, p.z)) continue;
+                    p.fuel[static_cast<std::size_t>(j) * p.grid_w + i] = static_cast<float>(depth_of(s));
+                    any = true;
+                }
             }
+            if (any) p.patches.emplace_back(pi, pj);
         }
-        if (p.flames.size() <= kMaxFlames) break;
     }
 }
 
@@ -420,19 +510,28 @@ float BarrelLeaks::fire_strength(const Pool& p, std::uint32_t tick) const {
     return ramp * (0.35f + 0.65f * tail);
 }
 
-// Reached by the fire, not yet burnt out: the edge goes out first.
+// Reached by the fire, not yet burnt out there: the edge goes out first.
 // @orig none: port-only barrel leaks
-bool BarrelLeaks::flame_alive(const Pool& p, const Flame& f, std::uint32_t tick) const {
-    if (!p.burning) return false;
+double BarrelLeaks::fire_at(const Pool& p, double x, double y, std::uint32_t tick) const {
+    if (!p.burning || p.fuel.empty()) return 0;
+    const int i = static_cast<int>(std::floor((x - p.grid_x) / kGrid));
+    const int j = static_cast<int>(std::floor((y - p.grid_y) / kGrid));
+    if (i < 0 || j < 0 || i >= p.grid_w || j >= p.grid_h) return 0;
+    const float fuel = p.fuel[static_cast<std::size_t>(j) * p.grid_w + i];
+    if (fuel < 0) return 0;
     const double age = tick - p.lit_at;
-    if (age * kSpread < f.from) return false;
-    const double u = age / p.burn_ticks;
-    return f.depth >= std::max(0.0, (u - 0.55) / 0.45);
+    const double from = std::sqrt((x - p.fire_x) * (x - p.fire_x) + (y - p.fire_y) * (y - p.fire_y));
+    const double reached = age * kSpread - from;
+    if (reached <= 0) return 0;
+    const double dying = std::max(0.0, (age / p.burn_ticks - 0.55) / 0.45);
+    if (fuel < dying) return 0;
+    return (0.5 + 0.4 * fuel) * std::min(1.0, reached / 12) * std::min(1.0, (fuel - dying) * 8 + 0.25) *
+           fire_strength(p, tick);
 }
 
 // @orig none: port-only barrel leaks
 void BarrelLeaks::prepare(const World& world, const Palette& game_palette, const std::vector<DrawItem>& list,
-                          int view_left, int view_top) {
+                          int view_left, int view_top, int width, int height) {
     if (world.current_map() != map_) {
         clear();
         map_ = world.current_map();
@@ -440,6 +539,14 @@ void BarrelLeaks::prepare(const World& world, const Palette& game_palette, const
     view_left_ = view_left;
     view_top_ = view_top;
     glowing_.clear();
+    ++frame_;
+    width_ = width;
+    const std::size_t pixels = static_cast<std::size_t>(width) * static_cast<std::size_t>(std::max(height, 0));
+    if (heat_frame_.size() != pixels) {
+        heat_frame_.assign(pixels, 0);
+        heat_.assign(pixels, 0);
+        heat_colour_.assign(pixels, 0);
+    }
     bool same = tone_ready_;
     for (int c = 0; same && c < 256; ++c) {
         if (c >= 1 && c <= 14) continue;
@@ -448,50 +555,52 @@ void BarrelLeaks::prepare(const World& world, const Palette& game_palette, const
     }
     if (!same) {
         // The fuel, dark and a little see-through at its edge; its jet; the
-        // holes; the burning pool; the burnt stain; the flames, white at
-        // their heart to a see-through dark red at their tips.
+        // holes; the pool glowing under the fire; the burnt stain; the
+        // fire, white at its heart, yellow, orange, red, then a see-through
+        // dark red and a wisp of smoke at its tips.
         tone_[kRim] = tint_table(game_palette, {52, 36, 16}, 55);
         tone_[kBody] = tint_table(game_palette, {30, 21, 10}, 80);
         tone_[kDeep] = tint_table(game_palette, {18, 12, 6}, 88);
-        tone_[kSheen] = tint_table(game_palette, {96, 80, 58}, 70);
+        tone_[kSheen] = tint_table(game_palette, {70, 60, 48}, 75);
         tone_[kStream] = tint_table(game_palette, {92, 62, 26}, 78);
         tone_[kStreamLight] = tint_table(game_palette, {196, 160, 90}, 72);
         tone_[kHole] = shade_table(game_palette, 12);
         tone_[kWet] = tint_table(game_palette, {34, 22, 10}, 45);
-        tone_[kHot] = tint_table(game_palette, {255, 150, 40}, 65);
-        tone_[kHotDark] = tint_table(game_palette, {170, 50, 10}, 58);
+        tone_[kHot] = tint_table(game_palette, {150, 50, 12}, 70);
         tone_[kAsh] = shade_table(game_palette, 58);
         tone_[kAshDark] = shade_table(game_palette, 38);
-        tone_[kFlameWhite] = tint_table(game_palette, {255, 246, 196}, 100);
-        tone_[kFlameYellow] = tint_table(game_palette, {255, 206, 70}, 100);
-        tone_[kFlameOrange] = tint_table(game_palette, {244, 128, 26}, 100);
-        tone_[kFlameRed] = tint_table(game_palette, {200, 56, 12}, 85);
-        tone_[kFlameTip] = tint_table(game_palette, {150, 30, 6}, 50);
+        tone_[kFlameWhite] = tint_table(game_palette, {255, 248, 204}, 100);
+        tone_[kFlameYellow] = tint_table(game_palette, {255, 214, 84}, 100);
+        tone_[kFlameOrange] = tint_table(game_palette, {250, 150, 40}, 100);
+        tone_[kFlameDeep] = tint_table(game_palette, {228, 94, 22}, 92);
+        tone_[kFlameRed] = tint_table(game_palette, {176, 42, 10}, 75);
+        tone_[kFlameDark] = tint_table(game_palette, {110, 24, 6}, 50);
+        tone_[kFlameSmoke] = tint_table(game_palette, {36, 28, 24}, 28);
         tone_palette_ = game_palette;
         tone_ready_ = true;
     }
-    // Each flame right after the last item it must be drawn over (a box of
-    // its own in the game's draw order), before the items in front.
-    flames_after_.clear();
-    flames_first_.clear();
+    // Each patch of fire right after the last item it must be drawn over (a
+    // box of its own in the game's draw order), before the items in front.
+    fire_after_.clear();
+    fire_first_.clear();
     for (std::size_t pi = 0; pi < pools_.size(); ++pi) {
         const Pool& p = pools_[pi];
         if (!p.burning) continue;
-        for (std::size_t fi = 0; fi < p.flames.size(); ++fi) {
-            const Flame& f = p.flames[fi];
-            if (!flame_alive(p, f, now_)) continue;
+        for (std::size_t k = 0; k < p.patches.size(); ++k) {
+            const double x0 = p.grid_x + p.patches[k].first * kGrid, y0 = p.grid_y + p.patches[k].second * kGrid;
+            const double x1 = x0 + kPatch * kGrid, y1 = y0 + kPatch * kGrid;
             DrawItem d{};
-            d.x = world_from_usecode(static_cast<std::int32_t>(std::lround(f.x)) + 2);
-            d.y = world_from_usecode(static_cast<std::int32_t>(std::lround(f.y)) + 2);
-            d.x_left = d.x - 8;
-            d.y_far = d.y - 8;
+            d.x = world_from_usecode(static_cast<std::int32_t>(x1));
+            d.y = world_from_usecode(static_cast<std::int32_t>(y1));
+            d.x_left = world_from_usecode(static_cast<std::int32_t>(x0));
+            d.y_far = world_from_usecode(static_cast<std::int32_t>(y0));
             d.z = p.z;
-            d.z_top = p.z + 16;
-            const int sx = screen_x(f.x, f.y) - view_left_, sy = screen_y(f.x, f.y, p.z) - view_top_;
-            d.left = sx - 4;
-            d.right = sx + 5;
-            d.top = sy - 24;
-            d.bottom = sy + 2;
+            d.z_top = p.z + 40;
+            d.left = screen_x(x0, y1) - view_left_ - 2;
+            d.right = screen_x(x1, y0) - view_left_ + 2;
+            d.top = screen_y(x0, y0, p.z) - view_top_ - static_cast<int>(kFlameHeight) - 2;
+            d.bottom = screen_y(x1, y1, p.z) - view_top_ + 2;
+            if (d.right < 0 || d.bottom < 0 || d.left > width || d.top > height) continue;
             std::size_t after = list.size();
             for (std::size_t i = list.size(); i-- > 0;) {
                 if (draw_before(list[i], d).value_or(false)) {
@@ -499,8 +608,8 @@ void BarrelLeaks::prepare(const World& world, const Palette& game_palette, const
                     break;
                 }
             }
-            if (after == list.size()) flames_first_.emplace_back(pi, fi);
-            else flames_after_[after].emplace_back(pi, fi);
+            if (after == list.size()) fire_first_.emplace_back(pi, k);
+            else fire_after_[after].emplace_back(pi, k);
         }
     }
 }
@@ -532,7 +641,7 @@ bool BarrelLeaks::opaque(const DrawItem& d, int sx, int sy) const {
 // @orig none: port-only barrel leaks
 void BarrelLeaks::draw_first(Surface8& screen) {
     if (!tone_ready_) return;
-    for (const auto& [pi, fi] : flames_first_) draw_flame(screen, pools_[pi], pools_[pi].flames[fi]);
+    for (const auto& [pi, k] : fire_first_) draw_patch(screen, pools_[pi], pools_[pi].patches[k]);
 }
 
 // @orig none: port-only barrel leaks
@@ -542,13 +651,15 @@ void BarrelLeaks::draw(Surface8& screen, const DrawItem& d, std::size_t index) {
     if (is_fuel_barrel(item.shape)) {
         for (const Barrel& b : barrels_)
             if (b.id == item.id && b.shape == item.shape) draw_barrel(screen, d, b);
-    } else if (!pools_.empty() && !is_npc_id(item.id) && !item.sprite_only &&
-               !(d.shape_flags & ShapeInfo::kTranslucent)) {
+    } else if (is_npc_id(item.id)) {
+        for (const Burning& b : burning_)
+            if (b.id == item.id) draw_person(screen, d, b);
+    } else if (!pools_.empty() && !item.sprite_only && !(d.shape_flags & ShapeInfo::kTranslucent)) {
         for (const Pool& p : pools_)
             if (std::abs(d.z_top - p.z) <= kHeight) draw_pool(screen, d, p);
     }
-    if (const auto found = flames_after_.find(index); found != flames_after_.end()) {
-        for (const auto& [pi, fi] : found->second) draw_flame(screen, pools_[pi], pools_[pi].flames[fi]);
+    if (const auto found = fire_after_.find(index); found != fire_after_.end()) {
+        for (const auto& [pi, k] : found->second) draw_patch(screen, pools_[pi], pools_[pi].patches[k]);
     }
 }
 
@@ -568,7 +679,6 @@ void BarrelLeaks::draw_pool(Surface8& screen, const DrawItem& d, const Pool& p) 
     const int bottom = std::min({d.bottom, screen_y(x1, y1, p.z) - view_top_ + 2, screen.height});
     const std::uint32_t tick = now_;
     const double age = p.burning ? static_cast<double>(tick - p.lit_at) : 0;
-    const double dying = p.burning ? std::max(0.0, (age / p.burn_ticks - 0.55) / 0.45) : 0;
     for (int py = top; py < bottom; ++py) {
         for (int px = left; px < right; ++px) {
             // The point of the floor's top seen at this pixel.
@@ -585,17 +695,14 @@ void BarrelLeaks::draw_pool(Surface8& screen, const DrawItem& d, const Pool& p) 
             if (p.burning) {
                 const double from = std::sqrt((x - p.fire_x) * (x - p.fire_x) + (y - p.fire_y) * (y - p.fire_y));
                 if (age * kSpread >= from) {
-                    if (depth < dying) {
-                        put(screen, px, py, noise(x / 4, y / 4, p.seed ^ 7) > 0.6 ? kAshDark : kAsh);
-                    } else {
-                        const double flick = noise(x / 5 + tick * 0.11, y / 3 - tick * 0.07, p.seed ^ 3);
-                        put(screen, px, py, flick > 0.35 ? kHot : kHotDark, true);
-                    }
+                    // Glowing under the fire, burnt where it went out.
+                    if (fire_at(p, x, y, tick) > 0) put(screen, px, py, kHot, true);
+                    else put(screen, px, py, noise(x / 4, y / 4, p.seed ^ 7) > 0.6 ? kAshDark : kAsh);
                     continue;
                 }
             }
             Tone tone = depth < 0.08 ? kRim : depth > 0.6 ? kDeep : kBody;
-            if (depth > 0.2 && noise(x / 12 + tick * 0.004, y / 5, p.seed ^ 1) > 0.8) tone = kSheen;
+            if (depth > 0.2 && noise(x / 16 + tick * 0.004, y / 9, p.seed ^ 1) > 0.84) tone = kSheen;
             put(screen, px, py, tone);
         }
     }
@@ -670,43 +777,116 @@ void BarrelLeaks::draw_barrel(Surface8& screen, const DrawItem& d, const Barrel&
     }
 }
 
-// A tongue of fire standing on the pool, flickering and swaying.
+// Flames rise from each burning row of the column, losing heat as they go
+// up (1 / height a pixel), broken up by noise rising faster than them, so
+// that tongues lick up and part from the fire; the hotter, the whiter.
+// Where fire was already drawn this frame, the hotter stays.
 // @orig none: port-only barrel leaks
-void BarrelLeaks::draw_flame(Surface8& screen, const Pool& p, const Flame& f) {
+void BarrelLeaks::fire_column(Surface8& screen, int px, int bottom, const std::vector<float>& base, float height,
+                              std::uint32_t seed) {
+    if (px < 0 || px >= screen.width || height < 2) return;
+    const float t = static_cast<float>(now_);
+    const float decay = 1.0f / height;
+    const float x = static_cast<float>(px + view_left_);
+    float m = 0;
+    const int n = static_cast<int>(base.size());
+    for (int k = 0;; ++k) {
+        const float b = k < n ? base[static_cast<std::size_t>(k)] : 0.0f;
+        m = std::max(b, m - decay);
+        if (m <= 0) {
+            if (k >= n) break;
+            continue;
+        }
+        const int py = bottom - k;
+        if (py < 0) break;
+        if (py >= screen.height) continue;
+        const float y = static_cast<float>(py + view_top_);
+        const float sway = 1.3f * std::sin(y * 0.19f + t * 0.08f + x * 0.05f);
+        // Streaks taller than wide, rising faster than the flames.
+        const float n1 = fast_noise((x + sway) / 3.2f, (y + t * 1.9f) / 11.0f, seed);
+        const float n2 = fast_noise(x / 1.7f, (y + t * 3.1f) / 5.0f, seed + 101);
+        const float v = m * (0.02f + 1.45f * (0.6f * n1 + 0.4f * n2));
+        if (v < 0.1f) continue;
+        const Tone tone = v > 1.0f    ? kFlameWhite
+                          : v > 0.8f  ? kFlameYellow
+                          : v > 0.62f ? kFlameOrange
+                          : v > 0.46f ? kFlameDeep
+                          : v > 0.32f ? kFlameRed
+                          : v > 0.2f  ? kFlameDark
+                                      : kFlameSmoke;
+        const std::size_t j = static_cast<std::size_t>(py) * static_cast<std::size_t>(screen.width) + px;
+        std::uint8_t& pixel = screen.row(py)[px];
+        if (j < heat_.size()) {
+            if (heat_frame_[j] == frame_ && heat_colour_[j] == pixel && heat_[j] >= v) continue;
+            heat_frame_[j] = frame_;
+            heat_[j] = v;
+        }
+        put(screen, px, py, tone, v > 0.32f);
+        if (j < heat_.size()) heat_colour_[j] = pixel;
+    }
+}
+
+// A patch of a burning pool: for each column of its screen, how strongly
+// each row of its floor burns, then the flames off them.
+// @orig none: port-only barrel leaks
+void BarrelLeaks::draw_patch(Surface8& screen, const Pool& p, std::pair<int, int> patch) {
     const float strength = fire_strength(p, now_);
     if (strength <= 0) return;
+    const double x0 = p.grid_x + patch.first * kGrid, y0 = p.grid_y + patch.second * kGrid;
+    const double x1 = x0 + kPatch * kGrid, y1 = y0 + kPatch * kGrid;
+    const int left = screen_x(x0, y1) - view_left_, right = screen_x(x1, y0) - view_left_;
+    const int top = screen_y(x0, y0, p.z) - view_top_, bottom = screen_y(x1, y1, p.z) - view_top_;
     const float t = static_cast<float>(now_);
-    const float phase = f.phase * 6.2831853f;
-    const float flicker = 0.75f + 0.25f * std::sin(t * 0.37f + phase) + 0.12f * std::sin(t * 0.91f + phase * 3);
-    const float height = (7 + 19 * f.size * (0.35f + 0.65f * f.depth)) * strength * flicker;
-    const float width = (1.8f + 1.8f * f.size * (0.5f + 0.5f * f.depth)) * (0.6f + 0.4f * strength);
-    const int sx = screen_x(f.x, f.y) - view_left_, sy = screen_y(f.x, f.y, p.z) - view_top_;
-    const int rows = static_cast<int>(height);
-    for (int k = 0; k <= rows; ++k) {
-        const float rel = rows > 0 ? static_cast<float>(k) / static_cast<float>(rows) : 0.0f;
-        float w = width * std::pow(1 - rel, 0.8f);
-        if (rel < 0.1f) w *= 0.7f + 3 * rel;
-        const float sway = std::sin(t * 0.23f + phase * 9 + k * 0.4f) * rel * 1.6f;
-        const float cx = sx + 0.5f + sway;
-        const int xa = static_cast<int>(std::floor(cx - w)), xb = static_cast<int>(std::ceil(cx + w));
-        for (int x = xa; x <= xb; ++x) {
-            const float c = std::abs(x + 0.5f - cx) / std::max(w, 0.5f);
-            if (c > 1) continue;
-            const float grain = static_cast<float>(unit(mix(static_cast<std::uint32_t>(now_ / 2), x, sy - k))) - 0.5f;
-            const float heat = (1 - rel) * (1 - 0.55f * c) + 0.15f * grain;
-            const Tone tone = heat > 0.72f   ? kFlameWhite
-                              : heat > 0.52f ? kFlameYellow
-                              : heat > 0.34f ? kFlameOrange
-                              : heat > 0.18f ? kFlameRed
-                                             : kFlameTip;
-            put(screen, x, sy - k, tone, true);
+    for (int px = std::max(left, 0); px <= std::min(right, screen.width - 1); ++px) {
+        column_.assign(static_cast<std::size_t>(bottom - top + 1), 0.0f);
+        bool any = false;
+        for (int k = 0; k <= bottom - top; ++k) {
+            const int py = bottom - k;
+            const double a = 2.0 * (px + view_left_ + 0.5), b = 4.0 * (py + view_top_ + 0.5 + p.z);
+            const double x = (a + b) / 2, y = (b - a) / 2;
+            if (x < x0 || x >= x1 || y < y0 || y >= y1) continue;
+            const float f = static_cast<float>(fire_at(p, x, y, now_));
+            column_[static_cast<std::size_t>(k)] = f;
+            any = any || f > 0;
         }
+        if (!any) continue;
+        // Taller here, lower there, slowly changing.
+        const float tall = 0.45f + 0.9f * fast_noise((px + view_left_) / 9.0f + t * 0.012f, t * 0.006f, p.seed);
+        fire_column(screen, px, bottom, column_, kFlameHeight * strength * tall, p.seed);
+    }
+}
+
+// Someone on fire: flames over their body, here and there, rising off it;
+// weaker once out of the fire, until they go out.
+// @orig none: port-only barrel leaks
+void BarrelLeaks::draw_person(Surface8& screen, const DrawItem& d, const Burning& b) {
+    const Item& item = *d.item;
+    if (item.shape == 0x576 || item.shape == 0x58F) return;  // the game's own burning and burnt
+    const float left = b.until > now_ ? static_cast<float>(b.until - now_) / kAfterBurn : 0.0f;
+    const float strength = 0.35f + 0.65f * std::min(1.0f, left * 1.5f);
+    const float t = static_cast<float>(now_);
+    const int rows = d.bottom - d.top;
+    const std::uint32_t seed = mix(item.id);
+    for (int px = std::max(d.left, 0); px < std::min(d.right, screen.width); ++px) {
+        column_.assign(static_cast<std::size_t>(rows), 0.0f);
+        bool any = false;
+        for (int k = 0; k < rows; ++k) {
+            const int py = d.bottom - 1 - k;
+            if (!opaque(d, px, py)) continue;
+            const float patchy = fast_noise((px + view_left_) / 3.0f, (py + view_top_ + t * 1.2f) / 4.0f, seed);
+            if (patchy < 0.45f) continue;
+            const float low = k < rows * 0.6f ? 0.85f : 0.6f;
+            column_[static_cast<std::size_t>(k)] = low * strength;
+            any = true;
+        }
+        if (any) fire_column(screen, px, d.bottom - 1, column_, 16 * strength, seed);
     }
 }
 
 // @orig none: port-only barrel leaks
-std::vector<PointLight> BarrelLeaks::lights() const {
+std::vector<PointLight> BarrelLeaks::lights(const World& world) const {
     std::vector<PointLight> out;
+    const float t = static_cast<float>(now_);
     for (const Pool& p : pools_) {
         const float strength = fire_strength(p, now_);
         if (strength <= 0) continue;
@@ -718,13 +898,24 @@ std::vector<PointLight> BarrelLeaks::lights() const {
             extent = std::max(extent, l.r);
         }
         if (sw <= 0) continue;
-        const float t = static_cast<float>(now_);
         const float flicker = 0.85f + 0.1f * std::sin(t * 0.5f + p.serial) + 0.05f * std::sin(t * 1.3f + p.serial * 3);
         PointLight l;
-        l.pos = {static_cast<float>(sx / sw * 2), static_cast<float>(sy / sw * 2), (p.z + 18) * kLightZScale};
-        const float k = 1.4f * strength * flicker;
+        l.pos = {static_cast<float>(sx / sw * 2), static_cast<float>(sy / sw * 2), (p.z + 22) * kLightZScale};
+        const float k = 1.6f * strength * flicker;
         l.color = Vec3{1.0f * k, 0.52f * k, 0.18f * k};
-        l.radius = static_cast<float>(380 + 4 * extent);
+        l.radius = static_cast<float>(420 + 4 * extent);
+        out.push_back(l);
+    }
+    for (const Burning& b : burning_) {
+        const Item* item = world.get(b.id);
+        if (!item) continue;
+        const float flicker = 0.8f + 0.2f * std::sin(t * 0.7f + b.id);
+        PointLight l;
+        l.pos = {float(world_from_usecode(item->x)) - 16, float(world_from_usecode(item->y)) - 16,
+                 (item->z + 24) * kLightZScale};
+        l.color = Vec3{1.0f * flicker, 0.5f * flicker, 0.16f * flicker};
+        l.radius = 300;
+        l.owner = b.id;
         out.push_back(l);
     }
     return out;
@@ -735,12 +926,16 @@ std::vector<Vec3> BarrelLeaks::smoke_since(std::uint32_t since) const {
     std::vector<Vec3> out;
     if (now_ - since > 60) since = now_ - 60;
     for (const Pool& p : pools_) {
-        if (!p.burning || p.flames.empty()) continue;
+        if (!p.burning || p.fuel.empty()) continue;
         for (std::uint32_t t = since + 1; t <= now_ && t != 0; ++t) {
-            if ((t + p.serial) % 9 != 0 || fire_strength(p, t) < 0.4f) continue;
-            const Flame& f = p.flames[mix(p.seed, static_cast<int>(t), 5) % p.flames.size()];
-            if (!flame_alive(p, f, t)) continue;
-            out.push_back({static_cast<float>(f.x * 2), static_cast<float>(f.y * 2), (p.z + 14) * kLightZScale});
+            if ((t + p.serial) % 7 != 0 || fire_strength(p, t) < 0.4f) continue;
+            // A cell picked at random: smoke if it burns.
+            const std::uint32_t h = mix(p.seed, static_cast<int>(t), 5);
+            const int i = static_cast<int>(h % static_cast<std::uint32_t>(p.grid_w));
+            const int j = static_cast<int>((h >> 12) % static_cast<std::uint32_t>(p.grid_h));
+            const double x = p.grid_x + (i + 0.5) * kGrid, y = p.grid_y + (j + 0.5) * kGrid;
+            if (fire_at(p, x, y, t) < 0.3) continue;
+            out.push_back({static_cast<float>(x * 2), static_cast<float>(y * 2), (p.z + 20) * kLightZScale});
         }
     }
     return out;
@@ -750,8 +945,10 @@ std::vector<Vec3> BarrelLeaks::smoke_since(std::uint32_t since) const {
 void BarrelLeaks::clear() {
     barrels_.clear();
     pools_.clear();
-    flames_after_.clear();
-    flames_first_.clear();
+    burning_.clear();
+    burns_.clear();
+    fire_after_.clear();
+    fire_first_.clear();
     glowing_.clear();
     masks_.clear();
     started_ = false;

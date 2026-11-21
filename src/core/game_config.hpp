@@ -95,9 +95,10 @@ public:
     // Port addition, written only when set: "casings", firearms eject
     // casings that stay on the floor (casings.hpp).
     bool casings = false;
-    // Port addition, written only when set: "barrelleaks", bullets pierce the
-    // explosive barrels, their fuel runs out into a pool that catches fire
-    // when they blow up (barrel_leaks.hpp).
+    // Port addition, written only when set: "barrelleaks", the explosive
+    // barrels take more bullets, each pierces them, their fuel runs out into a
+    // pool that catches fire when they blow up and burns whoever stands in it
+    // (barrel_leaks.hpp).
     bool barrel_leaks = false;
     // Port addition, a cheat written only when set: "remainsloot", an enemy
     // burnt, blown apart, melted or frozen drops beside its remains the loot

@@ -324,6 +324,7 @@ private:
     // date and time with set_auto_save_names, else none.
     std::function<std::string()> auto_save_name_function() const;
     void fire_frame(ObjId actor, int muzzle_a, int muzzle_b, int muzzle_z);
+    void burn_in_fires();
     void vibrate(std::uint16_t low_frequency, std::uint16_t high_frequency, std::uint32_t duration_ms,
                  bool preview = false);
     void reset_world();

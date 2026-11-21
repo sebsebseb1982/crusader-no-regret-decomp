@@ -99,7 +99,7 @@ The original has nothing like it. This screen gathers every option the port adds
 | IMPACT MARKS / IMPACTS | Shots leave marks on the scenery | `impactmarks` |
 | BLOOD / SANG | Cycles OFF → ON (the wounded bleed on the scenery) → GORE (much more blood) | `bloodmarks`, `goremode` |
 | CASINGS / DOUILLES | Firearms eject casings that stay on the floor (section 7c) | `casings` |
-| LEAKING BARRELS / FUITES DES BARILS | Bullets pierce the explosive barrels; their fuel makes a pool that catches fire when they blow up (section 7e) | `barrelleaks` |
+| LEAKING BARRELS / FUITES DES BARILS | Explosive barrels take more bullets; each pierces them, their fuel makes a pool that catches fire when they blow up and burns whoever stands in it (section 7e) | `barrelleaks` |
 
 *GAME / JEU*
 
@@ -484,12 +484,15 @@ The original draws flat sprites under a fixed light. With this option the world 
 ## 7e. Leaking barrels
 
 **Option:** LEAKING BARRELS / FUITES DES BARILS (`barrelleaks`), EFFECTS page, off by default.
-**Files:** `src/engine/world/barrel_leaks.*`, `src/engine/world/lighting.*` (the fire's smoke and glow), `src/game/game.cpp`
+**Files:** `src/engine/world/barrel_leaks.*`, `src/engine/world/projectile.cpp` (the barrels' damage), `src/engine/world/lighting.*` (the fire's smoke and glow), `src/game/game.cpp`
 
 The explosive barrels (BARRELUP 0xAA upright, BARRELS to BARRELSE 0x151..0x155 lying) take several bullets before they blow up: their class adds up the damage of each hit and explodes at 150 (100 in *No Remorse*). In the original the bullets before the last leave no trace. With this option each of them pierces the barrel, and its fuel runs out.
 
+**Tougher barrels**
+- A bullet does a barrel 3/5 of its damage (at least 1), after the game's own changes (difficulty, a third for bullets on the lifeless): it takes about 1.7 times as many bullets to blow one up, and so leaks more. Blasts do their full damage, so barrels still blow each other up.
+
 **Holes**
-- Only bullets pierce: the fire types that leave a bullet hole (section 7b) or eject a casing (section 7c). Six holes at most per barrel.
+- Only bullets pierce: the fire types that leave a bullet hole (section 7b) or eject a casing (section 7c). Eight holes at most per barrel.
 - The hole is where the bullet hit: on the round side of an upright barrel, on the face hit of a lying one. A hole in the top lets nothing out.
 - A barrel starts 90 % full. A hole below the fuel's level leaks 1/10 s after the hit; the bullet that blows the barrel up leaks nothing.
 
@@ -498,19 +501,25 @@ The explosive barrels (BARRELUP 0xAA upright, BARRELS to BARRELSE 0x151..0x155 l
 - A jet is a thin brown stream with light flecks running along it, two pixels wide near a strong hole, with a little splash where it lands. Under each hole the side stays wet down to the floor. A hole on a side the camera does not see leaks without its jet being drawn.
 
 **Pool**
-- The fuel makes one pool per barrel: a patch where each jet first landed and one at the foot of the barrel under the hole, growing with what ran out of that hole, flowing together with a ragged edge. A barrel emptied by a low hole makes a pool up to about four times its width.
+- The fuel makes one pool per barrel: a patch where each jet first landed and one at the foot of the barrel under the hole, growing with what ran out of that hole, flowing together with a ragged edge. A barrel emptied by a low hole makes a pool up to about six times its width.
 - It lies on the floor under the barrel (the highest floor at most 16 below it) and on the floors at that level around: not down a ledge, and under what stands on the floor (walls, crates), which covers it.
 - Dark brown, a little see-through at its edge, with a slow sheen.
 
 **Fire**
 - When the barrel explodes (its last bullet, or any blast), what was left in it splashes where it stood and the pool catches fire there. A blast within reach of a pool, an energy shot (laser, plasma, fire...) that ends on it, or a burning pool that touches it sets a pool alight too.
-- The fire spreads from where it caught at 2.5 units a tick: tongues of flame, white and yellow at their foot, then orange, red, see-through at their tips, flickering and swaying, taller where the pool is deep; the pool under them glows orange. Each flame is drawn in the game's order as a small box of its own, so what stands in front of it covers it.
+- The fire spreads from where it caught at 2.5 units a tick. It is drawn pixel by pixel: every point of the floor it has reached burns, more strongly where the pool is deep, and flames rise off it up to 64 pixels, losing heat as they go up. Noise rising faster than the flames, in streaks taller than wide and swaying a little, breaks them into tongues that lick up and part from the fire. The hotter a pixel, the whiter: white, yellow, orange, deep orange, then red, a see-through dark red and a wisp of smoke at the tips. The flames rise from the near parts of the pool over the far ones; where two meet, the hotter shows. The pool under the fire glows a dark orange.
+- The pool burns by patches of 32 x 32 units, each drawn in the game's order as a box of its own, so what stands in front of the fire covers it and the fire covers what is behind.
 - It burns 4 to 15 seconds (longer the bigger the pool), dies down for its last 40 %, from the edge in, and leaves a burnt stain that stays.
-- With the 3D lighting (section 7d), the fire gives a flickering orange light, its flames and the burning pool glow as they are, and, with the volumetric smoke, a dark smoke rises off the flames, lit from below at first.
-- The fire is only seen: it hurts no one, and only other pools catch from it.
+- With the 3D lighting (section 7d), the fire gives a flickering orange light, its pixels glow as they are, and, with the volumetric smoke, a dark smoke rises off it, lit from below at first.
+
+**Burning people**
+- Whoever stands in a burning part of a pool (their feet, or 6 units around them, where it burns at a quarter of its strength or more, up to 16 above the floor) catches fire, the Silencer as much as the others.
+- Someone on fire takes 5 damage of fire type 0xC, the game's own fire, at once then every quarter of a second, changed by the difficulty as any hit. A human it kills burns and runs, as in the game. It goes on for a second after they leave the fire.
+- They are drawn in flames: patches of fire over their body, rising off it, weaker once out of the fire; with the 3D lighting they carry an orange light.
+- Only other pools catch from a fire: the scenery does not burn.
 
 **Rules**
-- Leaks only read the world and use their own numbers, never the game's random generators, so the game plays the same with or without them.
+- Leaks use their own numbers, never the game's random generators. Only the barrels' damage and the burns change the game.
 - They follow the game's clock (they stop with it) and are not saved: a load or a map change forgets them, and so does switching the option off. At most 32 barrels and 48 pools are followed; past that the oldest go.
 
 ---

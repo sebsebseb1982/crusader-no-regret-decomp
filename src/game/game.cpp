@@ -528,6 +528,10 @@ void Game::reset_world() {
         if (config_.impact_marks) damage_marks_.record(*world_, hit, {x, y, z}, fire_type);
         if (config_.barrel_leaks) barrel_leaks_.shot(*world_, hit, {x, y, z}, fire_type, kernel_->ticks());
     };
+    hooks.item_damage = [this](ObjId item, int damage, int fire_type) {
+        const Item* hit = world_->get(item);
+        return config_.barrel_leaks && hit ? barrel_bullet_damage(hit->shape, damage, fire_type) : damage;
+    };
     hooks.shot_fired = [this](ObjId shooter, std::int32_t x, std::int32_t y, std::int32_t z, int dir, int fire_type) {
         if (lighting_) lighting_->shot_fired(shooter, x, y, z, dir, fire_type, kernel_->ticks());
     };
@@ -545,6 +549,21 @@ void Game::reset_world() {
     sprites_suspended_ = false;
     autosave_pending_ = false;
     autosave_lineage_ = 0;
+}
+
+// Port addition (leaking barrels): the leaks and fires go on with the game's
+// clock, and whoever stands in a fire burns (fire type 0xC, the game's own
+// fire: a human it kills burns and runs).
+// @orig none: port-only barrel leaks
+void Game::burn_in_fires() {
+    barrel_leaks_.advance(*world_, kernel_->ticks());
+    for (ObjId id : barrel_leaks_.take_burns()) {
+        const Item* victim = world_->get(id);
+        if (!victim) continue;
+        const World::Point at = world_->location(*victim);
+        apply_damage(*kernel_, *world_, anims_, id, 0, 0x10, BarrelLeaks::kBurnDamage, BarrelLeaks::kBurnFireType,
+                     &at);
+    }
 }
 
 // @orig none: port-only gamepad vibration
@@ -1063,6 +1082,7 @@ void Game::update(std::uint32_t elapsed_us) {
         left -= step;
         if (!more || in_movie() || kernel_->slice_interrupted()) break;
     }
+    if (config_.barrel_leaks) burn_in_fires();
     if (autosave_lineage_) {
         bool running = false;
         kernel_->for_each_process([&](const Process& p) { running |= p.lineage() == autosave_lineage_; });
@@ -2139,7 +2159,7 @@ bool Game::render_lit(const Surface8& screen, std::vector<std::uint32_t>& argb) 
     argb.resize(screen.pixels.size());
     // Port addition: the fires of the leaking barrels' pools light the scene.
     std::vector<PointLight> extra;
-    if (config_.barrel_leaks) extra = barrel_leaks_.lights();
+    if (config_.barrel_leaks) extra = barrel_leaks_.lights(*world_);
     return lighting_->shade(*world_, screen, palette(), lighting_options(config_), std::move(extra), argb.data());
 }
 
@@ -2251,7 +2271,8 @@ void Game::render_view(Surface8& screen, RenderStats* stats, bool keep_view) {
     const bool leaks = config_.barrel_leaks;
     if (leaks) {
         barrel_leaks_.advance(*world_, kernel_->ticks());
-        barrel_leaks_.prepare(*world_, world_->state.game_palette, list, s.view_left, s.view_top);
+        barrel_leaks_.prepare(*world_, world_->state.game_palette, list, s.view_left, s.view_top, screen.width,
+                              screen.height);
         barrel_leaks_.draw_first(screen);
     } else {
         barrel_leaks_.clear();

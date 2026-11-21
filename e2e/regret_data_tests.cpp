@@ -375,10 +375,13 @@ void test_shot_floor_mine(const std::filesystem::path& data) {
 
 // Port addition (barrel_leaks.hpp): an explosive barrel (BARRELUP 0xAA) put
 // by the player in a new game takes 150 damage before it blows up (BARREL,
-// ITEM_066B). Each bullet before the last pierces it: its fuel runs out into
-// a pool on the floor, which catches fire when the barrel explodes, burns
-// and leaves a burnt stain.
+// ITEM_066B); with the option bullets do it 3/5 of their damage. Each bullet
+// before the last pierces it: its fuel runs out into a pool on the floor,
+// which catches fire when the barrel explodes, burns and leaves a burnt
+// stain. Whoever stands in the fire catches fire and burns.
 void test_barrel_leaks(const std::filesystem::path& data) {
+    CHECK(barrel_bullet_damage(0xAA, 20, 2) == 12 && barrel_bullet_damage(0x153, 1, 0xB) == 1);
+    CHECK(barrel_bullet_damage(0xAA, 20, 4) == 20 && barrel_bullet_damage(0x1FD, 20, 2) == 20);
     Game game(data, saves_dir());
     game.config().barrel_leaks = true;
     game.new_game(0);
@@ -460,17 +463,45 @@ void test_barrel_leaks(const std::filesystem::path& data) {
     CHECK(w.get(barrel) && w.get(barrel)->shape == 0xAA && later > first);
     CHECK(!leaks.pools()[0].burning);
     picture("barrel_leak_later.png");
-    for (int k = 0; k < 6 && w.get(barrel) && w.get(barrel)->shape == 0xAA; ++k) {
+    // The Silencer out of the blast's reach.
+    World::Point away = w.location(*w.get(1));
+    bool far = false;
+    for (int ring = 320; ring <= 960 && !far; ring += 32) {
+        for (int k = 0; k < 16 && !far; ++k) {
+            const World::Point at{spot.x + kDirectionDx[k] * ring / 2, spot.y + kDirectionDy[k] * ring / 2, spot.z};
+            far = position_free(w, w.get(1)->shape, at, nullptr, 1);
+            if (far) away = at;
+        }
+    }
+    CHECK(far);
+    w.move_item(1, away.x, away.y, away.z);
+    // 3/5 of the damage: about 1.7 times as many shots (4 without the option).
+    int shots = 3;
+    for (; shots < 30 && w.get(barrel) && w.get(barrel)->shape == 0xAA; ++shots) {
         fire(64, 64, 30);
         run(10);
     }
     CHECK(!w.get(barrel) || w.get(barrel)->shape != 0xAA);
     run(40);
     CHECK(leaks.barrels().empty() && !leaks.pools().empty() && leaks.pools()[0].burning);
-    const std::size_t flames = leaks.pools().empty() ? 0 : leaks.pools()[0].flames.size();
-    std::printf("barrel leaks: exploded, pool burning with %zu flames, %zu lights\n", flames, leaks.lights().size());
-    CHECK(flames > 4 && leaks.lights().size() == 1);
+    const std::size_t patches = leaks.pools().empty() ? 0 : leaks.pools()[0].patches.size();
+    std::printf("barrel leaks: exploded after %d shots, pool burning in %zu patches, %zu lights\n", shots, patches,
+                leaks.lights(w).size());
+    CHECK(shots >= 7 && patches > 4 && leaks.lights(w).size() == 1);
     picture("barrel_fire.png");
+    // The Silencer walks into the fire: he catches fire and burns, and
+    // goes out a second after he left it.
+    const int hp = w.npc_hp(1);
+    w.move_item(1, spot.x, spot.y, spot.z);
+    run(45);
+    const int burnt_hp = w.npc_hp(1);
+    std::printf("barrel leaks: the Silencer in the fire, %s, hit points %d -> %d\n",
+                leaks.on_fire(1) ? "on fire" : "not on fire", hp, burnt_hp);
+    CHECK(leaks.on_fire(1) && burnt_hp < hp);
+    picture("barrel_person_fire.png");
+    w.move_item(1, away.x, away.y, away.z);
+    run(BarrelLeaks::kAfterBurn + 5);
+    CHECK(!leaks.on_fire(1));
     if (!g_png_dir.empty()) {
         game.config().lighting = true;
         w.set_camera(spot.x, spot.y, spot.z);
@@ -488,7 +519,7 @@ void test_barrel_leaks(const std::filesystem::path& data) {
         game.config().lighting = false;
     }
     run(900);
-    CHECK(!leaks.pools().empty() && leaks.pools()[0].burnt && leaks.lights().empty());
+    CHECK(!leaks.pools().empty() && leaks.pools()[0].burnt && leaks.lights(w).empty());
     picture("barrel_burnt.png");
     CHECK(game.machine().faults().empty() && game.machine().unbound_intrinsic_calls().empty());
 }

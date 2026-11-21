@@ -21,9 +21,10 @@
 //   "sang" (GameConfig::blood_marks, gore_mode): off, the wounded
 //   bleed on it, or "gore": much more, and "douilles" (GameConfig::casings):
 //   firearms eject casings that stay on the floor (casings.hpp), and
-//   "fuites des barils" (GameConfig::barrel_leaks): bullets pierce the
-//   explosive barrels, whose fuel runs out into a pool that catches fire when
-//   they blow up (barrel_leaks.hpp);
+//   "fuites des barils" (GameConfig::barrel_leaks): the explosive barrels
+//   take more bullets, each pierces them, their fuel runs out into a pool
+//   that catches fire when they blow up and burns whoever stands in it
+//   (barrel_leaks.hpp);
 // - "jeu": "sauvegarde auto" (GameConfig::autosave): the game saves itself at
 //   the key moments of a mission, and "langue" (GameConfig::language): the
 //   language of the port's texts, auto (the data's), then the others offered
