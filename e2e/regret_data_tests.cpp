@@ -677,6 +677,41 @@ void test_pierced_pipes_leak(const std::filesystem::path& data) {
     CHECK(pierced >= 2 && mended < pierced);
 }
 
+// Port lighting (smoke): a pierced pipe by one of the game's jets of steam
+// does not leak, the jet's sprite is its steam (shut with its valve): on map
+// 3, the pipe at 6270, 15198 (0x54, frame 1) by the jet STEAM2 (0x511) at
+// 6494, 15262; on map 8, the pipe at 26718, 38814 (0x3D, frame 1) by a shut
+// one (the marker 0x3A9). Moved away, the pipes leak (puffs of size 7).
+void test_valve_steam_not_doubled(const std::filesystem::path& data) {
+    struct Leak {
+        std::size_t map;
+        std::uint16_t pipe;
+        std::int32_t x, y;
+        std::uint16_t jet;
+        std::int32_t jx, jy;
+    };
+    const Leak leaks[] = {{3, 0x054, 6270, 15198, 0x511, 6494, 15262}, {8, 0x03D, 26718, 38814, 0x3A9, 26942, 38702}};
+    for (const Leak& k : leaks) {
+        LitMap m(data, k.map);
+        const ObjId pipe = m.find(k.pipe, k.x, k.y), jet = m.find(k.jet, k.jx, k.jy);
+        CHECK(pipe != 0 && jet != 0);
+        if (!pipe || !jet) continue;
+        const auto near = [&] {
+            int n = 0;
+            for (const PuffState& p : m.lighting.puffs_shown())
+                n += p.feature == 7 && std::abs(p.centre.x - float(k.x)) < 400 && std::abs(p.centre.y - float(k.y)) < 400;
+            return n;
+        };
+        m.lights_of(pipe, 120);
+        const int by_jet = near();
+        m.w.get(jet)->x += 3000;
+        m.lights_of(pipe, 120);
+        const int alone = near();
+        std::printf("pipe 0x%X by jet 0x%X: %d puffs of steam, %d without the jet\n", k.pipe, k.jet, by_jet, alone);
+        CHECK(by_jet == 0 && alone >= 2);
+    }
+}
+
 // Port addition, the controller: running one way, the aim stick swung behind
 // him, the left stick still held the same way. The gamepad then sends the
 // strafe away from the aim (Alt + down, a step back), relative to the aim; a
@@ -996,6 +1031,7 @@ int main(int argc, char** argv) {
         test_transformers_broken_together(data);
         test_regret_machines_smoulder(data);
         test_pierced_pipes_leak(data);
+        test_valve_steam_not_doubled(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
         test_hack_mover(data);
