@@ -531,7 +531,8 @@ int puffs_of_size(const LitMap& m, float size) {
 }
 
 // Port lighting: the electric arc between two transformers of map 2 (SHOCKEW
-// at 48830, 49694) lights blue but not its empty frame 6; on map 3, the jet
+// at 48830, 49694) lights blue but not its empty frame 6, and so would a wall
+// shocker's arc (SHOCKNS1, SHOCKEW1) in its place; on map 3, the jet
 // of flame FLAME1 (0x43B at 38910, 22142) lights and smokes, and the glowing
 // core on a generator (0x467 at 46366, 9854) lights and gives off a haze;
 // the heater THERMAL2 of map 20 (0x4E8 at 56498, 41118) lights red, broken
@@ -541,13 +542,23 @@ void test_arcs_and_fires(const std::filesystem::path& data) {
         LitMap m(data, 2);
         const ObjId arc = m.find(0x1C2, 48830, 49694);
         CHECK(arc != 0);
-        if (arc) {
+        // The same arc as a wall shocker's (SHOCKNS1 0x459, SHOCKEW1 0x45A,
+        // only made while someone touches the shocker): the same light.
+        for (const std::uint16_t shape : {std::uint16_t{0x1C2}, std::uint16_t{0x1C9}, std::uint16_t{0x459}, std::uint16_t{0x45A}}) {
+            if (!arc) break;
+            m.w.get(arc)->shape = shape;
+            m.w.get(arc)->frame = 0;
             const auto lit = m.lights_of(arc);
             m.w.get(arc)->frame = 6;
             const auto off = m.lights_of(arc);
-            std::printf("arc: %zu light(s), %zu in its empty frame\n", lit.size(), off.size());
+            std::printf("arc 0x%X: %zu light(s), %zu in its empty frame\n", shape, lit.size(), off.size());
             CHECK(lit.size() == 1 && off.empty());
-            if (lit.size() == 1) CHECK(lit[0].color.z > lit[0].color.x);
+            if (lit.size() == 1) {
+                CHECK(lit[0].color.z > lit[0].color.x);
+                CHECK(lit[0].radius >= 700);
+                CHECK(lit[0].halo >= 96);
+                CHECK(lit[0].halo_gain >= 2.5f);
+            }
         }
     }
     {

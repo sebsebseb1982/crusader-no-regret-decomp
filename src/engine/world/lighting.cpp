@@ -104,8 +104,11 @@ constexpr std::size_t kMaxSteam = 128;
 // behind the machine stays dark. `levels`: the light's strength by lit
 // frame (from frame 0), for a light that flickers with the sprite's
 // animation (TYPEFLAG, item_anim.cpp), a vending machine's neon; null: whole.
-// `flicker`: the light wavers, as a fire's or an electric arc's.
+// `flicker`: a flame's light wavers (kFlame), an electric arc's jumps from
+// one strength to another (kSpark). `glows`: the sprite itself is a light (an
+// arc): drawn as it is, not shaded, as a flash.
 struct Fixture {
+    enum Flicker : std::uint8_t { kSteady, kFlame, kSpark };
     std::uint16_t shape;
     std::uint32_t lit_frames;  // bit n: frame n gives light
     Vec3 colour;
@@ -116,7 +119,8 @@ struct Fixture {
     float halo_gain = 1;
     std::uint8_t face = 0;
     const float* levels = nullptr;
-    bool flicker = false;
+    Flicker flicker = kSteady;
+    bool glows = false;
 };
 const Vec3 kWarmLight{1.0f, 0.86f, 0.66f};
 const Vec3 kTubeLight{0.85f, 0.95f, 1.0f};
@@ -126,6 +130,8 @@ const Vec3 kAlarmLight{1.0f, 0.15f, 0.08f};
 const Vec3 kVendingLight{0.75f, 0.88f, 1.0f};
 const Vec3 kFireLight{1.0f, 0.55f, 0.2f};
 const Vec3 kArcLight{0.45f, 0.65f, 1.0f};
+constexpr float kArcHalo = 96;
+constexpr float kArcHaloGain = 2.5f;
 // How far in front of its glass a lit machine's light is, how high up its
 // box (0 floor, 1 top), and its cone round the face's normal.
 constexpr float kFaceOut = 20;
@@ -184,18 +190,23 @@ const Fixture kRegretFixtures[] = {
     {0x414, 0x07, kWarmLight, 0.9f, 380, true, false, 30},
     {0x493, 0x03, kRedLight, 1.1f, 460, true, false, 36},
     // Electric arcs between two transformers (SHOCKEW, SHOCKNS: 0..5, 6
-    // none; TRANSFOR's usecode destroys them when it breaks).
-    {0x1C2, 0x3F, kArcLight, 1.4f, 480, false, false, 30, 1, 0, nullptr, true},
-    {0x1C9, 0x3F, kArcLight, 1.4f, 480, false, false, 30, 1, 0, nullptr, true},
+    // none; TRANSFOR's usecode destroys them when it breaks), and the arcs
+    // that the shockers on the walls throw at whoever touches them (WSHOCKNS
+    // 0x44D and WSHOCKEW 0x44E create SHOCKNS1 0x459 and SHOCKEW1 0x45A, the
+    // same frames).
+    {0x1C2, 0x3F, kArcLight, 2.8f, 700, false, false, kArcHalo, kArcHaloGain, 0, nullptr, Fixture::kSpark, true},
+    {0x1C9, 0x3F, kArcLight, 2.8f, 700, false, false, kArcHalo, kArcHaloGain, 0, nullptr, Fixture::kSpark, true},
+    {0x459, 0x3F, kArcLight, 2.8f, 700, false, false, kArcHalo, kArcHaloGain, 0, nullptr, Fixture::kSpark, true},
+    {0x45A, 0x3F, kArcLight, 2.8f, 700, false, false, kArcHalo, kArcHaloGain, 0, nullptr, Fixture::kSpark, true},
     // Fire: the jets of flame that FLAMEBOX turns on and off (0x43A, FLAME1
     // 0x43B, FLAME2 0x50A, 0x518, all frames), the glowing core on top of
     // the mine's generators (0x467, 0..3), and the heaters THERMAL1,
     // THERMAL2 (0; 1 broken).
-    {0x43A, 0x3F, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
-    {0x43B, 0xFFFFFFF, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
-    {0x50A, 0xFFFFFFF, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
-    {0x518, 0x3F, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
-    {0x467, 0x0F, kFireLight, 1.6f, 700, false, false, 0, 1, 0, nullptr, true},
+    {0x43A, 0x3F, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, Fixture::kFlame},
+    {0x43B, 0xFFFFFFF, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, Fixture::kFlame},
+    {0x50A, 0xFFFFFFF, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, Fixture::kFlame},
+    {0x518, 0x3F, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, Fixture::kFlame},
+    {0x467, 0x0F, kFireLight, 1.6f, 700, false, false, 0, 1, 0, nullptr, Fixture::kFlame},
     {0x4E8, 0x01, kRedLight, 1.0f, 420, false},
     {0x4E9, 0x01, kRedLight, 1.0f, 420, false},
     {0x269, 0x01, kWarmLight, 1.3f, 650, true, false, 48},
@@ -350,6 +361,7 @@ bool is_blast_shape(std::uint16_t shape) { return shape == 0x31C || (shape >= 0x
 // The impact of a bullet (impact_sprite: fire types 1, 2, 0xB, 0xD): a
 // spark, so a small light, smaller than the flash at the muzzle.
 constexpr std::uint16_t kBulletImpactShape = 0x1D8;
+constexpr std::uint16_t kPlayerElectricShape = 0x62B;
 
 // Muzzle flash by fire type (dtable.cpp: the weapons' fire types): bullets
 // 1 (RP-22, RP-32), 0xB (BA-40, BA-41), several pellets 2 (SG-A1) and 0xD
@@ -675,8 +687,13 @@ void WorldLighting::capture(const World& world, const std::vector<DrawItem>& lis
     set_palette(palette);
     actor_.resize(list_.size());
     liquid_.resize(list_.size());
+    glows_.resize(list_.size());
     for (std::size_t i = 0; i < list_.size(); ++i) {
         decode(*list_[i].frame);
+        const Item& item = *list_[i].item;
+        const Fixture* fx = opt.fixture_lights && !item.sprite_only ? fixture(item.shape, item.frame, world.remorse())
+                                                                    : nullptr;
+        glows_[i] = fx && fx->glows;
         actor_[i] = is_actor(*list_[i].item, world.shape_info(list_[i].item->shape));
         liquid_[i] = opt.liquids && !actor_[i] && !list_[i].item->sprite_only && is_liquid(list_[i].item->shape);
     }
@@ -684,7 +701,8 @@ void WorldLighting::capture(const World& world, const std::vector<DrawItem>& lis
     else liquids_.clear();
     // Which item shows at each pixel, in the order they were drawn, by bands
     // of rows. Translucent items leave it to what is below; flashes and
-    // explosions (drawn as sprites) only glow.
+    // explosions (drawn as sprites) only glow, and so do the fixtures that
+    // are lights themselves (arcs), above the items behind them.
     const std::size_t bands = std::min<std::size_t>(pool_->size() * 2, static_cast<std::size_t>(height_));
     pool_->run(bands, [&](std::size_t band) {
         const int y0 = static_cast<int>(band * height_ / bands), y1 = static_cast<int>((band + 1) * height_ / bands);
@@ -696,7 +714,8 @@ void WorldLighting::capture(const World& world, const std::vector<DrawItem>& lis
             for (int y = std::max(d.top, y0); y < std::min(d.bottom, y1); ++y) {
                 const int fy = y - d.top;
                 for (int fx = 0; fx < f.w; ++fx) {
-                    if (f.color[fy * f.w + fx] < 0) continue;
+                    const int c = f.color[fy * f.w + fx];
+                    if (c < 0) continue;
                     const int x = d.mirrored ? d.left + (f.w - 1 - fx) : d.left + fx;
                     if (x < 0 || x >= width_) continue;
                     const std::size_t j = static_cast<std::size_t>(y) * width_ + x;
@@ -704,7 +723,7 @@ void WorldLighting::capture(const World& world, const std::vector<DrawItem>& lis
                         emissive_[j] = 1;
                     } else if (!translucent) {
                         owner_[j] = static_cast<std::int32_t>(i);
-                        emissive_[j] = 0;
+                        emissive_[j] = glows_[i] && lum_[c] >= 0.62f;
                     }
                 }
             }
@@ -1150,6 +1169,14 @@ void WorldLighting::gather_lights(const World& world, const LightingOptions& opt
                                   Vec3{1.0f, 0.55f, 0.2f} * (1.6f * flicker), 520, d.item->id});
                 continue;
             }
+            if (d.item->shape == kPlayerElectricShape) {
+                const Vec3 at{float(d.x), float(d.y), d.z * kLightZScale};
+                PointLight light{at, kArcLight * 2.2f, 600, d.item->id};
+                light.halo = kArcHalo;
+                light.halo_gain = kArcHaloGain;
+                lights.push_back(light);
+                continue;
+            }
             // Flashes, explosions, shots: their bright pixels.
             int count = 0;
             Vec3 sum;
@@ -1231,9 +1258,11 @@ void WorldLighting::gather_lights(const World& world, const LightingOptions& opt
                 PointLight light{at, fx->colour * strength, fx->radius, d.item->id};
                 light.halo = fx->halo;
                 light.halo_gain = fx->halo_gain;
-                if (fx->flicker)
+                if (fx->flicker == Fixture::kFlame)
                     light.color = light.color * (0.8f + 0.2f * std::sin(ticks_ * 1.9f + d.item->id * 0.7f) *
                                                              std::sin(ticks_ * 0.83f + d.item->id));
+                else if (fx->flicker == Fixture::kSpark)  // a new strength every 3 ticks
+                    light.color = light.color * (0.75f + 0.5f * float(hash32((ticks_ / 3) * 2654435761u + d.item->id) & 0xFF) / 255.0f);
                 if (fx->face) {
                     light.dir = dir;
                     light.cos_inner = kFaceCosInner;
