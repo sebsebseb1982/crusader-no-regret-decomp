@@ -465,6 +465,7 @@ The original draws flat sprites under a fixed light. With this option the world 
 **Liquids**
 - The puddles of toxic sludge (green 0x15D, yellow 0x15E, grey 0x15F; no TYPEFLAG bit marks them) glow a faint radioactive green, in slow patches that drift and breathe. The clear blue water of the pools (0x2DC) is left as it is.
 - They light what stands around them (walls, rims, floors, machines, pillars, people at the edge) in green, with one light for each 1024 x 1024 cell of liquid, high over it so that it falls on the floors past the rims and reaches 1600 units; it does not light the liquid itself.
+- Around them the ambient light is lower (down to 25 % of it over most of that reach, by how much of the cell the liquid covers, the strongest liquid near counting, not their sum), so that a place with a puddle is lit by its green glow rather than by the general light. The liquid itself and the lit points away from it keep the ambient light chosen.
 - The puddles give off a thin steam: wisps that rise from the surface, drift and fade out over seven to eleven seconds, faintly green. They need no memory (each comes back from the game's clock and the puddle's place), so they are there as soon as a puddle is in view; they go with the smoke (VOLUMETRIC SMOKE option).
 
 **What is not lit**
