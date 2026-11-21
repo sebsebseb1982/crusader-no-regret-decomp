@@ -309,6 +309,14 @@ const Smoulder kRegretSmoulders[] = {
     // bottles (0x536: 1, 2) leak.
     {0x520, 0x0C, Plume::kSteam}, {0x521, 0x0C, Plume::kSteam}, {0x45F, 0x0C, Plume::kSteam},
     {0x461, 0x0C, Plume::kSteam}, {0x536, 0x06, Plume::kSteam},
+    // Pierced pipes leak steam, some from the start (placed so on the maps),
+    // others once shot: straight pipes (1 pierced) and joints (4..7).
+    {0x02E, 0x02, Plume::kSteam}, {0x02F, 0x02, Plume::kSteam}, {0x03D, 0x02, Plume::kSteam},
+    {0x03E, 0x02, Plume::kSteam}, {0x03F, 0x02, Plume::kSteam}, {0x04C, 0x02, Plume::kSteam},
+    {0x04E, 0x02, Plume::kSteam}, {0x050, 0x02, Plume::kSteam}, {0x051, 0x02, Plume::kSteam},
+    {0x052, 0x02, Plume::kSteam}, {0x053, 0x02, Plume::kSteam}, {0x054, 0x02, Plume::kSteam},
+    {0x03C, 0xF0, Plume::kSteam}, {0x041, 0xF0, Plume::kSteam}, {0x056, 0xF0, Plume::kSteam},
+    {0x057, 0xF0, Plume::kSteam},
     // Fire and the glowing cores (as their lights).
     {0x43A, 0x3F, Plume::kFire}, {0x43B, 0xFFFFFFF, Plume::kFire}, {0x50A, 0xFFFFFFF, Plume::kFire},
     {0x518, 0x3F, Plume::kFire}, {0x467, 0x0F, Plume::kHeat},
@@ -1064,8 +1072,8 @@ void WorldLighting::smoulder(std::vector<PuffState>& out) const {
             case Plume::kSteam:
                 // White, blown out and quickly gone.
                 s.centre = top + drift * (2.0f * age) + Vec3{0, 0, 2 + 40 * age};
-                s.radius = 4 + 26 * u;
-                s.density = 0.025f * smoothstep(0.0f, 0.08f, u) * (1 - smoothstep(0.3f, 1.0f, u));
+                s.radius = 6 + 36 * u;
+                s.density = 0.06f * smoothstep(0.0f, 0.08f, u) * (1 - smoothstep(0.3f, 1.0f, u));
                 s.grey = 0.85f;
                 s.feature = 7;
                 break;

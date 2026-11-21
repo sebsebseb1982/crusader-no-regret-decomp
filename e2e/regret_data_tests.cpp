@@ -609,6 +609,28 @@ void test_regret_machines_smoulder(const std::filesystem::path& data) {
     }
 }
 
+// Port lighting (smoke): pierced pipes leak steam (puffs of size 7), whole
+// ones do not: on map 1, the pierced pipe at 28894, 12574 (0x51, frame 1)
+// of a row of them, then the same row mended (frame 0).
+void test_pierced_pipes_leak(const std::filesystem::path& data) {
+    LitMap m(data, 1);
+    const ObjId pipe = m.find(0x051, 28894, 12574);
+    CHECK(pipe != 0);
+    if (!pipe) return;
+    m.lights_of(pipe, 120);
+    const int pierced = puffs_of_size(m, 7);
+    std::vector<ObjId> row;
+    m.w.for_each([&](const Item& i) {
+        if ((i.shape == 0x051 || i.shape == 0x03D) && world_from_usecode(i.x) == 28894 && i.frame == 1)
+            row.push_back(i.id);
+    });
+    for (ObjId id : row) m.w.get(id)->frame = 0;
+    m.lights_of(pipe, 120);
+    const int mended = puffs_of_size(m, 7);
+    std::printf("pipes: %d puffs of steam pierced, %d mended\n", pierced, mended);
+    CHECK(pierced >= 2 && mended < pierced);
+}
+
 // Port addition, the controller: running one way, the aim stick swung behind
 // him, the left stick still held the same way. The gamepad then sends the
 // strafe away from the aim (Alt + down, a step back), relative to the aim; a
@@ -926,6 +948,7 @@ int main(int argc, char** argv) {
         test_regret_lamps(data);
         test_arcs_and_fires(data);
         test_regret_machines_smoulder(data);
+        test_pierced_pipes_leak(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
         test_hack_mover(data);
