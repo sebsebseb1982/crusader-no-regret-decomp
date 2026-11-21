@@ -522,6 +522,63 @@ void test_regret_lamps(const std::filesystem::path& data) {
     }
 }
 
+// The puffs in view of the last lights_of whose noise has features of `size`
+// (the kind of smoke: 14 a fire's, 30 the haze of a glowing core).
+int puffs_of_size(const LitMap& m, float size) {
+    int n = 0;
+    for (const PuffState& p : m.lighting.puffs_shown()) n += p.feature == size;
+    return n;
+}
+
+// Port lighting: the electric arc between two transformers of map 2 (SHOCKEW
+// at 48830, 49694) lights blue but not its empty frame 6; on map 3, the jet
+// of flame FLAME1 (0x43B at 38910, 22142) lights and smokes, and the glowing
+// core on a generator (0x467 at 46366, 9854) lights and gives off a haze;
+// the heater THERMAL2 of map 20 (0x4E8 at 56498, 41118) lights red, broken
+// (1) not.
+void test_arcs_and_fires(const std::filesystem::path& data) {
+    {
+        LitMap m(data, 2);
+        const ObjId arc = m.find(0x1C2, 48830, 49694);
+        CHECK(arc != 0);
+        if (arc) {
+            const auto lit = m.lights_of(arc);
+            m.w.get(arc)->frame = 6;
+            const auto off = m.lights_of(arc);
+            std::printf("arc: %zu light(s), %zu in its empty frame\n", lit.size(), off.size());
+            CHECK(lit.size() == 1 && off.empty());
+            if (lit.size() == 1) CHECK(lit[0].color.z > lit[0].color.x);
+        }
+    }
+    {
+        LitMap m(data, 3);
+        const ObjId flame = m.find(0x43B, 38910, 22142), core = m.find(0x467, 46366, 9854);
+        CHECK(flame != 0 && core != 0);
+        if (flame) {
+            const auto lit = m.lights_of(flame, 120);
+            const int smoke = puffs_of_size(m, 14);
+            std::printf("flame: %zu light(s), %d puffs of smoke\n", lit.size(), smoke);
+            CHECK(lit.size() == 1 && smoke >= 3);
+            if (lit.size() == 1) CHECK(lit[0].color.x > 2 * lit[0].color.z);
+        }
+        if (core) {
+            const auto lit = m.lights_of(core, 120);
+            const int haze = puffs_of_size(m, 30);
+            std::printf("glowing core: %zu light(s), %d puffs of haze\n", lit.size(), haze);
+            CHECK(lit.size() == 1 && haze >= 2);
+        }
+    }
+    LitMap m(data, 20);
+    const ObjId heater = m.find(0x4E8, 56498, 41118);
+    CHECK(heater != 0);
+    if (!heater) return;
+    const auto lit = m.lights_of(heater);
+    m.w.get(heater)->frame = 1;
+    const auto broken = m.lights_of(heater);
+    std::printf("heater: %zu light(s), %zu broken\n", lit.size(), broken.size());
+    CHECK(lit.size() == 1 && broken.empty());
+}
+
 // Port addition, the controller: running one way, the aim stick swung behind
 // him, the left stick still held the same way. The gamepad then sends the
 // strafe away from the aim (Alt + down, a step back), relative to the aim; a
@@ -837,6 +894,7 @@ int main(int argc, char** argv) {
         test_fixture_lights(data);
         test_wall_lamps_and_alarms(data);
         test_regret_lamps(data);
+        test_arcs_and_fires(data);
         test_aim_behind_while_running(data);
         test_remains_loot(data);
         test_hack_mover(data);

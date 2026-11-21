@@ -102,6 +102,7 @@ constexpr std::size_t kMaxSteam = 128;
 // behind the machine stays dark. `levels`: the light's strength by lit
 // frame (from frame 0), for a light that flickers with the sprite's
 // animation (TYPEFLAG, item_anim.cpp), a vending machine's neon; null: whole.
+// `flicker`: the light wavers, as a fire's or an electric arc's.
 struct Fixture {
     std::uint16_t shape;
     std::uint32_t lit_frames;  // bit n: frame n gives light
@@ -113,6 +114,7 @@ struct Fixture {
     float halo_gain = 1;
     std::uint8_t face = 0;
     const float* levels = nullptr;
+    bool flicker = false;
 };
 const Vec3 kWarmLight{1.0f, 0.86f, 0.66f};
 const Vec3 kTubeLight{0.85f, 0.95f, 1.0f};
@@ -120,6 +122,8 @@ const Vec3 kScreenLight{0.55f, 0.75f, 1.0f};
 const Vec3 kRedLight{1.0f, 0.38f, 0.25f};
 const Vec3 kAlarmLight{1.0f, 0.15f, 0.08f};
 const Vec3 kVendingLight{0.75f, 0.88f, 1.0f};
+const Vec3 kFireLight{1.0f, 0.55f, 0.2f};
+const Vec3 kArcLight{0.45f, 0.65f, 1.0f};
 // How far in front of its glass a lit machine's light is, how high up its
 // box (0 floor, 1 top), and its cone round the face's normal.
 constexpr float kFaceOut = 20;
@@ -177,6 +181,21 @@ const Fixture kRegretFixtures[] = {
     {0x407, 0x07, kWarmLight, 1.3f, 650, true, false, 44},
     {0x414, 0x07, kWarmLight, 0.9f, 380, true, false, 30},
     {0x493, 0x03, kRedLight, 1.1f, 460, true, false, 36},
+    // Electric arcs between two transformers (SHOCKEW, SHOCKNS: 0..5, 6
+    // none; TRANSFOR's usecode destroys them when it breaks).
+    {0x1C2, 0x3F, kArcLight, 1.4f, 480, false, false, 30, 1, 0, nullptr, true},
+    {0x1C9, 0x3F, kArcLight, 1.4f, 480, false, false, 30, 1, 0, nullptr, true},
+    // Fire: the jets of flame that FLAMEBOX turns on and off (0x43A, FLAME1
+    // 0x43B, FLAME2 0x50A, 0x518, all frames), the glowing core on top of
+    // the mine's generators (0x467, 0..3), and the heaters THERMAL1,
+    // THERMAL2 (0; 1 broken).
+    {0x43A, 0x3F, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
+    {0x43B, 0xFFFFFFF, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
+    {0x50A, 0xFFFFFFF, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
+    {0x518, 0x3F, kFireLight, 2.0f, 600, true, false, 40, 1, 0, nullptr, true},
+    {0x467, 0x0F, kFireLight, 1.6f, 700, false, false, 0, 1, 0, nullptr, true},
+    {0x4E8, 0x01, kRedLight, 1.0f, 420, false},
+    {0x4E9, 0x01, kRedLight, 1.0f, 420, false},
     {0x269, 0x01, kWarmLight, 1.3f, 650, true, false, 48},
     {0x4EB, 0x03, kTubeLight, 1.2f, 620, true, false, 44},
     {0x519, 0x03, kTubeLight, 1.2f, 620, true, false, 44},
@@ -198,10 +217,19 @@ float fixture_boost(float ambient) { return 1 + 1.2f * std::clamp(ambient, 0.0f,
 // Broken machines (SHAPES.FLX, their frames once shot, as the usecode or
 // DAMAGE.FLX leave them): they smoulder, a thin wisp rising from them for
 // good. Electronics only: a lamp has none, nor a tank or a desk.
+// Not only broken things: a fire gives off its smoke, a glowing core its heat,
+// a pierced pipe its steam, whole as they are.
+enum class Plume : std::uint8_t {
+    kWisp,   // a thin wisp from the top
+    kMotor,  // a fan: a thicker smoke from its hub, in the middle of its face
+    kFire,   // a fire: thick dark smoke rising fast
+    kHeat,   // a glowing core: a wide, faint haze over its surface
+    kSteam,  // a leak: small white puffs, quickly gone
+};
 struct Smoulder {
     std::uint16_t shape;
-    std::uint32_t frames;  // bit n: frame n is broken
-    bool motor = false;    // a fan: a thicker smoke from its hub, in the middle of its face
+    std::uint32_t frames;  // bit n: frame n gives off smoke
+    Plume plume = Plume::kWisp;
 };
 // No Remorse's shapes.
 const Smoulder kRemorseSmoulders[] = {
@@ -223,8 +251,8 @@ const Smoulder kRemorseSmoulders[] = {
     {0x39F, 0x01}, {0x3A0, 0x01},  // vending machines, broken (PEPSIEW, PEPSINS replaced)
     {0x40B, 0x02},                 // drinks fridge
     // Fans: shot, they are replaced by these shapes, frame 0.
-    {0x3CE, 0x01, true}, {0x3D3, 0x01, true},  // RFANBADE, RFANBADN (RFANEW, RFANNS)
-    {0x32C, 0x03, true}, {0x32D, 0x03, true},  // MFAN_EW, MFAN_NS broken
+    {0x3CE, 0x01, Plume::kMotor}, {0x3D3, 0x01, Plume::kMotor},  // RFANBADE, RFANBADN (RFANEW, RFANNS)
+    {0x32C, 0x03, Plume::kMotor}, {0x32D, 0x03, Plume::kMotor},  // MFAN_EW, MFAN_NS broken
     {0x3E7, 0x0C}, {0x3E8, 0x0C},  // wall vents (WVENTNS, WVENTEW)
     // Power: chargers, generators, transformers.
     {0x136, 0x30}, {0x158, 0x30},  // chargers (RECHAGNS, RECHAGEW: both parts)
@@ -247,15 +275,19 @@ const Smoulder kRegretSmoulders[] = {
     {0x1B0, 0x08}, {0x1B1, 0x08}, {0x1B2, 0x02}, {0x1B3, 0x02}, {0x1EF, 0x30}, {0x1F8, 0x30},
     {0x25B, 0x60}, {0x25C, 0x60}, {0x25D, 0x02}, {0x25E, 0x02}, {0x26A, 0x02}, {0x26B, 0x02},
     {0x3BF, 0xF0}, {0x3C0, 0xF0}, {0x431, 0xFFFF00}, {0x409, 0xF0}, {0x39F, 0x01}, {0x3A0, 0x01}, {0x40B, 0x02},
-    {0x3CE, 0x01, true}, {0x3D3, 0x01, true}, {0x32C, 0x03, true}, {0x32D, 0x03, true},
+    {0x3CE, 0x01, Plume::kMotor}, {0x3D3, 0x01, Plume::kMotor},
+    {0x32C, 0x03, Plume::kMotor}, {0x32D, 0x03, Plume::kMotor},
     {0x3E7, 0x0C}, {0x3E8, 0x0C},
     {0x136, 0x04}, {0x15A, 0x04},  // recharge booth (RE_SIDE, RE_BOOTH)
     {0x3C1, 0x1C}, {0x357, 0x06}, {0x5AC, 0x06},  // GENERATR, MINEGEN, RADIOGEN
     {0x1BF, 0x02}, {0x073, 0x02}, {0x0C8, 0x02}, {0x0FF, 0x02}, {0x21C, 0x02}, {0x2A5, 0x02},
     {0x4F6, 0x0C}, {0x55C, 0x0C},
     {0x1B6, 0x20}, {0x1B8, 0x200}, {0x1D7, 0x200},  // cameras
+    // Fire and the glowing cores (as their lights).
+    {0x43A, 0x3F, Plume::kFire}, {0x43B, 0xFFFFFFF, Plume::kFire}, {0x50A, 0xFFFFFFF, Plume::kFire},
+    {0x518, 0x3F, Plume::kFire}, {0x467, 0x0F, Plume::kHeat},
 };
-constexpr std::size_t kMaxSmoulder = 64;
+constexpr std::size_t kMaxSmoulder = 96;
 
 // @orig none: port lighting (smoke)
 const Smoulder* smoulders(std::uint16_t shape, std::uint32_t frame, bool remorse) {
@@ -926,9 +958,10 @@ void WorldLighting::steam(std::vector<PuffState>& out) const {
     }
 }
 
-// Thin smoke rising from the broken electric things in view (kSmoulders):
-// as the steam, puffs that need no memory, each slot of an item coming back
-// every few seconds, so that it smoulders as soon as it is seen.
+// Smoke rising from the things in view that give some off (kSmoulders):
+// the broken electric things, fires, glowing cores, leaks. As the steam,
+// puffs that need no memory, each slot of an item coming back every few
+// seconds, so that it smokes as soon as it is seen.
 // @orig none: port lighting (smoke)
 void WorldLighting::smoulder(std::vector<PuffState>& out) const {
     const float t = ticks_ / 60.0f;
@@ -938,20 +971,28 @@ void WorldLighting::smoulder(std::vector<PuffState>& out) const {
         const Item& item = *d.item;
         const Smoulder* kind = item.sprite_only ? nullptr : smoulders(item.shape, item.frame, remorse_);
         if (!kind) continue;
-        const bool motor = kind->motor;
+        const Plume plume = kind->plume;
         // From the top of the thing, in the middle of its box. A fan's motor:
         // the middle of its face (the box's middle, on its near side along
         // its thin axis), a little out of it.
         Vec3 top{(d.x + d.x_left) * 0.5f, (d.y + d.y_far) * 0.5f, float(d.z_top) * kLightZScale};
-        if (motor) {
+        if (plume == Plume::kMotor) {
             top.z = (d.z + d.z_top) * 0.5f * kLightZScale;
             if (d.x - d.x_left < d.y - d.y_far) top.x = float(d.x) + 10;
             else top.y = float(d.y) + 10;
         }
         // Its slots share a period, evenly spaced: a steady thread.
-        const int slots = motor ? 8 : 6;
+        int slots = 6;
+        float period = 2.6f;
+        switch (plume) {
+        case Plume::kWisp: break;
+        case Plume::kMotor: slots = 8, period = 3.4f; break;
+        case Plume::kFire: slots = 8, period = 2.4f; break;
+        case Plume::kHeat: slots = 5, period = 6.0f; break;
+        case Plume::kSteam: slots = 6, period = 1.4f; break;
+        }
         const std::uint32_t own = hash32(item.id * 2654435761u);
-        const float period = (motor ? 3.4f : 2.6f) + 0.8f * puff_random(own, 1);
+        period += 0.8f * puff_random(own, 1);
         for (int k = 0; k < slots && count < kMaxSmoulder; ++k) {
             const std::uint32_t serial = hash32(own ^ static_cast<std::uint32_t>(k) * 83492791u);
             const float phase = t / period + puff_random(own, 2) + (k + 0.4f * puff_random(serial, 2)) / slots;
@@ -960,23 +1001,53 @@ void WorldLighting::smoulder(std::vector<PuffState>& out) const {
             const float age = u * period;
             PuffState s;
             const Vec3 drift{(puff_random(round, 5) * 2 - 1) * 6, (puff_random(round, 6) * 2 - 1) * 6, 0};
-            if (motor) {
+            s.feature = 9;
+            switch (plume) {
+            case Plume::kWisp:
+                s.centre = top + drift * age + Vec3{0, 0, 4 + 30 * age};
+                s.radius = 5 + 20 * u;
+                s.density = 0.02f * smoothstep(0.0f, 0.15f, u) * (1 - smoothstep(0.4f, 1.0f, u));
+                s.grey = 0.5f;
+                break;
+            case Plume::kMotor:
                 // Thick and dark, pushed out of the face, then rising.
                 s.centre = top + drift * age + Vec3{0, 0, 2 + 48 * age};
                 s.radius = 12 + 48 * u;
                 s.density = 0.04f * smoothstep(0.0f, 0.1f, u) * (1 - smoothstep(0.4f, 1.0f, u));
                 s.grey = 0.2f;
-            } else {
-                s.centre = top + drift * age + Vec3{0, 0, 4 + 30 * age};
-                s.radius = 5 + 20 * u;
-                s.density = 0.02f * smoothstep(0.0f, 0.15f, u) * (1 - smoothstep(0.4f, 1.0f, u));
-                s.grey = 0.5f;
+                break;
+            case Plume::kFire:
+                // Dark, rising fast over the flames, spreading as it goes.
+                s.centre = top + drift * (1.5f * age) + Vec3{0, 0, 6 + 70 * age};
+                s.radius = 14 + 60 * u;
+                s.density = 0.035f * smoothstep(0.0f, 0.12f, u) * (1 - smoothstep(0.45f, 1.0f, u));
+                s.grey = 0.15f;
+                s.feature = 14;
+                break;
+            case Plume::kHeat: {
+                // Anywhere over the surface, wide, faint and slow.
+                const Vec3 at{d.x_left + (d.x - d.x_left) * puff_random(round, 3),
+                              d.y_far + (d.y - d.y_far) * puff_random(round, 4), top.z};
+                s.centre = at + drift * age + Vec3{0, 0, 4 + 22 * age};
+                s.radius = 30 + 80 * u;
+                s.density = 0.007f * smoothstep(0.0f, 0.25f, u) * (1 - smoothstep(0.5f, 1.0f, u));
+                s.grey = 0.6f;
+                s.feature = 30;
+                break;
+            }
+            case Plume::kSteam:
+                // White, blown out and quickly gone.
+                s.centre = top + drift * (2.0f * age) + Vec3{0, 0, 2 + 40 * age};
+                s.radius = 4 + 26 * u;
+                s.density = 0.025f * smoothstep(0.0f, 0.08f, u) * (1 - smoothstep(0.3f, 1.0f, u));
+                s.grey = 0.85f;
+                s.feature = 7;
+                break;
             }
             if (s.density <= 1e-5f) continue;
             s.heat = 0;
             s.seed = puff_random(round, 8) * 100.0f;
             s.time = age;
-            s.feature = 9;
             out.push_back(s);
             ++count;
         }
@@ -1119,6 +1190,9 @@ void WorldLighting::gather_lights(const World& world, const LightingOptions& opt
                 PointLight light{at, fx->colour * strength, fx->radius, d.item->id};
                 light.halo = fx->halo;
                 light.halo_gain = fx->halo_gain;
+                if (fx->flicker)
+                    light.color = light.color * (0.8f + 0.2f * std::sin(ticks_ * 1.9f + d.item->id * 0.7f) *
+                                                             std::sin(ticks_ * 0.83f + d.item->id));
                 if (fx->face) {
                     light.dir = dir;
                     light.cos_inner = kFaceCosInner;
