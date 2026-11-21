@@ -99,7 +99,9 @@ constexpr std::size_t kMaxSteam = 128;
 // `face`: a machine lit from inside behind its glass (vending machines, a
 // drinks fridge), its glass on the box's +x (1) or +y (2) face: the light
 // sits just in front of the glass and shines out of it, a spot, so the wall
-// behind the machine stays dark.
+// behind the machine stays dark. `levels`: the light's strength by lit
+// frame (from frame 0), for a light that flickers with the sprite's
+// animation (TYPEFLAG, item_anim.cpp), a vending machine's neon; null: whole.
 struct Fixture {
     std::uint16_t shape;
     std::uint32_t lit_frames;  // bit n: frame n gives light
@@ -110,6 +112,7 @@ struct Fixture {
     float halo = 0;
     float halo_gain = 1;
     std::uint8_t face = 0;
+    const float* levels = nullptr;
 };
 const Vec3 kWarmLight{1.0f, 0.86f, 0.66f};
 const Vec3 kTubeLight{0.85f, 0.95f, 1.0f};
@@ -122,6 +125,8 @@ const Vec3 kVendingLight{0.75f, 0.88f, 1.0f};
 constexpr float kFaceOut = 20;
 constexpr float kFaceHeight = 0.55f;
 constexpr float kFaceCosInner = 0.35f, kFaceCosOuter = -0.15f;
+// A vending machine's neon (frames 0..2): bright, dimmer, off.
+const float kVendingLevels[] = {1.0f, 0.65f, 0.2f};
 // No Remorse's shapes.
 const Fixture kRemorseFixtures[] = {
     {0x2A0, 0x0F, kWarmLight, 1.3f, 620, true, false, 44},  // wall lamp, a dome (4..7 broken)
@@ -141,10 +146,11 @@ const Fixture kRemorseFixtures[] = {
     {0x174, 0x02, kAlarmLight, 1.4f, 520, true, true, 44},  // alarm lights (0 off, 1 on, 2 broken)
     {0x271, 0x02, kAlarmLight, 1.4f, 520, true, true, 44},
     {0x477, 0x0C, kAlarmLight, 0.8f, 320, true, true, 30},  // alarm box: 2, 3 its frames 0, 1 on
-    // Vending machines (PEPSIEW +x, PEPSINS +y; frames 0..2, shot: replaced
-    // by 0x39F, 0x3A0) and a drinks fridge (+x; 1 broken, DAMAGE.FLX).
-    {0x094, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 1},
-    {0x09A, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 2},
+    // Vending machines (PEPSIEW +x, PEPSINS +y; frames 0..2, their neon
+    // flickering; shot: replaced by 0x39F, 0x3A0) and a drinks fridge (+x;
+    // 1 broken, DAMAGE.FLX).
+    {0x094, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 1, kVendingLevels},
+    {0x09A, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 2, kVendingLevels},
     {0x40B, 0x01, kTubeLight, 0.8f, 360, false, false, 56, 0.3f, 1},
 };
 // No Regret's: the same, but its wall lamps 0x2A0 have 20 frames (domes,
@@ -162,8 +168,8 @@ const Fixture kRegretFixtures[] = {
     {0x165, 0x01, kScreenLight, 0.45f, 300, false},
     {0x130, 0x01, Vec3{1.0f, 0.75f, 0.35f}, 0.6f, 420, false},
     {0x1A3, 0x01, Vec3{1.0f, 0.75f, 0.35f}, 0.6f, 420, false},
-    {0x094, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 1},
-    {0x09A, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 2},
+    {0x094, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 1, kVendingLevels},
+    {0x09A, 0x07, kVendingLight, 0.9f, 400, false, false, 60, 0.3f, 2, kVendingLevels},
     {0x40B, 0x01, kTubeLight, 0.8f, 360, false, false, 56, 0.3f, 1},
 };
 
@@ -1090,6 +1096,7 @@ void WorldLighting::gather_lights(const World& world, const LightingOptions& opt
                     at = at + kToViewer * 12.0f;
                 }
                 float strength = fx->strength * fixture_boost(opt.ambient);
+                if (fx->levels) strength *= fx->levels[d.item->frame];  // lit frames only: 0..2
                 if (fx->pulse) strength *= 0.3f + 0.7f * (0.5f + 0.5f * std::sin(ticks_ * (2 * 3.14159265f * 2 / 60)));
                 PointLight light{at, fx->colour * strength, fx->radius, d.item->id};
                 light.halo = fx->halo;

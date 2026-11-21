@@ -363,8 +363,8 @@ void test_wall_lamp_lights(const std::filesystem::path& data) {
 
 // Port lighting: the vending machine 4876 of map 1 (PEPSIEW 0x94, frame 0,
 // its glass on +x) is lit from inside: one light in front of its glass,
-// shining out of it (a spot along +x) with a glow over the glass; shot
-// (replaced by 0x39F), none, and it smoulders.
+// shining out of it (a spot along +x) with a glow over the glass, dimmed
+// with its flickering neon; shot (replaced by 0x39F), none, and it smoulders.
 void test_vending_machine_lights(const std::filesystem::path& data) {
     constexpr ObjId kVending = 4876;
     const auto typeflags = load_typeflags(data / "STATIC/TYPEFLAG.DAT");
@@ -389,7 +389,13 @@ void test_vending_machine_lights(const std::filesystem::path& data) {
                     l.dir.x, l.dir.y, l.dir.z);
         CHECK(l.dir.x == 1 && l.dir.y == 0 && l.cos_outer < 0 && l.halo > 0 && l.color.z >= l.color.x);
     }
-    vending->shape = 0x39F;  // shot: the broken machine
+    // Its neon flickers (frames 0..2, TYPEFLAG animation): its light with it.
+    vending->frame = 2;
+    const auto off = lights_of();
+    CHECK(off.size() == 1);
+    if (lit.size() == 1 && off.size() == 1) CHECK(off[0].color.z < 0.3f * lit[0].color.z);
+    vending->shape = 0x39F;  // shot: the broken machine (its usecode: frame 0)
+    vending->frame = 0;
     CHECK(lights_of().empty());
     int wisps = 0;
     for (const PuffState& p : lighting.puffs_shown()) wisps += p.feature == 9;
