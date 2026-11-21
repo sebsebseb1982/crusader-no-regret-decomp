@@ -74,8 +74,13 @@ public:
     PaletteFaderProcess(Palette& screen, const Palette& target, std::uint32_t rate, int count, int step = 1,
                         bool* cycle_paused = nullptr, bool resume_cycle = false);
 
+    // An inert fade (No Regret, another fade running) is not a timer: the
+    // kernel slice runs it, and it ends there.
+    bool runs_in_slice() const override { return inert_; }
+
 protected:
     void tick() override;
+    void run() override;
     void on_added() override;
     void on_terminate() override;
 

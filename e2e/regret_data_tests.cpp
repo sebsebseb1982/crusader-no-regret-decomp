@@ -590,6 +590,41 @@ void test_arcs_and_fires(const std::filesystem::path& data) {
     CHECK(lit.size() == 1 && broken.empty());
 }
 
+// Two transformers of map 7 broken together (TRANSFOR at 28463, 30479 and
+// 28671, 30479): each one's gotHit fades the screen in from black, waits for
+// the fade, then destroys the arcs within 160 of it. The second one's fade,
+// started while the first one's ran, is never activated and ends at the next
+// slice (1418:0000, 1038:070C): the arc only the second one reaches (SHOCKNS
+// at 28639, 30591) goes too. It stayed, its transformer waiting for ever.
+void test_transformers_broken_together(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.set_start(7, 0x1E);
+    game.new_game(0);
+    game.update(kFrameUs);
+    World& w = game.world();
+    const auto find = [&w](std::uint16_t shape, std::int32_t x, std::int32_t y) {
+        ObjId found = 0;
+        w.for_each([&](const Item& i) {
+            if (i.shape == shape && i.x == x && i.y == y && !i.parent) found = i.id;
+        });
+        return found;
+    };
+    const ObjId a = find(0x1BF, 28463, 30479), b = find(0x1BF, 28671, 30479);
+    const ObjId shared = find(0x1C2, 28575, 30447), far = find(0x1C9, 28639, 30591);
+    CHECK(a && b && shared && far);
+    if (!a || !b || !shared || !far) return;
+    apply_damage(game.kernel(), w, game.animations(), a, 1, 0, 200, 2);
+    apply_damage(game.kernel(), w, game.animations(), b, 1, 0, 200, 2);
+    for (int f = 0; f < 240; ++f) game.update(kFrameUs);
+    const bool broken = w.get(a) && w.get(a)->frame == 1 && w.get(b) && w.get(b)->frame == 1;
+    // By place: a destroyed item's id is soon another item's.
+    const bool shared_stays = find(0x1C2, 28575, 30447) != 0, far_stays = find(0x1C9, 28639, 30591) != 0;
+    std::printf("transformers broken together: %s, shared arc %s, far arc %s\n", broken ? "both broken" : "not both",
+                shared_stays ? "stays" : "gone", far_stays ? "stays" : "gone");
+    CHECK(broken);
+    CHECK(!shared_stays && !far_stays);
+}
+
 // Port lighting (smoke): No Regret's own machines smoulder once broken, its
 // gas tanks leak. On map 1, the machine BMPC at 41182, 57022 (0x18C: 0 whole,
 // 1 broken) and the computer at 24190, 15518 (0x3E4: 2 whole, 3 broken)
@@ -958,6 +993,7 @@ int main(int argc, char** argv) {
         test_wall_lamps_and_alarms(data);
         test_regret_lamps(data);
         test_arcs_and_fires(data);
+        test_transformers_broken_together(data);
         test_regret_machines_smoulder(data);
         test_pierced_pipes_leak(data);
         test_aim_behind_while_running(data);

@@ -236,7 +236,9 @@ void test_keyboard_repeat() {
 }  // namespace
 
 // No Regret (1418:0000): a fade started while another runs is never
-// activated; it leaves the palette and the colour cycling alone and stays.
+// activated; it leaves the palette and the colour cycling alone, and the
+// next slice runs it (1038:070C), which ends it: whoever waits for it goes on
+// (TRANSFOR destroys its arcs after its fade).
 void test_regret_second_fade() {
     set_regret_data(true);
     Kernel k;
@@ -252,11 +254,18 @@ void test_regret_second_fade() {
     paused = false;  // as if something resumed it meanwhile
     const Pid second = k.spawn<PaletteFaderProcess>(screen, Palette::filled(63, 0, 0), 60, 0, 1, &paused, true).pid();
     CHECK(!paused);
+    auto& waiter = k.spawn<Counter>();
+    waiter.wait_for(second);
+    k.advance_time(kFrameUs);
+    k.run_slice();
+    CHECK(ended(k, second) && !ended(k, first));
+    k.run_slice();
+    CHECK(waiter.runs >= 1);
     for (int i = 0; i < 120; ++i) {
         k.advance_time(kFrameUs);
         k.run_slice();
     }
-    CHECK(ended(k, first) && !ended(k, second));
+    CHECK(ended(k, first));
     CHECK(screen == Palette::filled(0, 0, 0));
     set_regret_data(false);
     Kernel r;

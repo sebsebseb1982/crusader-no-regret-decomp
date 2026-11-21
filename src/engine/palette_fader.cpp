@@ -67,8 +67,12 @@ PaletteFaderProcess::PaletteFaderProcess(Palette& screen, const Palette& target,
 // @orig 1418:0000
 // No Regret first looks for another fade (11E8:13A4, type 0x206): when one
 // runs, the new process is never activated: no rate,
-// no palettes, flag +0x41 cleared, the colour cycling not paused. It does
-// nothing and does not end by itself (a kill of the type 0x206 ends it).
+// no palettes, flag +0x41 cleared, the colour cycling not paused. Its flag
+// +0x16 bit 0 (run by the timer only) stays clear, so the next kernel slice
+// calls its run (1038:070C), which ends it at once (terminate_with_result 0,
+// its vtable +8). Whoever waits for it goes on: TRANSFOR's gotHit waits for
+// its fadeToGamePal before destroying its arcs, and a transformer broken while
+// another one's fade ran kept its arcs while it waited for ever.
 void PaletteFaderProcess::on_added() {
     if (rate_ == 0) {
         *screen_ = target_;
@@ -78,8 +82,14 @@ void PaletteFaderProcess::on_added() {
     if (regret_data() && kernel().count_processes(0, kType) > 1) {
         inert_ = true;
         resume_cycle_ = false;
+        set_rate(0);
         if (cycle_paused_) *cycle_paused_ = was_paused_;
     }
+}
+
+// @orig 1038:070C
+void PaletteFaderProcess::run() {
+    if (inert_) terminate();
 }
 
 void PaletteFaderProcess::tick() {
