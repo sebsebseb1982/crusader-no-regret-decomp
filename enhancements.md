@@ -28,6 +28,7 @@ The changes fall into four groups:
    - [7b. Impact marks](#7b-impact-marks)
    - [7c. Casings](#7c-casings)
    - [7d. 3D lighting](#7d-3d-lighting)
+   - [7e. Leaking barrels](#7e-leaking-barrels)
 8. [Autosave](#8-autosave)
    - [8b. Language](#8b-language)
 9. [Toggle run](#9-toggle-run)
@@ -98,6 +99,7 @@ The original has nothing like it. This screen gathers every option the port adds
 | IMPACT MARKS / IMPACTS | Shots leave marks on the scenery | `impactmarks` |
 | BLOOD / SANG | Cycles OFF → ON (the wounded bleed on the scenery) → GORE (much more blood) | `bloodmarks`, `goremode` |
 | CASINGS / DOUILLES | Firearms eject casings that stay on the floor (section 7c) | `casings` |
+| LEAKING BARRELS / FUITES DES BARILS | Bullets pierce the explosive barrels; their fuel makes a pool that catches fire when they blow up (section 7e) | `barrelleaks` |
 
 *GAME / JEU*
 
@@ -478,6 +480,38 @@ The original draws flat sprites under a fixed light. With this option the world 
 - Otherwise on the processor, on all its cores, by 16 x 16 tiles: the same picture, slower. `--cpu-lighting` forces it.
 - Measured with `lightview` (16 lights, shadows, smoke), a frame takes about 3 ms at 640 x 480, 6 ms at 1280 x 720 and 10 ms at 1920 x 1080 with the GPU, against 7, 14 and 26 ms on the processor.
 - The liquids add about 5.5 ms at 1920 x 1080 over two large pools with the GPU, 14 ms on the processor (their steam is marched in half the steps of smoke and lit as at its centre).
+
+## 7e. Leaking barrels
+
+**Option:** LEAKING BARRELS / FUITES DES BARILS (`barrelleaks`), EFFECTS page, off by default.
+**Files:** `src/engine/world/barrel_leaks.*`, `src/engine/world/lighting.*` (the fire's smoke and glow), `src/game/game.cpp`
+
+The explosive barrels (BARRELUP 0xAA upright, BARRELS to BARRELSE 0x151..0x155 lying) take several bullets before they blow up: their class adds up the damage of each hit and explodes at 150 (100 in *No Remorse*). In the original the bullets before the last leave no trace. With this option each of them pierces the barrel, and its fuel runs out.
+
+**Holes**
+- Only bullets pierce: the fire types that leave a bullet hole (section 7b) or eject a casing (section 7c). Six holes at most per barrel.
+- The hole is where the bullet hit: on the round side of an upright barrel, on the face hit of a lying one. A hole in the top lets nothing out.
+- A barrel starts 90 % full. A hole below the fuel's level leaks 1/10 s after the hit; the bullet that blows the barrel up leaks nothing.
+
+**Leak**
+- The fuel's speed out of a hole grows with the square root of the fuel's height above it (Torricelli): a jet out of the side, which falls to the floor, then, as the level drops, a weaker one, at last drops running down the side. It stops once the level is down to the hole. Every hole lowers the level.
+- A jet is a thin brown stream with light flecks running along it, two pixels wide near a strong hole, with a little splash where it lands. Under each hole the side stays wet down to the floor. A hole on a side the camera does not see leaks without its jet being drawn.
+
+**Pool**
+- The fuel makes one pool per barrel: a patch where each jet first landed and one at the foot of the barrel under the hole, growing with what ran out of that hole, flowing together with a ragged edge. A barrel emptied by a low hole makes a pool up to about four times its width.
+- It lies on the floor under the barrel (the highest floor at most 16 below it) and on the floors at that level around: not down a ledge, and under what stands on the floor (walls, crates), which covers it.
+- Dark brown, a little see-through at its edge, with a slow sheen.
+
+**Fire**
+- When the barrel explodes (its last bullet, or any blast), what was left in it splashes where it stood and the pool catches fire there. A blast within reach of a pool, an energy shot (laser, plasma, fire...) that ends on it, or a burning pool that touches it sets a pool alight too.
+- The fire spreads from where it caught at 2.5 units a tick: tongues of flame, white and yellow at their foot, then orange, red, see-through at their tips, flickering and swaying, taller where the pool is deep; the pool under them glows orange. Each flame is drawn in the game's order as a small box of its own, so what stands in front of it covers it.
+- It burns 4 to 15 seconds (longer the bigger the pool), dies down for its last 40 %, from the edge in, and leaves a burnt stain that stays.
+- With the 3D lighting (section 7d), the fire gives a flickering orange light, its flames and the burning pool glow as they are, and, with the volumetric smoke, a dark smoke rises off the flames, lit from below at first.
+- The fire is only seen: it hurts no one, and only other pools catch from it.
+
+**Rules**
+- Leaks only read the world and use their own numbers, never the game's random generators, so the game plays the same with or without them.
+- They follow the game's clock (they stop with it) and are not saved: a load or a map change forgets them, and so does switching the option off. At most 32 barrels and 48 pools are followed; past that the oldest go.
 
 ---
 

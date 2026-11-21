@@ -523,8 +523,10 @@ void Game::reset_world() {
     };
     damage_marks_.clear();
     casings_.clear();
+    barrel_leaks_.clear();
     hooks.shot_landed = [this](ObjId hit, std::int32_t x, std::int32_t y, std::int32_t z, int fire_type) {
         if (config_.impact_marks) damage_marks_.record(*world_, hit, {x, y, z}, fire_type);
+        if (config_.barrel_leaks) barrel_leaks_.shot(*world_, hit, {x, y, z}, fire_type, kernel_->ticks());
     };
     hooks.shot_fired = [this](ObjId shooter, std::int32_t x, std::int32_t y, std::int32_t z, int dir, int fire_type) {
         if (lighting_) lighting_->shot_fired(shooter, x, y, z, dir, fire_type, kernel_->ticks());
@@ -2135,7 +2137,10 @@ void Game::set_lighting_gpu(LightingGpu* gpu) {
 bool Game::render_lit(const Surface8& screen, std::vector<std::uint32_t>& argb) {
     if (!config_.lighting || !lighting_ || !lighting_->captured()) return false;
     argb.resize(screen.pixels.size());
-    return lighting_->shade(*world_, screen, palette(), lighting_options(config_), {}, argb.data());
+    // Port addition: the fires of the leaking barrels' pools light the scene.
+    std::vector<PointLight> extra;
+    if (config_.barrel_leaks) extra = barrel_leaks_.lights();
+    return lighting_->shade(*world_, screen, palette(), lighting_options(config_), std::move(extra), argb.data());
 }
 
 // @orig 1198:1A02
@@ -2242,11 +2247,21 @@ void Game::render_view(Surface8& screen, RenderStats* stats, bool keep_view) {
     } else if (damage_marks_.size() != 0) {
         damage_marks_.clear();
     }
+    // Port addition: the leaking barrels, their pools and fires.
+    const bool leaks = config_.barrel_leaks;
+    if (leaks) {
+        barrel_leaks_.advance(*world_, kernel_->ticks());
+        barrel_leaks_.prepare(*world_, world_->state.game_palette, list, s.view_left, s.view_top);
+        barrel_leaks_.draw_first(screen);
+    } else {
+        barrel_leaks_.clear();
+    }
     // DLIST.C 11A0:05xx: right after item 1, in combat (or holstering,
     // last action 0xB), its weapon (WPNOVLAY.DAT), unmirrored, at the item's
     // screen place plus the offsets of the current action, direction, frame.
-    draw_display_list(screen, list, &xform_, [this, marks, casings](Surface8& surface, const DrawItem& d) {
+    const auto after = [this, &list, marks, casings, leaks](Surface8& surface, const DrawItem& d) {
         if (marks) damage_marks_.draw(surface, d);
+        if (leaks) barrel_leaks_.draw(surface, d, static_cast<std::size_t>(&d - list.data()));
         [&] {
             if (d.item->id != 1 || d.item->shape != 1) return;
             const auto record = world_->npc_record(1);
@@ -2264,7 +2279,8 @@ void Game::render_view(Surface8& screen, RenderStats* stats, bool keep_view) {
             shape->frames()[piece->frame].draw(surface, d.sx + piece->dx, d.sy + piece->dy, false);
         }();
         if (casings) casings_.draw(surface, d, damage_marks_);
-    });
+    };
+    draw_display_list(screen, list, &xform_, after);
     // Port addition: what the lighting needs of the world just drawn; what
     // comes over it below (aiming sprites, status bar) is shown unlit.
     if (config_.lighting) {
@@ -2274,7 +2290,16 @@ void Game::render_view(Surface8& screen, RenderStats* stats, bool keep_view) {
         }
         lighting_->capture(*world_, list, screen, s.view_left, s.view_top, palette(), lighting_options(config_),
                            kernel_->ticks());
+        if (leaks) {
+            // The flames glow and smoke.
+            lighting_->glow(barrel_leaks_.glowing());
+            if (config_.volumetric_smoke) {
+                for (const Vec3& at : barrel_leaks_.smoke_since(fire_smoke_tick_))
+                    lighting_->add_puff(at, SmokePuff::kFire, 0.8f);
+            }
+        }
     }
+    fire_smoke_tick_ = kernel_->ticks();
     // SPMGR.C: the screen sprites (aiming mode), over the scene, unless
     // suspended in the menu mode (DS:2D8F).
     for (const ScreenSprite& sprite : world_->state.screen_sprites.all()) {

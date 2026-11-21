@@ -37,6 +37,7 @@
 #include "engine/world/avatar_mover.hpp"
 #include "engine/world/combat_control.hpp"
 #include "core/weapon_overlay.hpp"
+#include "engine/world/barrel_leaks.hpp"
 #include "engine/world/casings.hpp"
 #include "engine/world/damage_marks.hpp"
 #include "engine/world/lighting.hpp"
@@ -159,6 +160,7 @@ public:
     void set_lighting_gpu(LightingGpu* gpu);
     // The 3D lighting (null until first switched on), for the tests.
     const WorldLighting* lighting() const { return lighting_.get(); }
+    const BarrelLeaks& barrel_leaks() const { return barrel_leaks_; }
     // Where the 640 x 480 area starts in the last rendered screen; the mouse
     // coordinates the game takes are relative to it.
     int ui_x() const { return ui_x_; }
@@ -395,6 +397,8 @@ private:
     WeaponOverlay weapon_overlay_;
     DamageMarks damage_marks_;  // port addition (GameConfig::impact_marks)
     Casings casings_;           // port addition (GameConfig::casings)
+    BarrelLeaks barrel_leaks_;  // port addition (GameConfig::barrel_leaks)
+    std::uint32_t fire_smoke_tick_ = 0;  // the fires' smoke is made up to this tick
     // Port addition (GameConfig::lighting), made when first switched on.
     std::unique_ptr<WorldLighting> lighting_;
     LightingGpu* lighting_gpu_ = nullptr;

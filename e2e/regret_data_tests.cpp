@@ -373,6 +373,126 @@ void test_shot_floor_mine(const std::filesystem::path& data) {
     CHECK(!after || after->shape != 0x29F);
 }
 
+// Port addition (barrel_leaks.hpp): an explosive barrel (BARRELUP 0xAA) put
+// by the player in a new game takes 150 damage before it blows up (BARREL,
+// ITEM_066B). Each bullet before the last pierces it: its fuel runs out into
+// a pool on the floor, which catches fire when the barrel explodes, burns
+// and leaves a burnt stain.
+void test_barrel_leaks(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.config().barrel_leaks = true;
+    game.new_game(0);
+    for (int i = 0; i < 300 && game.in_movie(); ++i) game.update(kFrameUs);
+    World& w = game.world();
+    w.state.difficulty = 3;
+    const Item* player = w.get(1);
+    const ObjId barrel = w.create(0xAA, 0);
+    CHECK(barrel != 0 && player);
+    if (!barrel || !player) return;
+    // A free place on the player's floor, in sight (the barrel shows at
+    // its middle), shot from in front of it (towards +x, +y) so that the
+    // holes face the camera.
+    World::Point start{};
+    bool clear = false;
+    for (int ring = 64; ring <= 512 && !clear; ring += 32) {
+        for (int k = 0; k < 16 && !clear; ++k) {
+            const World::Point at{player->x + kDirectionDx[k] * ring, player->y + kDirectionDy[k] * ring, player->z};
+            if (!position_free(w, 0xAA, at)) continue;
+            w.move_item(barrel, at.x, at.y, at.z);
+            start = {at.x + 64, at.y + 64, at.z + 30};
+            if (!position_free(w, kProjectileShape, start)) continue;
+            const SweepResult line = sweep(w, kProjectileShape, 1, start, aim_point(w, 1, barrel), kSweepNoGround);
+            if (line.blocker != barrel) continue;
+            const Camera camera{world_from_usecode(at.x), world_from_usecode(at.y), at.z};
+            const auto list = build_display_list(w, game.shapes(), camera, 640, 480);
+            const auto on_top = pick(list, 320 - 8, 240 - 16);
+            clear = !on_top.empty() && list[on_top.back()].item->id == barrel;
+        }
+    }
+    CHECK(clear);
+    if (!clear) return;
+    Surface8 screen(Game::kScreenWidth, Game::kScreenHeight);
+    const auto run = [&](int frames) {
+        for (int f = 0; f < frames; ++f) {
+            game.update(kFrameUs);
+            game.render(screen);
+        }
+    };
+    // A level shot from (dx, dy, dz) off the barrel's anchor.
+    const auto fire = [&](int dx, int dy, int dz) {
+        const World::Point at = w.location(*w.get(barrel));
+        const World::Point from{at.x + dx, at.y + dy, at.z + dz};
+        World::Point target = aim_point(w, 1, barrel);
+        target.z = from.z;
+        game.kernel().add(std::make_unique<ProjectileProcess>(w, game.animations(), 1, from, target, 2, 40, 0));
+        for (int i = 0; i < 60 && game.kernel().count_processes(0, ProjectileProcess::kType) != 0; ++i) run(1);
+    };
+    const BarrelLeaks& leaks = game.barrel_leaks();
+    const World::Point spot = w.location(*w.get(barrel));
+    const auto picture = [&](const char* name) {
+        w.set_camera(spot.x, spot.y, spot.z);
+        shot(game, name);
+    };
+    fire(64, 64, 30);
+    run(90);
+    CHECK(leaks.barrels().size() == 1 && leaks.pools().size() == 1);
+    if (leaks.barrels().size() != 1 || leaks.pools().size() != 1) return;
+    const double full = leaks.barrels()[0].height * 0.9;
+    const auto extent = [&] {
+        double r = 0;
+        for (const BarrelLeaks::Lobe& l : leaks.pools()[0].lobes) r = std::max(r, l.r);
+        return r;
+    };
+    const double first = extent();
+    std::printf("barrel leaks: a hole, level %.1f of %.1f, pool %.1f\n", leaks.barrels()[0].level, full, first);
+    CHECK(leaks.barrels()[0].holes.size() == 1 && leaks.barrels()[0].holes[0].started);
+    CHECK(leaks.barrels()[0].level < full && first > 4);
+    picture("barrel_leak_1.png");
+    // Lower down, from the sides: those jets are stronger.
+    fire(90, 20, 12);
+    fire(20, 90, 20);
+    run(60);
+    picture("barrel_leak_3.png");
+    run(340);
+    const double later = extent();
+    std::printf("barrel leaks: %zu holes, level %.1f, pool %.1f\n", leaks.barrels()[0].holes.size(),
+                leaks.barrels()[0].level, later);
+    CHECK(w.get(barrel) && w.get(barrel)->shape == 0xAA && later > first);
+    CHECK(!leaks.pools()[0].burning);
+    picture("barrel_leak_later.png");
+    for (int k = 0; k < 6 && w.get(barrel) && w.get(barrel)->shape == 0xAA; ++k) {
+        fire(64, 64, 30);
+        run(10);
+    }
+    CHECK(!w.get(barrel) || w.get(barrel)->shape != 0xAA);
+    run(40);
+    CHECK(leaks.barrels().empty() && !leaks.pools().empty() && leaks.pools()[0].burning);
+    const std::size_t flames = leaks.pools().empty() ? 0 : leaks.pools()[0].flames.size();
+    std::printf("barrel leaks: exploded, pool burning with %zu flames, %zu lights\n", flames, leaks.lights().size());
+    CHECK(flames > 4 && leaks.lights().size() == 1);
+    picture("barrel_fire.png");
+    if (!g_png_dir.empty()) {
+        game.config().lighting = true;
+        w.set_camera(spot.x, spot.y, spot.z);
+        game.render(screen);
+        std::vector<std::uint32_t> argb;
+        if (game.render_lit(screen, argb)) {
+            std::vector<std::uint8_t> rgb(argb.size() * 3);
+            for (std::size_t i = 0; i < argb.size(); ++i) {
+                rgb[i * 3] = static_cast<std::uint8_t>(argb[i] >> 16);
+                rgb[i * 3 + 1] = static_cast<std::uint8_t>(argb[i] >> 8);
+                rgb[i * 3 + 2] = static_cast<std::uint8_t>(argb[i]);
+            }
+            write_png_rgb(g_png_dir / "barrel_fire_lit.png", screen.width, screen.height, rgb.data());
+        }
+        game.config().lighting = false;
+    }
+    run(900);
+    CHECK(!leaks.pools().empty() && leaks.pools()[0].burnt && leaks.lights().empty());
+    picture("barrel_burnt.png");
+    CHECK(game.machine().faults().empty() && game.machine().unbound_intrinsic_calls().empty());
+}
+
 // Port lighting: No Regret's lantern (wall lamp 0x2A0 frame 8; 0..9 whole,
 // 10..19 broken) put by the player in a new game lights from its bulb, and
 // goes out once broken (frame 18).
@@ -1024,6 +1144,7 @@ int main(int argc, char** argv) {
         test_keypad_autosave(data);
         test_movie_shows_status_bar(data);
         test_shot_floor_mine(data);
+        test_barrel_leaks(data);
         test_fixture_lights(data);
         test_wall_lamps_and_alarms(data);
         test_regret_lamps(data);
