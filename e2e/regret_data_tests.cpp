@@ -14,6 +14,7 @@
 #include "core/shape.hpp"
 #include "core/typeflags.hpp"
 #include "core/xform.hpp"
+#include "editor/item_semantics.hpp"
 #include "editor/level.hpp"
 #include "editor/project.hpp"
 #include "engine/audio/audio.hpp"
@@ -777,11 +778,14 @@ void test_arcs_and_fires(const std::filesystem::path& data) {
 // at 28639, 30591) goes too. It stayed, its transformer waiting for ever.
 // A level made with the level editor (a mod's map with no mission egg),
 // started with --map: no mission script fades the game palette in, so the
-// port shows it at once. An original mission still starts black.
+// port shows it at once. An original mission still starts black. An NPC the
+// editor places (a MONSTER pair, type 4, that acts when its area is entered)
+// appears at its place, and its pair's link is cleared.
 void test_editor_level_shows(const std::filesystem::path& data) {
     const auto mod = std::filesystem::temp_directory_path() / "crusader_regret_tests_mod";
     std::filesystem::remove_all(mod);
     std::size_t slot = 0;
+    std::pair<std::int32_t, std::int32_t> place_at;
     {
         // The start pad of map 1: its egg 0x1E and the glob of its cell.
         editor::Project project(data, mod);
@@ -797,7 +801,11 @@ void test_editor_level_shows(const std::filesystem::path& data) {
             const bool glob_here = i.shape == 0x10 && (i.x & ~0x1FF) == (ex & ~0x1FF) && (i.y & ~0x1FF) == (ey & ~0x1FF);
             if (start_egg || glob_here) level.items.push_back(i);
         }
-        CHECK(slot != 0 && level.items.size() >= 2);
+        auto [place, kind] = editor::make_monster_pair(ex - 96, ey - 96, 0, 4, 0x40);
+        level.items.push_back(place);
+        level.items.push_back(kind);
+        place_at = {place.x, place.y};
+        CHECK(slot != 0 && level.items.size() >= 4);
         project.store_map(slot, level);
         project.save();
     }
@@ -809,6 +817,17 @@ void test_editor_level_shows(const std::filesystem::path& data) {
         const World& w = game.world();
         CHECK(w.current_map() == static_cast<int>(slot));
         CHECK(w.state.screen_palette == w.state.game_palette && !w.state.cycle_paused);
+        int npcs = 0, links = 0;
+        w.for_each([&](const Item& i) {
+            // It may have taken a step since.
+            if (is_npc_id(i.id) && i.id != 1 && !i.off_map && std::abs(i.x - place_at.first) <= 64 &&
+                std::abs(i.y - place_at.second) <= 64) {
+                ++npcs;
+            }
+            if (i.shape == editor::kShapeMonster && (i.quality & 0xFF) == 0x40) ++links;
+        });
+        std::printf("editor level: %d NPC(s) by the MONSTER place, %d link(s) left\n", npcs, links);
+        CHECK(npcs == 1 && links == 0);
     }
     {
         Game game(data, saves_dir());

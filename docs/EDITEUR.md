@@ -24,7 +24,7 @@ In No Regret, a mission's script (its egg `MISS1`…`MISS10`) fades the picture 
 ## Getting started
 
 1. *Map > New map*: a 3 × 3 cell floor and the mission start.
-2. Place scenery from the *Shapes* and *Globs* tabs.
+2. Place scenery from the *Shapes* and *Globs* tabs, NPCs from the *Eggs* tab.
 3. *Eggs* tab > **Mission start** moves the start where you click; **Teleporter pair** places a teleporter and its destination, already linked.
 4. Select a switch, press **L** and click the doors or force fields it should drive.
 5. Watch the status bar: a red or orange counter means the **level check** found something that would not work; click it.
@@ -39,7 +39,7 @@ The original levels are made of numbers that must match: a teleporter names the 
 | **Mission start** | *Eggs* tab | Click in the view: the arrival egg 0x1E goes there (it moves if the map has one). *Go to it* and *Map > Go to the mission start* find it. |
 | **Teleporter pair** | *Eggs* tab | First click: the departure (a trigger area); second click: the arrival. The pair gets an id that the map does not use. |
 | **Link by clicking** | **L**, *Edit* menu, or *Properties* | Click the items the selected one acts on: they take its quality low (a free one if it has none). Clicking a linked item unlinks it; Esc or a right click when done. The links are drawn as cyan lines. |
-| **Copy, cut, paste** | Ctrl+C, Ctrl+X, Ctrl+V | Pastes under the pointer, on this map or another one (the clipboard stays when you open another map). A switch pasted with its doors, or a teleporter with its arrival, gets numbers the map does not use, so the copy works on its own and leaves the map's own links alone (*Edit > Paste: renumber links and teleports* turns this off). |
+| **Copy, cut, paste** | Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+D | Pastes under the pointer, on this map or another one (the clipboard stays when you open another map). A switch pasted with its doors, an NPC's MONSTER pair, or a teleporter with its arrival, gets numbers the map does not use, so the copy works on its own and leaves the map's own links alone; a door copied alone beside another keeps its switch (*Edit > Paste: renumber links and teleports* turns this off). Ctrl+D (duplicate) does the same. |
 | **Teleport destination** | *Properties* of a departure | Pick the map and the arrival from lists; *Open the arrival's map* goes there. |
 | **Level check** | status bar, *Map > Check the level* | Lists what would not work in the game, updated at each change; *Show* selects the item. |
 | **Tooltip** | pointer over the view | What the item is, where a teleporter leads, its link number. |
@@ -54,9 +54,10 @@ The level check reports:
 | Warning | several arrival eggs with the same id (the game takes whichever its search finds first) |
 | Warning | a departure without a trigger area |
 | Warning | a map busier than the game's busiest original map (8,687 records) |
+| Warning | a MONSTER place without its kind, or a kind without its place (no NPC appears) |
 | Note | no mission start (the map can still be reached by a teleport), a glob egg whose glob is empty |
 
-The original maps have no errors and three warnings (arrival ids used twice).
+The original maps have no errors; their warnings are 3 arrival ids used twice and 25 incomplete MONSTER pairs.
 
 ## What a level contains
 
@@ -94,7 +95,24 @@ Many objects answer each other through their **low quality**: switch → energy 
 
 ### NPCs
 
-No Regret has no monster eggs (the No Remorse ones, shape 0x24F). Its NPCs come from **MONSTER** objects (shape 0x4D0) linked by their quality low: a MONSTER of frame 0 makes the NPCs of the frame 1 MONSTER objects of the same quality low around it. The editor has no form for their other bytes yet: copy MONSTER objects from an original map (Ctrl+C, then Ctrl+V on your map, which renumbers their link) and adjust them. *Eggs tab > Select the map's MONSTER objects* lists them.
+No Regret has no monster eggs: all its NPCs are **MONSTER pairs**. A pair is two MONSTER objects (shape 0x4D0) linked by their quality low, like a monster egg and its template:
+
+- the **place** (frame 0): the NPC appears where it stands, when the player comes near (its map number has bit 3) or when a script fires it (a `MHATCHER` trigger egg whose id is the pair's link, within 3,200 units; reinforcements; NPCs coming out of doors);
+- the **kind** (frame 1), within 64 units of the place: the NPC's type and two of its activities.
+
+Once the NPC has appeared, both links are cleared. *Eggs* tab: click an NPC type, then in the view: the editor places a pair with a free link, an NPC that guards, attacks on seeing the player or when shot at, and appears when the player comes near. Select either object of the pair: *Properties > Role in the level* edits the NPC on both objects at once:
+
+| Setting | Stored in |
+|---|---|
+| NPC type (`DTABLE.FLX`) | kind, NPC number |
+| direction (0 to 7) | place, NPC number (low nibble) |
+| lowest difficulty, other weapon | place, map number bits 0-1 and bit 2 |
+| appears when the player comes near | place, map number bit 3 |
+| starting activity | kind, quality high |
+| activity on seeing the player | place, quality high |
+| activity when shot at | kind, map number |
+
+A place that does not appear on its own shows whether a `MHATCHER` egg fires it, and *Add a MHATCHER egg here* makes one with the right id: move it where the player should set the NPC off.
 
 ### New level
 
