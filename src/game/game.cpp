@@ -528,6 +528,9 @@ void Game::reset_world() {
         if (config_.impact_marks) damage_marks_.record(*world_, hit, {x, y, z}, fire_type);
         if (config_.barrel_leaks) barrel_leaks_.shot(*world_, hit, {x, y, z}, fire_type, kernel_->ticks());
     };
+    hooks.item_exploding = [this](ObjId item) {
+        if (config_.barrel_leaks) barrel_leaks_.exploded(*world_, item, kernel_->ticks());
+    };
     hooks.item_damage = [this](ObjId item, int damage, int fire_type) {
         const Item* hit = world_->get(item);
         return config_.barrel_leaks && hit ? barrel_bullet_damage(hit->shape, damage, fire_type) : damage;
@@ -2302,6 +2305,7 @@ void Game::render_view(Surface8& screen, RenderStats* stats, bool keep_view) {
         if (casings) casings_.draw(surface, d, damage_marks_);
     };
     draw_display_list(screen, list, &xform_, after);
+    if (leaks) barrel_leaks_.draw_last(screen);  // the burning drops in flight, the pools' mirror
     // Port addition: what the lighting needs of the world just drawn; what
     // comes over it below (aiming sprites, status bar) is shown unlit.
     if (config_.lighting) {

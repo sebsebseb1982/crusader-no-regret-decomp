@@ -463,10 +463,13 @@ void test_barrel_leaks(const std::filesystem::path& data) {
     CHECK(w.get(barrel) && w.get(barrel)->shape == 0xAA && later > first);
     CHECK(!leaks.pools()[0].burning);
     picture("barrel_leak_later.png");
+    // The pool mirrors the barrel and the door behind it.
+    std::printf("barrel leaks: %zu pool pixels mirror the scene\n", leaks.reflected());
+    CHECK(leaks.reflected() > 50);
     // The Silencer out of the blast's reach.
     World::Point away = w.location(*w.get(1));
     bool far = false;
-    for (int ring = 320; ring <= 960 && !far; ring += 32) {
+    for (int ring = 720; ring <= 1600 && !far; ring += 32) {
         for (int k = 0; k < 16 && !far; ++k) {
             const World::Point at{spot.x + kDirectionDx[k] * ring / 2, spot.y + kDirectionDy[k] * ring / 2, spot.z};
             far = position_free(w, w.get(1)->shape, at, nullptr, 1);
@@ -475,6 +478,16 @@ void test_barrel_leaks(const std::filesystem::path& data) {
     }
     CHECK(far);
     w.move_item(1, away.x, away.y, away.z);
+    // A second barrel by the first, never shot: the blast sets it off, and
+    // it throws its own burning drops.
+    const ObjId second = w.create(0xAA, 2);
+    bool beside = false;
+    for (int k = 0; k < 16 && second && !beside; ++k) {
+        const World::Point at{spot.x + kDirectionDx[k] * 40, spot.y + kDirectionDy[k] * 40, spot.z};
+        beside = (kDirectionDx[k] < 0 || kDirectionDy[k] < 0) && position_free(w, 0xAA, at, nullptr, second);
+        if (beside) w.move_item(second, at.x, at.y, at.z);
+    }
+    CHECK(beside);
     // 3/5 of the damage: about 1.7 times as many shots (4 without the option).
     int shots = 3;
     for (; shots < 30 && w.get(barrel) && w.get(barrel)->shape == 0xAA; ++shots) {
@@ -482,12 +495,21 @@ void test_barrel_leaks(const std::filesystem::path& data) {
         run(10);
     }
     CHECK(!w.get(barrel) || w.get(barrel)->shape != 0xAA);
-    run(40);
+    std::size_t most_drops = leaks.drops().size();
+    for (int f = 0; f < 40; ++f) {
+        run(1);
+        most_drops = std::max(most_drops, leaks.drops().size());
+        if (f == 6) picture("barrel_drops.png");  // the burning drops in flight
+    }
+    const bool chained = !w.get(second) || w.get(second)->shape != 0xAA;
+    std::printf("barrel leaks: second barrel %s, up to %zu drops in flight, %zu pools, %zu fires on walls\n",
+                chained ? "blown up" : "standing", most_drops, leaks.pools().size(), leaks.wall_fires().size());
+    CHECK(chained && most_drops > 10 && leaks.pools().size() + leaks.wall_fires().size() > 3);
     CHECK(leaks.barrels().empty() && !leaks.pools().empty() && leaks.pools()[0].burning);
     const std::size_t patches = leaks.pools().empty() ? 0 : leaks.pools()[0].patches.size();
     std::printf("barrel leaks: exploded after %d shots, pool burning in %zu patches, %zu lights\n", shots, patches,
                 leaks.lights(w).size());
-    CHECK(shots >= 7 && patches > 4 && leaks.lights(w).size() == 1);
+    CHECK(shots >= 7 && patches > 4 && !leaks.lights(w).empty());
     picture("barrel_fire.png");
     // The Silencer walks into the fire: he catches fire and burns, and
     // goes out a second after he left it.
@@ -521,6 +543,10 @@ void test_barrel_leaks(const std::filesystem::path& data) {
     run(900);
     CHECK(!leaks.pools().empty() && leaks.pools()[0].burnt && leaks.lights(w).empty());
     picture("barrel_burnt.png");
+    if (!g_png_dir.empty()) {
+        std::printf("barrel leaks: %zu stains of burning drops on the walls in view\n", leaks.walls_shown());
+        CHECK(leaks.walls_shown() > 0);
+    }
     CHECK(game.machine().faults().empty() && game.machine().unbound_intrinsic_calls().empty());
 }
 
