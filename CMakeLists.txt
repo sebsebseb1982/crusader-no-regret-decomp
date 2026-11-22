@@ -308,7 +308,7 @@ target_compile_definitions(game_tests PRIVATE CRUSADER_TEST_SAVES="${CRUSADER_TE
 
 # No Regret data (data/): regret_data_tests.
 add_executable(regret_data_tests e2e/regret_data_tests.cpp)
-target_link_libraries(regret_data_tests PRIVATE crusader_game)
+target_link_libraries(regret_data_tests PRIVATE crusader_game crusader_editor_core)
 if(CRUSADER_GAME_DATA_TESTS)
     add_test(NAME regret_data_tests COMMAND regret_data_tests ${CRUSADER_DATA_DIR})
 endif()

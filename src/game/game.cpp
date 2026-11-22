@@ -1011,6 +1011,23 @@ void Game::new_game(int difficulty) {
         }
         teleport_to_egg_at_once(*kernel_, *world_, start_map_, start_egg_);
         s.screen_palette = Palette::filled(0, 0, 0);
+        // Port addition: a start chosen with --map (a mod's level, F5 in the
+        // level editor) on a map without a mission egg (classes MISS1..10,
+        // REBEL), which would fade the game palette in: it shows at once,
+        // colours cycling, instead of staying black.
+        if (chosen_start_) {
+            bool mission = false;
+            for (ObjId id : world_->rect_search(0, 0, 0x7FFF, 0x7FFF)) {
+                const Item* egg = world_->get(id);
+                if (!egg || world_->family_of(egg->shape) != 4) continue;
+                const std::string name = machine_->usecode().class_name(static_cast<std::uint16_t>(0x900 + (egg->quality & 0xFF)));
+                mission |= name.rfind("MISS", 0) == 0 || name == "REBEL";
+            }
+            if (!mission) {
+                s.screen_palette = s.game_palette;
+                s.cycle_paused = false;
+            }
+        }
     } else {
         start_teleport_to_egg(*kernel_, *world_, start_map_, start_egg_, true, true);
     }

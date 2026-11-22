@@ -14,6 +14,8 @@
 #include "core/shape.hpp"
 #include "core/typeflags.hpp"
 #include "core/xform.hpp"
+#include "editor/level.hpp"
+#include "editor/project.hpp"
 #include "engine/audio/audio.hpp"
 #include "engine/ui/gump_keys.hpp"
 #include "engine/ui/help_screen.hpp"
@@ -773,6 +775,50 @@ void test_arcs_and_fires(const std::filesystem::path& data) {
 // started while the first one's ran, is never activated and ends at the next
 // slice (1418:0000, 1038:070C): the arc only the second one reaches (SHOCKNS
 // at 28639, 30591) goes too. It stayed, its transformer waiting for ever.
+// A level made with the level editor (a mod's map with no mission egg),
+// started with --map: no mission script fades the game palette in, so the
+// port shows it at once. An original mission still starts black.
+void test_editor_level_shows(const std::filesystem::path& data) {
+    const auto mod = std::filesystem::temp_directory_path() / "crusader_regret_tests_mod";
+    std::filesystem::remove_all(mod);
+    std::size_t slot = 0;
+    {
+        // The start pad of map 1: its egg 0x1E and the glob of its cell.
+        editor::Project project(data, mod);
+        slot = project.free_map();
+        const editor::Level map1 = project.load_map(1);
+        std::int32_t ex = 0, ey = 0;
+        for (const editor::LevelItem& i : map1.items) {
+            if (i.shape == 0x194 && i.frame == 1 && i.quality_low() == 0x1E) ex = i.x, ey = i.y;
+        }
+        editor::Level level;
+        for (const editor::LevelItem& i : map1.items) {
+            const bool start_egg = i.shape == 0x194 && i.frame == 1 && i.quality_low() == 0x1E;
+            const bool glob_here = i.shape == 0x10 && (i.x & ~0x1FF) == (ex & ~0x1FF) && (i.y & ~0x1FF) == (ey & ~0x1FF);
+            if (start_egg || glob_here) level.items.push_back(i);
+        }
+        CHECK(slot != 0 && level.items.size() >= 2);
+        project.store_map(slot, level);
+        project.save();
+    }
+    {
+        Game game(data, saves_dir(), mod);
+        game.set_start(static_cast<int>(slot), 0x1E);
+        game.new_game(0);
+        for (int f = 0; f < 30; ++f) game.update(kFrameUs);
+        const World& w = game.world();
+        CHECK(w.current_map() == static_cast<int>(slot));
+        CHECK(w.state.screen_palette == w.state.game_palette && !w.state.cycle_paused);
+    }
+    {
+        Game game(data, saves_dir());
+        game.set_start(1, 0x1E);
+        game.new_game(0);
+        CHECK(game.world().state.screen_palette == Palette::filled(0, 0, 0));
+    }
+    std::filesystem::remove_all(mod);
+}
+
 void test_transformers_broken_together(const std::filesystem::path& data) {
     Game game(data, saves_dir());
     game.set_start(7, 0x1E);
@@ -1207,6 +1253,7 @@ int main(int argc, char** argv) {
         test_regret_lamps(data);
         test_arcs_and_fires(data);
         test_transformers_broken_together(data);
+        test_editor_level_shows(data);
         test_regret_machines_smoulder(data);
         test_pierced_pipes_leak(data);
         test_valve_steam_not_doubled(data);

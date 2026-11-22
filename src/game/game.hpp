@@ -136,6 +136,7 @@ public:
     void set_start(int map, std::uint16_t egg) {
         start_map_ = map;
         start_egg_ = egg;
+        chosen_start_ = true;
     }
 
     // Advances the clock by `elapsed_us` and runs one kernel slice. While the
@@ -420,6 +421,7 @@ private:
     std::filesystem::path mod_;  // level editor files that replace the data's
     int start_map_ = 1;
     std::uint16_t start_egg_ = 0x1E;  // kTeleportStartEgg
+    bool chosen_start_ = false;       // set_start (--map) was called
     std::string port_version_;
     bool regret_ = false;       // No Regret data, else No Remorse
     std::string data_version_;  // "1.08", "1.23", "1.01"
