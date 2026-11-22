@@ -16,6 +16,7 @@
 #include "core/xform.hpp"
 #include "editor/item_semantics.hpp"
 #include "editor/level.hpp"
+#include "editor/level_tools.hpp"
 #include "editor/project.hpp"
 #include "engine/audio/audio.hpp"
 #include "engine/ui/gump_keys.hpp"
@@ -23,6 +24,7 @@
 #include "engine/ui/keypad_gump.hpp"
 #include "engine/ui/load_screen.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
+#include "engine/usecode/usecode_file.hpp"
 #include "engine/usecode/world_intrinsics.hpp"
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/collision.hpp"
@@ -838,6 +840,127 @@ void test_editor_level_shows(const std::filesystem::path& data) {
     std::filesystem::remove_all(mod);
 }
 
+// A switch linked to an energy wall the way the editor does it (Link by
+// clicking: the same quality low, the wall's shape as the switch's target in
+// its map and NPC numbers, and the setting the original maps use most on
+// that shape), on a mod's map: used, it turns the wall off (a marker 0x476).
+// Another one, set the same way on a MONSTER place that does not act when its
+// area is entered, makes its NPC appear.
+void test_editor_switch_wall(const std::filesystem::path& data) {
+    editor::TriggerSettings settings;
+    {
+        const auto typeflags = load_typeflags(data / "STATIC/TYPEFLAG.DAT");
+        const auto usecode = UsecodeFile::from_flex(FlexArchive::open(data / "USECODE/EUSECODE.FLX"));
+        std::vector<bool> calls(0x800, false);
+        for (std::uint16_t c = 0; c < 0x800; ++c) {
+            calls[c] = usecode.has_class(c) && editor::code_calls_class(usecode.code(c), 0xA17);
+        }
+        editor::LevelInfo info;
+        info.family = [&](std::uint16_t sh) -> std::uint8_t { return sh < typeflags.size() ? typeflags[sh].family : 0; };
+        info.has_class = [&](std::uint16_t cid) { return usecode.has_class(cid); };
+        const auto fixed = editor::FlexEntries::read((data / "STATIC/FIXED.DAT").string());
+        std::vector<editor::Level> maps;
+        for (std::size_t m = 1; m < fixed.entries.size() && m < 256; ++m) {
+            if (!fixed.entries[m].empty()) maps.push_back(editor::Level::parse(fixed.entries[m]));
+        }
+        settings = editor::trigger_settings(maps, info, editor::find_trigger_users(maps, info, calls));
+    }
+    const auto mod = std::filesystem::temp_directory_path() / "crusader_regret_tests_switch";
+    std::filesystem::remove_all(mod);
+    std::size_t slot = 0;
+    std::int32_t sx = 0, sy = 0, sy2 = 0;
+    {
+        editor::Project project(data, mod);
+        slot = project.free_map();
+        const editor::Level map1 = project.load_map(1);
+        std::int32_t ex = 0, ey = 0;
+        for (const editor::LevelItem& i : map1.items) {
+            if (i.shape == 0x194 && i.frame == 1 && i.quality_low() == 0x1E) ex = i.x, ey = i.y;
+        }
+        editor::Level level;
+        for (const editor::LevelItem& i : map1.items) {
+            const bool start_egg = i.shape == 0x194 && i.frame == 1 && i.quality_low() == 0x1E;
+            const bool glob_here = i.shape == 0x10 && (i.x & ~0x1FF) == (ex & ~0x1FF) && (i.y & ~0x1FF) == (ey & ~0x1FF);
+            if (start_egg || glob_here) level.items.push_back(i);
+        }
+        editor::LevelItem sw, wall;
+        sw.uid = editor::new_uid();
+        sw.shape = 0x061;  // SWITCHEW
+        sw.x = sx = ex - 64;
+        sw.y = sy = ey;
+        sw.quality = 0x41;
+        editor::set_trigger_target(sw, 0x565);
+        // What it does to the wall: the original maps' most common setting.
+        const editor::TriggerSetting* ts = editor::find_trigger_setting(settings, 0x061, 0x565);
+        CHECK(ts != nullptr);
+        if (ts) editor::apply_trigger_setting(sw, *ts);
+        wall.uid = editor::new_uid();
+        wall.shape = 0x565;  // EWALLEW
+        wall.x = ex + 128;
+        wall.y = ey;
+        wall.quality = 0x41;
+        level.items.push_back(sw);
+        level.items.push_back(wall);
+        // A second switch fires an NPC that does not appear on its own.
+        editor::LevelItem sw2 = sw;
+        sw2.uid = editor::new_uid();
+        sw2.y = sy2 = ey + 64;
+        sw2.quality = 0x42;
+        editor::set_trigger_target(sw2, editor::kShapeMonster);
+        const editor::TriggerSetting* ms = editor::find_trigger_setting(settings, 0x061, editor::kShapeMonster);
+        CHECK(ms != nullptr);
+        if (ms) editor::apply_trigger_setting(sw2, *ms);
+        auto [place, kind] = editor::make_monster_pair(ex - 160, ey - 160, 0, 4, 0x42);
+        editor::MonsterPair npc = editor::read_monster_pair(place, kind);
+        npc.on_enter = false;
+        editor::write_monster_pair(place, kind, npc);
+        level.items.push_back(sw2);
+        level.items.push_back(place);
+        level.items.push_back(kind);
+        project.store_map(slot, level);
+        project.save();
+    }
+    Game game(data, saves_dir(), mod);
+    game.set_start(static_cast<int>(slot), 0x1E);
+    game.new_game(0);
+    for (int f = 0; f < 30; ++f) game.update(kFrameUs);
+    World& w = game.world();
+    ObjId sw = 0;
+    w.for_each([&](const Item& i) {
+        if (i.shape == 0x061 && i.x == sx && i.y == sy) sw = i.id;
+    });
+    CHECK(sw != 0);
+    if (!sw) return;
+    use_item(w, sw);
+    for (int f = 0; f < 300; ++f) game.update(kFrameUs);
+    int walls = 0, markers = 0;
+    w.for_each([&](const Item& i) {
+        walls += i.shape == 0x565 && (i.quality & 0xFF) == 0x41;
+        markers += i.shape == 0x476 && (i.quality & 0xFF) == 0x41;
+    });
+    std::printf("editor switch: %d wall(s), %d marker(s) after use\n", walls, markers);
+    CHECK(walls == 0 && markers == 1);
+    // The NPC: none on the map before the second switch is used, one after
+    // (it soon runs off after the player).
+    const auto npcs_by_place = [&] {
+        int n = 0;
+        w.for_each([&](const Item& i) { n += is_npc_id(i.id) && i.id != 1 && !i.off_map; });
+        return n;
+    };
+    const int before = npcs_by_place();
+    ObjId sw2 = 0;
+    w.for_each([&](const Item& i) {
+        if (i.shape == 0x061 && i.x == sx && i.y == sy2) sw2 = i.id;
+    });
+    CHECK(sw2 != 0);
+    if (sw2) use_item(w, sw2);
+    for (int f = 0; f < 300; ++f) game.update(kFrameUs);
+    const int after = npcs_by_place();
+    std::printf("editor switch: NPCs on the map %d before, %d after use\n", before, after);
+    CHECK(before == 0 && after == 1);
+    std::filesystem::remove_all(mod);
+}
+
 void test_transformers_broken_together(const std::filesystem::path& data) {
     Game game(data, saves_dir());
     game.set_start(7, 0x1E);
@@ -1273,6 +1396,7 @@ int main(int argc, char** argv) {
         test_arcs_and_fires(data);
         test_transformers_broken_together(data);
         test_editor_level_shows(data);
+        test_editor_switch_wall(data);
         test_regret_machines_smoulder(data);
         test_pierced_pipes_leak(data);
         test_valve_steam_not_doubled(data);
