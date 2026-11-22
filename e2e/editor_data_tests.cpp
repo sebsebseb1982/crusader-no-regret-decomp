@@ -3,14 +3,20 @@
 // byte for byte, so that saving a project changes only what was edited.
 // Usage: editor_data_tests <data_dir>   (skips with exit code 0 when data is absent)
 
+#include "core/data_info.hpp"
 #include "core/flex.hpp"
+#include "core/typeflags.hpp"
 #include "editor/level.hpp"
+#include "editor/level_tools.hpp"
 #include "editor/project.hpp"
+#include "engine/usecode/usecode_file.hpp"
 
 #include <algorithm>
 #include <cstdio>
 #include <exception>
 #include <filesystem>
+#include <map>
+#include <string>
 
 using namespace crusader;
 using namespace crusader::editor;
@@ -46,9 +52,11 @@ void check_maps(const std::filesystem::path& data) {
         }
     }
     std::printf("maps: %zu, records: %zu, in containers: %zu\n", maps, records, contained);
-    check(maps == 63, "63 maps");
+    // No Regret has no monster eggs: MONSTER objects make its NPCs.
+    const bool regret = detect_data_info(data).regret;
+    check(maps == (regret ? 38u : 63u), regret ? "38 maps" : "63 maps");
     check(bad == 0, "every map written back byte for byte");
-    check(monster_eggs == 199, "the 199 monster eggs hold their template");
+    check(monster_eggs == (regret ? 0u : 199u), "the monster eggs hold their template");
 }
 
 void check_globs(const std::filesystem::path& data) {
@@ -92,6 +100,39 @@ void check_project(const std::filesystem::path& data) {
     std::filesystem::remove_all(mod);
 }
 
+void check_level_check(const std::filesystem::path& data) {
+    // The level check on the original maps: what it reports there is what
+    // the original designers left (an unused teleport, a lone switch...), so
+    // it must stay rare, and no original map may have a trigger egg without
+    // its class or a monster egg without its template.
+    const Project project(data, {});
+    const auto typeflags = load_typeflags(data / "STATIC/TYPEFLAG.DAT");
+    const auto usecode = UsecodeFile::from_flex(FlexArchive::open(data / "USECODE/EUSECODE.FLX"));
+    CheckContext context;
+    context.info.family = [&](std::uint16_t s) -> std::uint8_t { return s < typeflags.size() ? typeflags[s].family : 0; };
+    context.info.has_class = [&](std::uint16_t cid) { return usecode.has_class(cid); };
+    context.glob_pieces = [&](std::uint16_t g) { return project.glob(g).pieces.size(); };
+    context.map_exists = [&](int m) { return m > 0 && project.map_used(static_cast<std::size_t>(m)); };
+    context.arrivals_on = [&](int m) { return arrival_ids(project.load_map(static_cast<std::size_t>(m)), context.info); };
+    context.busiest_records = busiest_map_records(FlexEntries::read((data / "STATIC/FIXED.DAT").string()).entries);
+    std::map<std::string, int> kinds;
+    int errors = 0, items = 0;
+    for (std::size_t m : project.used_maps()) {
+        if (m == 0 || m > 255) continue;
+        context.map = static_cast<int>(m);
+        const Level level = project.load_map(m);
+        items += static_cast<int>(level.items.size());
+        for (const Problem& p : check_level(level, context)) {
+            const std::string kind = p.text.substr(0, p.text.find_first_of("(:0"));
+            ++kinds[(p.severity == Severity::Error ? "E " : p.severity == Severity::Warning ? "W " : "N ") + kind];
+            errors += p.severity == Severity::Error;
+        }
+    }
+    for (const auto& [kind, n] : kinds) std::printf("  %4d %s\n", n, kind.c_str());
+    std::printf("level check: %d error(s) over %d items\n", errors, items);
+    check(errors * 500 < items, "few errors in the original maps");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -104,6 +145,7 @@ int main(int argc, char** argv) {
         check_maps(data);
         check_globs(data);
         check_project(data);
+        check_level_check(data);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());
         return 1;

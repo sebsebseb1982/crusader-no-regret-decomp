@@ -193,6 +193,7 @@ target_link_libraries(shapedump PRIVATE crusader_core)
 add_library(crusader_editor_core
   src/editor/level.cpp
   src/editor/item_semantics.cpp
+  src/editor/level_tools.cpp
   src/editor/project.cpp)
 target_link_libraries(crusader_editor_core PUBLIC crusader_core)
 
@@ -299,7 +300,7 @@ add_executable(audio_data_tests e2e/audio_data_tests.cpp)
 target_link_libraries(audio_data_tests PRIVATE crusader_engine)
 
 add_executable(editor_data_tests e2e/editor_data_tests.cpp)
-target_link_libraries(editor_data_tests PRIVATE crusader_editor_core)
+target_link_libraries(editor_data_tests PRIVATE crusader_editor_core crusader_engine)
 
 add_executable(game_tests e2e/game_tests.cpp)
 target_link_libraries(game_tests PRIVATE crusader_game crusader_editor_core)
@@ -311,6 +312,8 @@ add_executable(regret_data_tests e2e/regret_data_tests.cpp)
 target_link_libraries(regret_data_tests PRIVATE crusader_game crusader_editor_core)
 if(CRUSADER_GAME_DATA_TESTS)
     add_test(NAME regret_data_tests COMMAND regret_data_tests ${CRUSADER_DATA_DIR})
+    # The level editor reads and writes No Regret's maps and globs byte for byte.
+    add_test(NAME editor_data_tests COMMAND editor_data_tests ${CRUSADER_DATA_DIR})
 endif()
 
 # The German No Regret data (v1.07), when found: the English executable
