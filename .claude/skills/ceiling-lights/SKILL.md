@@ -25,6 +25,8 @@ for m in $(seq 0 60); do build/Release/mapview.exe data $m --dump > $S/map$m.csv
   awk -F, -v m=$m '$13==8 && $3==1 && $11%256==30 {print "map", m, "start", $5, $7}' $S/map$m.csv; done
 ```
 
+No Regret: tools/lights/README.md lists each mission's maps and which are done; take the next one there.
+
 Some missions have two near-identical maps (same start position, e.g. No Remorse 25/26, 27/28): compare their dumps and ask whether both get the plan (copy the file to both numbers if the rooms match).
 
 ## 2. Plan

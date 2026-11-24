@@ -7,7 +7,24 @@ The original draws no ceilings and has no light there. With the 3D lighting (CEI
 
 Edit them next to the executable (or in the sources, then build) and restart the game; in `lightview`, F5 reads them again. A file that does not parse is told on the error output (line and column) and gives no lamps. A mod (`--mod DIR`) can bring its own: `DIR/ceiling_lights/` is read first.
 
-Done: mission 1 (map 1). The screenshots of its rooms are in `lights/mission01/` (not in git).
+Done: missions 1 to 7. The screenshots of their rooms are in `lights/` (not in git): `lights/missionNN/` for a mission's first map, `lights/missionNN-mapMM/` for its others.
+
+No Regret's missions and their maps (the maps holding the mission eggs, classes MISS1..MISS10):
+
+| Mission | Maps | Done |
+|---|---|---|
+| 1 | 1, 2 | yes |
+| 2 | 3 | yes |
+| 3 | 5, 6 (29, 30: variants of 6) | yes |
+| 4 | 7 (28: a variant), 8 | yes |
+| 5 | 9, 10 | yes |
+| 6 | 11 | yes |
+| 7 | 13, 14 (no mission egg: reached from 13) | yes |
+| 8 | 15, 16 | |
+| 9 | 17, 18? (no mission egg) | |
+| 10 | 19, 20, 21, 22? (no mission egg) | |
+
+A variant map has the same rooms as its model, a few items apart: its plan is the model's (names, kinds, rooms without lamps), checked room by room where they differ.
 
 ## A plan
 

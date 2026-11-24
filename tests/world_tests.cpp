@@ -1770,8 +1770,8 @@ void test_beam_meets() {
 // JSON files. A kinds file replaces built-in kinds and adds others; a map
 // file's lights take their room's kind, or their own, and their own reach;
 // each gives a point light, brighter with the ambient light, that lowers the
-// ambient light round it. The files shipped: mission 1's map has its lamps,
-// others none yet.
+// ambient light round it. The files shipped: each parses and has lamps, maps
+// without a file none.
 void test_ceiling_lights() {
     const auto kinds_doc = parse_json(R"({"kinds": {"neon": {"colour": [0.5, 0.5, 1], "strength": 2},
                                                      "uv": {"colour": [0.6, 0.2, 1], "radius": 500, "dim": 2}}})");
@@ -1799,6 +1799,18 @@ void test_ceiling_lights() {
     const auto& map1 = ceiling_lights(1);
     CHECK(map1.size() > 20 && ceiling_lights(0).empty() && ceiling_lights(99).empty());
     CHECK(std::all_of(map1.begin(), map1.end(), [](const CeilingLight& l) { return l.z > 40; }));
+    // Every map file shipped parses and has lamps, under a ceiling.
+    int files = 0;
+    for (int m = 1; m < 100; ++m) {
+        char name[32];
+        std::snprintf(name, sizeof name, "map%03d.json", m);
+        if (!std::filesystem::exists(std::filesystem::path(CRUSADER_CEILING_LIGHTS_DIR) / name)) continue;
+        ++files;
+        const auto& lights = ceiling_lights(m);
+        CHECK(!lights.empty());
+        CHECK(std::all_of(lights.begin(), lights.end(), [](const CeilingLight& l) { return l.z > 20 && l.z < 300; }));
+    }
+    CHECK(files >= 10);
     if (map1.empty()) return;
     std::vector<PointLight> dark, bright;
     add_ceiling_lights({map1[0]}, 0.0f, dark);
