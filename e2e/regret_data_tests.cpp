@@ -29,6 +29,7 @@
 #include "engine/world/actor_anim.hpp"
 #include "engine/world/collision.hpp"
 #include "engine/world/inventory.hpp"
+#include "engine/world/ceiling_lights.hpp"
 #include "engine/world/lighting.hpp"
 #include "engine/world/render.hpp"
 #include "engine/world/projectile.hpp"
@@ -590,6 +591,36 @@ void test_fixture_lights(const std::filesystem::path& data) {
     const int broken = lamp_lights();
     std::printf("lantern: %d light(s) whole, %d broken\n", lit, broken);
     CHECK(lit == 1 && broken == 0);
+}
+
+// Port lighting: the ceiling lights (ceiling_lights.hpp). In a new game, the
+// first mission's map (1), the room where the Silencer arrives has lamps
+// under its ceiling: with the 3D lighting they light the view (lights of no
+// item that lower the ambient light, not a liquid's), and none with the
+// CEILING LIGHTS option off.
+void test_ceiling_lights_in_game(const std::filesystem::path& data) {
+    set_ceiling_lights_dirs({CRUSADER_CEILING_LIGHTS_DIR});  // as main() does, next to the executable
+    Game game(data, saves_dir());
+    game.config().lighting = true;
+    game.new_game(0);
+    for (int i = 0; i < 300 && game.in_movie(); ++i) game.update(kFrameUs);
+    for (int i = 0; i < 30; ++i) game.update(kFrameUs);
+    const World& w = game.world();
+    CHECK(!w.remorse() && w.current_map() == 1);
+    Surface8 screen(Game::kScreenWidth, Game::kScreenHeight);
+    std::vector<std::uint32_t> argb;
+    const auto ceiling_lights_shown = [&](bool on) {
+        game.config().ceiling_lights = on;
+        game.render(screen);
+        if (!game.render_lit(screen, argb) || !game.lighting()) return -1;
+        int n = 0;
+        for (const PointLight& l : game.lighting()->lights()) n += l.owner == 0 && l.dim > 0 && !l.liquid;
+        return n;
+    };
+    const int on = ceiling_lights_shown(true), off = ceiling_lights_shown(false);
+    game.config().ceiling_lights = true;
+    std::printf("ceiling lights: %d in view in the arrival room, %d with the option off\n", on, off);
+    CHECK(on > 0 && off == 0);
 }
 
 // A map of FIXED.DAT as the lighting sees it, without the game: its items
@@ -1391,6 +1422,7 @@ int main(int argc, char** argv) {
         test_shot_floor_mine(data);
         test_barrel_leaks(data);
         test_fixture_lights(data);
+        test_ceiling_lights_in_game(data);
         test_wall_lamps_and_alarms(data);
         test_regret_lamps(data);
         test_arcs_and_fires(data);

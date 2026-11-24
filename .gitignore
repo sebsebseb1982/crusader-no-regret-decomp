@@ -13,3 +13,5 @@ mods/
 # only the port's texts (port.txt) are in the repository
 languages/*/*
 !languages/*/port.txt
+# Screenshots of the ceiling lights, room by room (tools/lights/shoot_rooms.py)
+/lights/
