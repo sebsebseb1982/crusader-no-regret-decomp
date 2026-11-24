@@ -1,0 +1,2493 @@
+{
+ "map": 15,
+ "mission": 8,
+ "rooms": [
+  {
+   "id": "C57",
+   "name": "Hall",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 11581,
+   "bbox": [
+    58368,
+    24576,
+    62400,
+    29632
+   ],
+   "centre": [
+    60480,
+    26863
+   ],
+   "walled": 0.93,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     59024,
+     25200,
+     170
+    ],
+    [
+     60368,
+     25200,
+     170
+    ],
+    [
+     61584,
+     25200,
+     170
+    ],
+    [
+     58960,
+     26416,
+     170
+    ],
+    [
+     61584,
+     26480,
+     170
+    ],
+    [
+     59024,
+     27536,
+     170
+    ],
+    [
+     61584,
+     27728,
+     170
+    ],
+    [
+     59152,
+     28880,
+     170
+    ],
+    [
+     60016,
+     28944,
+     170
+    ],
+    [
+     61712,
+     29008,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C42",
+   "name": "Laboratoire",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 8911,
+   "bbox": [
+    26624,
+    20480,
+    31680,
+    23488
+   ],
+   "centre": [
+    28834,
+    22322
+   ],
+   "walled": 0.8,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [
+    [
+     27248,
+     21232,
+     74
+    ],
+    [
+     28528,
+     21680,
+     74
+    ],
+    [
+     30352,
+     21680,
+     74
+    ],
+    [
+     27248,
+     22736,
+     74
+    ],
+    [
+     28400,
+     22832,
+     74
+    ],
+    [
+     29808,
+     22768,
+     74
+    ],
+    [
+     31056,
+     22736,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C8",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 8143,
+   "bbox": [
+    26624,
+    12288,
+    31424,
+    14784
+   ],
+   "centre": [
+    28877,
+    13367
+   ],
+   "walled": 0.89,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     27216,
+     12912,
+     74
+    ],
+    [
+     28432,
+     13008,
+     74
+    ],
+    [
+     29616,
+     12912,
+     74
+    ],
+    [
+     30832,
+     12912,
+     74
+    ],
+    [
+     27216,
+     14160,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C13",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 7550,
+   "bbox": [
+    23552,
+    13312,
+    26592,
+    18368
+   ],
+   "centre": [
+    24906,
+    15717
+   ],
+   "walled": 0.64,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     24304,
+     13936,
+     170
+    ],
+    [
+     25840,
+     13936,
+     170
+    ],
+    [
+     24464,
+     15216,
+     170
+    ],
+    [
+     25136,
+     14672,
+     170
+    ],
+    [
+     24464,
+     16464,
+     170
+    ],
+    [
+     25360,
+     17104,
+     170
+    ],
+    [
+     24304,
+     17744,
+     170
+    ],
+    [
+     25808,
+     17744,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C103",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 7506,
+   "bbox": [
+    26624,
+    35840,
+    29632,
+    38848
+   ],
+   "centre": [
+    28174,
+    37420
+   ],
+   "walled": 0.88,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     27152,
+     36816,
+     74
+    ],
+    [
+     28880,
+     36592,
+     74
+    ],
+    [
+     27376,
+     38096,
+     74
+    ],
+    [
+     28880,
+     38096,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C98",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 7340,
+   "bbox": [
+    53216,
+    34816,
+    58304,
+    37824
+   ],
+   "centre": [
+    56186,
+    36264
+   ],
+   "walled": 0.83,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     54032,
+     36016,
+     170
+    ],
+    [
+     55472,
+     35504,
+     170
+    ],
+    [
+     56400,
+     35568,
+     170
+    ],
+    [
+     57680,
+     36016,
+     170
+    ],
+    [
+     55120,
+     36624,
+     170
+    ],
+    [
+     56400,
+     37072,
+     170
+    ],
+    [
+     57680,
+     37072,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C62",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 6802,
+   "bbox": [
+    51200,
+    26624,
+    53216,
+    30656
+   ],
+   "centre": [
+    52173,
+    28704
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     51696,
+     27216,
+     170
+    ],
+    [
+     52720,
+     27248,
+     170
+    ],
+    [
+     51728,
+     28752,
+     170
+    ],
+    [
+     52624,
+     28752,
+     170
+    ],
+    [
+     51696,
+     30096,
+     170
+    ],
+    [
+     52720,
+     29968,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C1",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 5828,
+   "bbox": [
+    1024,
+    1024,
+    4032,
+    3008
+   ],
+   "centre": [
+    2528,
+    2016
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     1776,
+     1520,
+     74
+    ],
+    [
+     3280,
+     1520,
+     74
+    ],
+    [
+     1776,
+     2512,
+     74
+    ],
+    [
+     3280,
+     2512,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C53",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 5276,
+   "bbox": [
+    29696,
+    23520,
+    31680,
+    27584
+   ],
+   "centre": [
+    30590,
+    25185
+   ],
+   "walled": 0.82,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     30192,
+     24176,
+     170
+    ],
+    [
+     31184,
+     24208,
+     170
+    ],
+    [
+     30192,
+     25552,
+     170
+    ],
+    [
+     31184,
+     25936,
+     170
+    ],
+    [
+     30160,
+     26896,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C3",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 4848,
+   "bbox": [
+    31744,
+    7168,
+    33728,
+    11232
+   ],
+   "centre": [
+    32872,
+    8983
+   ],
+   "walled": 0.92,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     32240,
+     7856,
+     170
+    ],
+    [
+     33232,
+     7856,
+     170
+    ],
+    [
+     33232,
+     9136,
+     170
+    ],
+    [
+     32944,
+     10608,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C105",
+   "name": "Salle des machines",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 4552,
+   "bbox": [
+    49152,
+    35840,
+    53184,
+    37824
+   ],
+   "centre": [
+    51146,
+    37067
+   ],
+   "walled": 0.89,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [
+    [
+     49648,
+     36496,
+     170
+    ],
+    [
+     51216,
+     37040,
+     170
+    ],
+    [
+     52592,
+     36432,
+     170
+    ],
+    [
+     49808,
+     37328,
+     170
+    ],
+    [
+     52496,
+     37328,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C82",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 4441,
+   "bbox": [
+    26624,
+    30720,
+    29632,
+    32736
+   ],
+   "centre": [
+    28178,
+    31620
+   ],
+   "walled": 0.93,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     27376,
+     31216,
+     170
+    ],
+    [
+     28880,
+     31216,
+     170
+    ],
+    [
+     27376,
+     32240,
+     170
+    ],
+    [
+     28848,
+     32208,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C85",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 4418,
+   "bbox": [
+    27648,
+    32576,
+    29632,
+    35808
+   ],
+   "centre": [
+    28538,
+    34070
+   ],
+   "walled": 0.88,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     28048,
+     33104,
+     74
+    ],
+    [
+     29168,
+     33136,
+     74
+    ],
+    [
+     28144,
+     34192,
+     74
+    ],
+    [
+     28144,
+     35280,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C38",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 4286,
+   "bbox": [
+    26624,
+    16384,
+    28640,
+    19392
+   ],
+   "centre": [
+    27634,
+    17992
+   ],
+   "walled": 0.84,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     27216,
+     17040,
+     74
+    ],
+    [
+     28144,
+     17136,
+     74
+    ],
+    [
+     27152,
+     18672,
+     74
+    ],
+    [
+     28144,
+     18640,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C24",
+   "name": "Quartiers",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 3834,
+   "bbox": [
+    17152,
+    14336,
+    19680,
+    17344
+   ],
+   "centre": [
+    18607,
+    15956
+   ],
+   "walled": 0.91,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     17776,
+     15536,
+     170
+    ],
+    [
+     18832,
+     15024,
+     170
+    ],
+    [
+     19056,
+     15824,
+     170
+    ],
+    [
+     19056,
+     16848,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C61",
+   "name": "Bureaux",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 3834,
+   "bbox": [
+    59392,
+    25600,
+    61024,
+    28256
+   ],
+   "centre": [
+    60201,
+    26951
+   ],
+   "walled": 0.61,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     60208,
+     26256,
+     74
+    ],
+    [
+     60208,
+     27600,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C64",
+   "name": "Quartiers",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 3331,
+   "bbox": [
+    54272,
+    26624,
+    58336,
+    27616
+   ],
+   "centre": [
+    56309,
+    27080
+   ],
+   "walled": 0.88,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     54768,
+     27120,
+     170
+    ],
+    [
+     55792,
+     27120,
+     170
+    ],
+    [
+     56816,
+     27056,
+     170
+    ],
+    [
+     57840,
+     27120,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C69",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 3061,
+   "bbox": [
+    53248,
+    27648,
+    55232,
+    29632
+   ],
+   "centre": [
+    54351,
+    28617
+   ],
+   "walled": 0.81,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     53616,
+     28144,
+     74
+    ],
+    [
+     54736,
+     28144,
+     74
+    ],
+    [
+     53744,
+     28912,
+     74
+    ],
+    [
+     54736,
+     29136,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C7",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 2876,
+   "bbox": [
+    31424,
+    11552,
+    33728,
+    13248
+   ],
+   "centre": [
+    32670,
+    12561
+   ],
+   "walled": 0.82,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     31952,
+     12560,
+     74
+    ],
+    [
+     33136,
+     12400,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C66",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 2680,
+   "bbox": [
+    17408,
+    27648,
+    19392,
+    29632
+   ],
+   "centre": [
+    18537,
+    28619
+   ],
+   "walled": 0.67,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     17680,
+     27952,
+     170
+    ],
+    [
+     18896,
+     28144,
+     170
+    ],
+    [
+     18096,
+     29136,
+     170
+    ],
+    [
+     19056,
+     29136,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C26",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 2459,
+   "bbox": [
+    20160,
+    14336,
+    21472,
+    17344
+   ],
+   "centre": [
+    20895,
+    15879
+   ],
+   "walled": 0.75,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     20784,
+     14864,
+     170
+    ],
+    [
+     20816,
+     15824,
+     170
+    ],
+    [
+     20816,
+     16816,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C41",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 2281,
+   "bbox": [
+    28640,
+    18432,
+    30144,
+    20448
+   ],
+   "centre": [
+    29314,
+    19300
+   ],
+   "walled": 0.9,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     29392,
+     18928,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "C32",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 1509,
+   "bbox": [
+    21504,
+    15360,
+    23456,
+    16320
+   ],
+   "centre": [
+    22386,
+    15847
+   ],
+   "walled": 0.87,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     22000,
+     15824,
+     170
+    ],
+    [
+     23088,
+     15856,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C77",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 794,
+   "bbox": [
+    30720,
+    28672,
+    31680,
+    29632
+   ],
+   "centre": [
+    31159,
+    29186
+   ],
+   "walled": 0.78,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     31184,
+     29136,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C83",
+   "name": "Couloir",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 685,
+   "bbox": [
+    50400,
+    30944,
+    50720,
+    33376
+   ],
+   "centre": [
+    50575,
+    32160
+   ],
+   "walled": 0.89,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [
+    [
+     50576,
+     31536,
+     170
+    ],
+    [
+     50576,
+     32752,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C80",
+   "name": "Couloir",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 657,
+   "bbox": [
+    27904,
+    28928,
+    28768,
+    30688
+   ],
+   "centre": [
+    28154,
+    29626
+   ],
+   "walled": 0.94,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [
+    [
+     28112,
+     29136,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C47",
+   "name": "Local technique",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 571,
+   "bbox": [
+    25600,
+    22496,
+    26592,
+    23488
+   ],
+   "centre": [
+    26039,
+    23108
+   ],
+   "walled": 0.82,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [
+    [
+     25968,
+     23120,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C2",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 479,
+   "bbox": [
+    32480,
+    7168,
+    33728,
+    7648
+   ],
+   "centre": [
+    33189,
+    7435
+   ],
+   "walled": 0.95,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small",
+   "note": "recoin derrière les briques de verre"
+  },
+  {
+   "id": "C99",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 423,
+   "bbox": [
+    55296,
+    36992,
+    56128,
+    37824
+   ],
+   "centre": [
+    55687,
+    37275
+   ],
+   "walled": 0.69,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [
+    [
+     55696,
+     37360,
+     170
+    ]
+   ]
+  },
+  {
+   "id": "C20",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 420,
+   "bbox": [
+    25088,
+    14784,
+    25536,
+    16928
+   ],
+   "centre": [
+    25418,
+    15840
+   ],
+   "walled": 0.85,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": []
+  },
+  {
+   "id": "C58",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 48,
+   "area": 385,
+   "bbox": [
+    60192,
+    28640,
+    61024,
+    29344
+   ],
+   "centre": [
+    60676,
+    28909
+   ],
+   "walled": 0.64,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small",
+   "note": "enclos à rambarde d'une machine"
+  },
+  {
+   "id": "C15",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 367,
+   "bbox": [
+    23296,
+    15200,
+    23776,
+    16480
+   ],
+   "centre": [
+    23619,
+    15874
+   ],
+   "walled": 0.89,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small",
+   "note": "bande le long du mur"
+  },
+  {
+   "id": "C9",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 306,
+   "bbox": [
+    26624,
+    13120,
+    27392,
+    13952
+   ],
+   "centre": [
+    27108,
+    13668
+   ],
+   "walled": 0.57,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "hidden",
+   "note": "socle d'une plate-forme"
+  },
+  {
+   "id": "C67",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 266,
+   "bbox": [
+    17408,
+    28992,
+    17888,
+    29632
+   ],
+   "centre": [
+    17660,
+    29315
+   ],
+   "walled": 0.93,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small",
+   "note": "cabine en briques de verre"
+  },
+  {
+   "id": "C104",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 246,
+   "bbox": [
+    28000,
+    36736,
+    28608,
+    37472
+   ],
+   "centre": [
+    28305,
+    37038
+   ],
+   "walled": 0.54,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "hidden",
+   "note": "socle d'une plate-forme"
+  },
+  {
+   "id": "C63",
+   "name": "Salle",
+   "floor_z": 96,
+   "ceiling": 56,
+   "area": 212,
+   "bbox": [
+    52704,
+    27680,
+    53216,
+    28192
+   ],
+   "centre": [
+    52963,
+    27958
+   ],
+   "walled": 0.99,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small",
+   "note": "enclos à rambarde"
+  },
+  {
+   "id": "C100",
+   "name": "Couloir",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 196,
+   "bbox": [
+    58080,
+    35840,
+    58304,
+    37248
+   ],
+   "centre": [
+    58217,
+    36487
+   ],
+   "walled": 0.84,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": []
+  },
+  {
+   "id": "C45",
+   "name": "Salle",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 176,
+   "bbox": [
+    29696,
+    22208,
+    30400,
+    22464
+   ],
+   "centre": [
+    30048,
+    22336
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "hidden",
+   "note": "comptoir"
+  },
+  {
+   "id": "C84",
+   "name": "Couloir",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 166,
+   "bbox": [
+    27936,
+    31744,
+    28224,
+    32800
+   ],
+   "centre": [
+    28110,
+    32366
+   ],
+   "walled": 0.34,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "outside"
+  },
+  {
+   "id": "C87",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 153,
+   "bbox": [
+    28640,
+    34976,
+    29152,
+    35424
+   ],
+   "centre": [
+    28921,
+    35225
+   ],
+   "walled": 0.86,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C74",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 144,
+   "bbox": [
+    54176,
+    28224,
+    54560,
+    28608
+   ],
+   "centre": [
+    54368,
+    28416
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C25",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 140,
+   "bbox": [
+    21152,
+    14336,
+    21440,
+    14880
+   ],
+   "centre": [
+    21307,
+    14595
+   ],
+   "walled": 0.7,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C59",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 140,
+   "bbox": [
+    58368,
+    29056,
+    58944,
+    29632
+   ],
+   "centre": [
+    58555,
+    29431
+   ],
+   "walled": 0.61,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C27",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 80,
+   "area": 126,
+   "bbox": [
+    19680,
+    16032,
+    20352,
+    16320
+   ],
+   "centre": [
+    20019,
+    16140
+   ],
+   "walled": 0.31,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C40",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 126,
+   "bbox": [
+    26624,
+    17472,
+    27520,
+    17984
+   ],
+   "centre": [
+    27021,
+    17836
+   ],
+   "walled": 0.25,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C55",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 70,
+   "area": 120,
+   "bbox": [
+    31264,
+    25024,
+    31680,
+    25472
+   ],
+   "centre": [
+    31516,
+    25279
+   ],
+   "walled": 0.9,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C68",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 120,
+   "bbox": [
+    17856,
+    27648,
+    18496,
+    27840
+   ],
+   "centre": [
+    18176,
+    27744
+   ],
+   "walled": 0.77,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C71",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 120,
+   "bbox": [
+    58976,
+    27776,
+    59360,
+    28192
+   ],
+   "centre": [
+    59158,
+    28008
+   ],
+   "walled": 0.81,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C86",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 114,
+   "bbox": [
+    28352,
+    34784,
+    28864,
+    35136
+   ],
+   "centre": [
+    28682,
+    34953
+   ],
+   "walled": 0.77,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C18",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 88,
+   "area": 105,
+   "bbox": [
+    24896,
+    16320,
+    25312,
+    16608
+   ],
+   "centre": [
+    25091,
+    16467
+   ],
+   "walled": 0.96,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C16",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 100,
+   "bbox": [
+    24800,
+    15360,
+    25248,
+    15680
+   ],
+   "centre": [
+    25081,
+    15532
+   ],
+   "walled": 0.57,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C19",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 90,
+   "bbox": [
+    23552,
+    16480,
+    23776,
+    16896
+   ],
+   "centre": [
+    23665,
+    16690
+   ],
+   "walled": 0.82,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C17",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 89,
+   "area": 87,
+   "bbox": [
+    24800,
+    16000,
+    25248,
+    16288
+   ],
+   "centre": [
+    25087,
+    16152
+   ],
+   "walled": 0.5,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C21",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 72,
+   "bbox": [
+    23808,
+    13312,
+    24384,
+    13440
+   ],
+   "centre": [
+    24096,
+    13376
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C30",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 88,
+   "area": 72,
+   "bbox": [
+    24896,
+    15072,
+    25184,
+    15328
+   ],
+   "centre": [
+    25040,
+    15200
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C35",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 88,
+   "area": 72,
+   "bbox": [
+    24896,
+    15712,
+    25184,
+    15968
+   ],
+   "centre": [
+    25040,
+    15840
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C14",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 83,
+   "area": 70,
+   "bbox": [
+    23552,
+    14880,
+    23776,
+    15200
+   ],
+   "centre": [
+    23664,
+    15040
+   ],
+   "walled": 0.82,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C79",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": -97,
+   "area": 66,
+   "bbox": [
+    30336,
+    28704,
+    30688,
+    28896
+   ],
+   "centre": [
+    30512,
+    28800
+   ],
+   "walled": 0.5,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C11",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 88,
+   "area": 65,
+   "bbox": [
+    28640,
+    12896,
+    28928,
+    13152
+   ],
+   "centre": [
+    28797,
+    13025
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C96",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 88,
+   "area": 65,
+   "bbox": [
+    27648,
+    34016,
+    27936,
+    34272
+   ],
+   "centre": [
+    27805,
+    34145
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C34",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 88,
+   "area": 64,
+   "bbox": [
+    22816,
+    15392,
+    23072,
+    15648
+   ],
+   "centre": [
+    22944,
+    15520
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C43",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 56,
+   "area": 64,
+   "bbox": [
+    28672,
+    20480,
+    28928,
+    20736
+   ],
+   "centre": [
+    28800,
+    20608
+   ],
+   "walled": 0.28,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C75",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 88,
+   "area": 64,
+   "bbox": [
+    18080,
+    28480,
+    18336,
+    28736
+   ],
+   "centre": [
+    18208,
+    28608
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C94",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 88,
+   "area": 64,
+   "bbox": [
+    28768,
+    32800,
+    29024,
+    33056
+   ],
+   "centre": [
+    28896,
+    32928
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C39",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 63,
+   "bbox": [
+    27296,
+    17472,
+    27520,
+    17760
+   ],
+   "centre": [
+    27408,
+    17616
+   ],
+   "walled": 0.5,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C54",
+   "name": "Placard, recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 63,
+   "bbox": [
+    31040,
+    25248,
+    31328,
+    25472
+   ],
+   "centre": [
+    31184,
+    25360
+   ],
+   "walled": 0.41,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C95",
+   "name": "Placard, recoin",
+   "floor_z": 97,
+   "ceiling": 96,
+   "area": 56,
+   "bbox": [
+    59392,
+    33216,
+    60160,
+    33344
+   ],
+   "centre": [
+    59766,
+    33280
+   ],
+   "walled": 0.0,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C51",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 48,
+   "bbox": [
+    26208,
+    22688,
+    26592,
+    23008
+   ],
+   "centre": [
+    26338,
+    22810
+   ],
+   "walled": 0.8,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C109",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 45,
+   "bbox": [
+    27584,
+    36832,
+    27808,
+    37088
+   ],
+   "centre": [
+    27686,
+    36979
+   ],
+   "walled": 0.67,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C50",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 44,
+   "bbox": [
+    26080,
+    22560,
+    26592,
+    22656
+   ],
+   "centre": [
+    26353,
+    22605
+   ],
+   "walled": 0.57,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C97",
+   "name": "Placard, recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 40,
+   "bbox": [
+    28896,
+    34784,
+    29152,
+    34944
+   ],
+   "centre": [
+    29024,
+    34864
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C90",
+   "name": "Recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 38,
+   "bbox": [
+    28256,
+    32352,
+    28608,
+    32544
+   ],
+   "centre": [
+    28384,
+    32424
+   ],
+   "walled": 0.36,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C44",
+   "name": "Recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 32,
+   "bbox": [
+    26624,
+    21408,
+    26752,
+    21664
+   ],
+   "centre": [
+    26688,
+    21536
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C81",
+   "name": "Recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 32,
+   "bbox": [
+    18368,
+    29312,
+    18880,
+    29376
+   ],
+   "centre": [
+    18624,
+    29344
+   ],
+   "walled": 0.0,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C113",
+   "name": "Recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 32,
+   "bbox": [
+    28480,
+    36992,
+    28608,
+    37248
+   ],
+   "centre": [
+    28544,
+    37120
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C110",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 30,
+   "bbox": [
+    53888,
+    36832,
+    54208,
+    36928
+   ],
+   "centre": [
+    54048,
+    36880
+   ],
+   "walled": 0.5,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C73",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 64,
+   "area": 28,
+   "bbox": [
+    52960,
+    28224,
+    53216,
+    28544
+   ],
+   "centre": [
+    53076,
+    28397
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C31",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 24,
+   "bbox": [
+    25216,
+    15072,
+    25312,
+    15328
+   ],
+   "centre": [
+    25264,
+    15200
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C36",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 24,
+   "bbox": [
+    25216,
+    15712,
+    25312,
+    15968
+   ],
+   "centre": [
+    25264,
+    15840
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C78",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 24,
+   "bbox": [
+    28640,
+    28704,
+    28768,
+    28896
+   ],
+   "centre": [
+    28704,
+    28800
+   ],
+   "walled": 0.2,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C101",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 24,
+   "bbox": [
+    51840,
+    35520,
+    51936,
+    35776
+   ],
+   "centre": [
+    51888,
+    35648
+   ],
+   "walled": 0.64,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C111",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 24,
+   "bbox": [
+    50880,
+    36896,
+    51040,
+    37120
+   ],
+   "centre": [
+    50964,
+    37004
+   ],
+   "walled": 0.86,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C29",
+   "name": "Recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 23,
+   "bbox": [
+    23808,
+    14976,
+    23840,
+    15712
+   ],
+   "centre": [
+    23824,
+    15344
+   ],
+   "walled": 0.71,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C106",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 19,
+   "bbox": [
+    54592,
+    35840,
+    54816,
+    35968
+   ],
+   "centre": [
+    54704,
+    35896
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C116",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 18,
+   "bbox": [
+    53216,
+    37536,
+    53280,
+    37824
+   ],
+   "centre": [
+    53248,
+    37680
+   ],
+   "walled": 0.5,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C37",
+   "name": "Recoin",
+   "floor_z": 0,
+   "ceiling": 96,
+   "area": 16,
+   "bbox": [
+    19680,
+    15840,
+    19808,
+    15968
+   ],
+   "centre": [
+    19744,
+    15904
+   ],
+   "walled": 0.25,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C49",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": -96,
+   "area": 16,
+   "bbox": [
+    26336,
+    22496,
+    26592,
+    22560
+   ],
+   "centre": [
+    26464,
+    22528
+   ],
+   "walled": 0.6,
+   "liquid": 0.0,
+   "kind": "neon",
+   "lights": [],
+   "skip": "small"
+  },
+  {
+   "id": "C112",
+   "name": "Recoin",
+   "floor_z": 96,
+   "ceiling": 96,
+   "area": 16,
+   "bbox": [
+    51872,
+    36896,
+    52032,
+    37056
+   ],
+   "centre": [
+    51938,
+    36978
+   ],
+   "walled": 1.0,
+   "liquid": 0.0,
+   "kind": "warm",
+   "lights": [],
+   "skip": "small"
+  }
+ ]
+}
