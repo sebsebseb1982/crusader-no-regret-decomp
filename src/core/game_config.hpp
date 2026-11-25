@@ -3,6 +3,13 @@
 // back by config_save (1020:0DB7) when the options screen closes. Keys and
 // values are compared in lower case.
 //
+// Port addition: the defaults below are the original's and the port's first
+// ones. A file without any key of the enhancements window (a fresh install, or
+// the original game's file) instead gets the settings the port's author plays
+// with (set_fresh_install_defaults: the camera, controls, marks, lighting...);
+// these keys are then always written, "false" included, so that a file the
+// port wrote keeps what the player switched off.
+//
 // Only the keys of the options screen, the movies' and the violence are
 // decoded here; the others (sound card, CD letter, mouse buttons, joystick...)
 // are kept as they are. Defaults are the data segment's initial values, used
@@ -184,6 +191,7 @@ public:
     void save(const std::filesystem::path& path) const;
 
 private:
+    void set_fresh_install_defaults();
     void set(std::string_view key, const std::string& value);
     void erase(std::string_view key);
 
