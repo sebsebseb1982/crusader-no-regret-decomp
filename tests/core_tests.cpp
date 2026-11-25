@@ -7,6 +7,7 @@
 #include "core/iso_image.hpp"
 #include "core/json.hpp"
 #include "core/language.hpp"
+#include "core/news.hpp"
 #include "core/movie_subtitles.hpp"
 #include "core/translation.hpp"
 #include "core/xan_movie.hpp"
@@ -553,6 +554,92 @@ void check_languages() {
     check(GameConfig::parse("Language = PT-BR\r\n").language == "pt-br", "config language in lower case");
 }
 
+// The online news and update notice (news.hpp), and their config keys.
+void check_news() {
+    // Versions: with or without "v", none for a pre-release.
+    check(parse_semver("v1.79.0") == SemVer{1, 79, 0} && parse_semver("1.2.3") == SemVer{1, 2, 3}, "news: semver");
+    check(!parse_semver("0.0.0-dev") && !parse_semver("1.2") && !parse_semver("") && !parse_semver("1.2.3.4"),
+          "news: not a semver");
+    check(SemVer{1, 10, 0} > SemVer{1, 9, 9} && SemVer{2, 0, 0} > SemVer{1, 99, 99}, "news: semver order");
+    // Dates (UTC).
+    check(parse_utc_date("1970-01-02") == 86400, "news: a day");
+    check(parse_utc_date("2026-11-25T18:00:00Z") == 1795629600, "news: a day and time");
+    check(parse_utc_date("2026-11-25T18:00") == 1795629600, "news: no seconds, no Z");
+    check(!parse_utc_date("2026-13-01") && !parse_utc_date("2026-11-25T") && !parse_utc_date("25/11/2026"),
+          "news: bad dates");
+    check(format_day(1795629600) == "25.11.2026" && format_day(0) == "01.01.1970", "news: day printed");
+    // The latest release.
+    const auto release = parse_latest_release(
+        R"({"tag_name": "v1.79.0", "html_url": "https://github.com/x/y/releases/tag/v1.79.0", "assets": []})");
+    check(release && release->version == SemVer{1, 79, 0} && release->url.ends_with("v1.79.0"), "news: release");
+    check(!parse_latest_release(R"({"message": "API rate limit exceeded"})") && !parse_latest_release("<html>"),
+          "news: no release");
+    // Menu text: capitals without accents.
+    check(to_menu_text("\xC3\x89t\xC3\xA9 \xE2\x80\x99" "a\xE2\x80\x99 \xC5\x93uf\tz") == "ETE 'A' OEUF Z",
+          "news: menu text");
+    check(to_menu_text("\xE6\x97\xA5x\xC3") == "?X?", "news: characters out of the fonts");
+    // Selection: shown from the date, for 30 days or until "expires", to
+    // the versions between min and max, in the language asked for.
+    const std::int64_t day = 86400, now = *parse_utc_date("2026-11-25T12:00:00Z");
+    const std::string json = R"({"format": 1, "news": [
+        {"date": "2026-11-20", "title": {"en": "Older", "fr": "Plus vieux"}, "body": "Line one\nline two"},
+        {"date": "2026-11-24T08:00:00Z", "title": {"en": "Newest"}},
+        {"date": "2026-11-26", "title": "Tomorrow"},
+        {"date": "2026-10-20", "title": "Too old"},
+        {"date": "2026-10-20", "expires": "2026-12-01", "title": "Kept longer"},
+        {"date": "2026-11-21", "min_version": "1.80.0", "title": "For 1.80"},
+        {"date": "2026-11-21", "max_version": "1.78.9", "title": "Update!"},
+        {"date": "bad", "title": "Bad date"},
+        {"date": "2026-11-21"},
+        "not an object"]})";
+    auto news = select_news(json, now, SemVer{1, 79, 0}, "fr");
+    check(news.size() == 3, "news: selection");
+    if (news.size() == 3) {
+        check(news[0].title == "NEWEST" && news[1].title == "PLUS VIEUX" && news[2].title == "KEPT LONGER",
+              "news: newest first, the language asked for, else English");
+        check(news[1].body == "LINE ONE\nLINE TWO", "news: body");
+    }
+    news = select_news(json, now, SemVer{1, 78, 0}, "en");
+    check(news.size() == 4 && news[1].title == "UPDATE!", "news: max_version");
+    news = select_news(json, now, std::nullopt, "en");
+    check(news.size() == 5, "news: a build that is not a release sees them all");
+    check(select_news(json, now + 27 * day, SemVer{1, 79, 0}, "en").size() == 2, "news: expired, and a date come");
+    check(select_news("{", now, std::nullopt, "en").empty() && select_news("[]", now, std::nullopt, "en").empty(),
+          "news: bad JSON");
+    news = select_news(json, now, SemVer{1, 79, 0}, "en");
+    check(count_unread(news, {}) == 3 && count_unread(news, {news[0].date, {}}) == 1 &&
+              count_unread(news, {news[0].date + 1, {}}) == 0,
+          "news: unread, by the old date");
+    check(count_unread(news, {0, {news[0].id}}) == 2 && count_unread(news, {0, {news[0].id, news[2].id}}) == 1,
+          "news: unread, by ids");
+    // Two news of the same day: reading the first leaves the second new.
+    const std::string same_day = R"({"news": [{"date": "2026-11-25", "title": "First"},
+        {"date": "2026-11-25", "title": "Second"}]})";
+    const auto day_one = select_news(same_day, now, std::nullopt, "en");
+    check(day_one.size() == 2 && day_one[0].id != day_one[1].id, "news: ids of two news of the same day");
+    NewsRead read;
+    for (const NewsItem& item : day_one) read.seen.push_back(item.id);
+    check(count_unread(day_one, read) == 0, "news: both read");
+    const auto day_two = select_news(
+        R"({"news": [{"date": "2026-11-25", "title": "First"}, {"date": "2026-11-25", "title": "Second"},
+            {"date": "2026-11-25", "title": "Third"}]})",
+        now, std::nullopt, "en");
+    check(day_two.size() == 3 && count_unread(day_two, read) == 1, "news: a third news of the same day is new");
+    // Config: asked until answered, the news read.
+    GameConfig c = GameConfig::parse("irq=7\r\n");
+    check(c.check_updates == -1 && c.news_read == 0 && c.news_seen.empty(), "news: config defaults");
+    check(c.text().find("checkupdates") == std::string::npos && c.text().find("newsread") == std::string::npos &&
+              c.text().find("newsseen") == std::string::npos,
+          "news: nothing written before an answer");
+    c.check_updates = 1;
+    c.news_read = 1795629600;
+    c.news_seen = {0x0123abcdu, 0xffffffffu};
+    const GameConfig back = GameConfig::parse(c.text());
+    check(back.check_updates == 1 && back.news_read == 1795629600 && back.news_seen == c.news_seen,
+          "news: config written and read");
+    check(GameConfig::parse("checkupdates=false\r\n").check_updates == 0, "news: refused");
+}
+
 int main() {
     check_config();
     check_xan();
@@ -560,6 +647,7 @@ int main() {
     check_data_info();
     check_languages();
     check_json();
+    check_news();
     std::printf(failures ? "%d failure(s)\n" : "all checks passed\n", failures);
     return failures ? 1 : 0;
 }

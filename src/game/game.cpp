@@ -43,9 +43,11 @@
 #include <ctime>
 #include <fstream>
 #include <iterator>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 
 namespace crusader {
 
@@ -1159,6 +1161,7 @@ void Game::update(std::uint32_t elapsed_us) {
     if (!modal()) selection_tick(*world_);
     mix_elapsed(elapsed_us);
     if (menu_) {
+        poll_online();
         menu_->update(kernel_->ticks());
         run_credits(before);
     }
@@ -1389,12 +1392,165 @@ void Game::save_config() {
         world_->state.frameskip = config_.frameskip;
         world_->state.violence = !regret_ || config_.violence;
     }
+    // Port addition: the online check, once the player agreed to it.
+    if (online_fetch_ && config_.check_updates == 1) start_online_check();
     if (config_file_.empty()) return;
     try {
         config_.save(config_file_);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "%s\n", e.what());
     }
+}
+
+// The port's online news and update notice (news.hpp).
+
+struct Game::OnlineState {
+    std::mutex mutex;
+    bool done = false;
+    std::optional<std::string> release, news;
+};
+
+// @orig none: port's online news
+void Game::enable_online(UrlFetch fetch, std::function<void(const std::string&)> open_url, bool synchronous) {
+    online_fetch_ = std::move(fetch);
+    open_url_ = std::move(open_url);
+    online_synchronous_ = synchronous;
+    if (online_fetch_ && config_.check_updates == 1) start_online_check();
+}
+
+// @orig none: port's online news
+void Game::start_online_check() {
+    if (online_state_ || !online_fetch_) return;
+    online_state_ = std::make_shared<OnlineState>();
+    auto run = [state = online_state_, fetch = online_fetch_] {
+        auto release = fetch(kLatestReleaseUrl);
+        auto news = fetch(kNewsUrl);
+        const std::lock_guard lock(state->mutex);
+        state->release = std::move(release);
+        state->news = std::move(news);
+        state->done = true;
+    };
+    if (online_synchronous_) {
+        run();
+        poll_online();
+    } else {
+        // Detached: a slow network never holds the game, nor its end.
+        std::thread(std::move(run)).detach();
+    }
+}
+
+// @orig none: port's online news
+void Game::poll_online() {
+    if (!online_state_) return;
+    if (!online_received_) {
+        const std::unique_lock lock(online_state_->mutex, std::try_to_lock);
+        if (!lock.owns_lock() || !online_state_->done) return;
+        if (online_state_->release) latest_release_ = parse_latest_release(*online_state_->release);
+        if (online_state_->news) news_json_ = *online_state_->news;
+        online_received_ = true;
+    }
+    // The news in the language of the port's texts, else the data's.
+    const std::string language = !config_.language.empty()                  ? config_.language
+                                 : text_language() == Language::English ? "en"
+                                 : text_language() == Language::German  ? "de"
+                                                                        : "fr";
+    if (language == news_language_ || news_json_.empty()) return;
+    news_language_ = language;
+    news_ = select_news(news_json_, static_cast<std::int64_t>(std::time(nullptr)), parse_semver(port_version_),
+                        language);
+}
+
+// @orig none: port's online news
+bool Game::OnlineMenu::ask() const { return game_->online_fetch_ && game_->config_.check_updates < 0; }
+
+// @orig none: port's online news
+void Game::OnlineMenu::answer(bool check) {
+    game_->config_.check_updates = check ? 1 : 0;
+    game_->save_config();
+}
+
+// @orig none: port's online news
+std::string Game::OnlineMenu::new_version() const {
+    const auto& latest = game_->latest_release_;
+    const auto current = parse_semver(game_->port_version_);
+    if (game_->config_.check_updates != 1 || !latest || !current || latest->version <= *current) return {};
+    return latest->version.text();
+}
+
+// @orig none: port's online news
+void Game::OnlineMenu::open_release() {
+    if (!game_->open_url_ || !game_->latest_release_) return;
+    const std::string& url = game_->latest_release_->url;
+    game_->open_url_(!url.empty() ? url
+                                  : "https://github.com/sebsebseb1982/crusader-no-regret-decomp/releases/latest");
+}
+
+// @orig none: port's self-update
+void Game::enable_self_update(UpdateHooks hooks, std::filesystem::path install_dir, std::string exe_name,
+                              const char* suffix, bool synchronous) {
+    if (!suffix || !hooks.fetch || !hooks.download) return;
+    self_update_ = SelfUpdate{std::move(hooks), std::move(install_dir), std::move(exe_name), suffix, synchronous};
+    install_dir_ok_.reset();
+}
+
+// @orig none: port's self-update
+bool Game::OnlineMenu::can_install() {
+    Game& g = *game_;
+    if (!g.self_update_ || !g.latest_release_ || new_version().empty()) return false;
+    const SelfUpdate& u = *g.self_update_;
+    if (!SelfUpdater(u.hooks, u.install_dir, u.exe_name, u.suffix).can_install(*g.latest_release_)) return false;
+    if (!g.install_dir_ok_) g.install_dir_ok_ = install_dir_writable(u.install_dir);
+    return *g.install_dir_ok_;
+}
+
+// @orig none: port's self-update
+void Game::OnlineMenu::install() {
+    Game& g = *game_;
+    if (!can_install()) return;
+    const SelfUpdate& u = *g.self_update_;
+    // A new one for each try: a failed or cancelled one is over.
+    g.updater_ = std::make_unique<SelfUpdater>(u.hooks, u.install_dir, u.exe_name, u.suffix);
+    g.updater_->start(*g.latest_release_, u.synchronous);
+}
+
+// @orig none: port's self-update
+void Game::OnlineMenu::cancel_install() {
+    if (game_->updater_) game_->updater_->cancel();
+}
+
+// @orig none: port's self-update
+UpdateStatus Game::OnlineMenu::install_status() const {
+    return game_->updater_ ? game_->updater_->status() : UpdateStatus{};
+}
+
+// @orig none: port's self-update
+void Game::OnlineMenu::restart() {
+    game_->restart_ = true;
+    game_->quit_ = true;
+}
+
+// @orig none: port's online news
+const std::vector<NewsItem>& Game::OnlineMenu::news() const {
+    static const std::vector<NewsItem> none;
+    return game_->config_.check_updates == 1 ? game_->news_ : none;
+}
+
+// @orig none: port's online news
+NewsRead Game::OnlineMenu::news_read() const { return {game_->config_.news_read, game_->config_.news_seen}; }
+
+// @orig none: port's online news
+void Game::OnlineMenu::mark_news_read() {
+    auto& seen = game_->config_.news_seen;
+    bool changed = false;
+    for (const NewsItem& item : game_->news_) {
+        if (std::find(seen.begin(), seen.end(), item.id) != seen.end()) continue;
+        seen.push_back(item.id);
+        changed = true;
+    }
+    if (!changed) return;
+    constexpr std::size_t kKept = 64;
+    if (seen.size() > kKept) seen.erase(seen.begin(), seen.end() - kKept);
+    game_->save_config();
 }
 
 // No Regret's Credits_done (13D0:0290) pauses the credits' music before
@@ -1658,7 +1814,8 @@ void Game::open_menu(bool no_game) {
                                 (data_language_.empty() ? std::string(tr("UNKNOWN LANGUAGE")) : data_language_),
                             &load_pictures_,
                             auto_save_name_function(),
-                            christmas_ && (!audio_ || audio_->music.christmas_allowed())},
+                            christmas_ && (!audio_ || audio_->music.christmas_allowed()),
+                            online_fetch_ ? &online_menu_ : nullptr},
         menu_shared_, no_game);
     auto p = std::make_unique<ModalProcess>();
     menu_process_ = p.get();

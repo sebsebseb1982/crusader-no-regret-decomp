@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -128,6 +129,18 @@ GameConfig GameConfig::parse(std::string_view text) {
         else if (key == "togglerun") c.toggle_run = value == "true";
         else if (key == "impactmarks") c.impact_marks = value == "true";
         else if (key == "bloodmarks") c.blood_marks = value == "true";
+        else if (key == "checkupdates") c.check_updates = value == "false" ? 0 : value == "true" ? 1 : -1;
+        else if (key == "newsread") c.news_read = std::max<long long>(std::atoll(std::string(value).c_str()), 0);
+        else if (key == "newsseen") {
+            std::size_t pos = 0;
+            while (pos < value.size()) {
+                std::size_t end = value.find(',', pos);
+                if (end == std::string_view::npos) end = value.size();
+                const std::string id(value.substr(pos, end - pos));
+                if (!id.empty()) c.news_seen.push_back(static_cast<std::uint32_t>(std::strtoul(id.c_str(), nullptr, 16)));
+                pos = end + 1;
+            }
+        }
         else if (key == "goremode") c.gore_mode = value == "true";
         else if (key == "casings") c.casings = value == "true";
         else if (key == "barrelleaks") c.barrel_leaks = value == "true";
@@ -211,6 +224,22 @@ std::string GameConfig::text() const {
     else out.erase("lighting");
     if (!volumetric_smoke) out.set("volumetricsmoke", "false");
     else out.erase("volumetricsmoke");
+    if (check_updates >= 0) out.set("checkupdates", check_updates ? "true" : "false");
+    else out.erase("checkupdates");
+    if (news_read > 0) out.set("newsread", std::to_string(news_read));
+    else out.erase("newsread");
+    if (!news_seen.empty()) {
+        std::string ids;
+        char hex[16];
+        for (const std::uint32_t id : news_seen) {
+            std::snprintf(hex, sizeof hex, "%08x", static_cast<unsigned>(id));
+            if (!ids.empty()) ids += ',';
+            ids += hex;
+        }
+        out.set("newsseen", ids);
+    } else {
+        out.erase("newsseen");
+    }
     if (!flashlight) out.set("flashlight", "false");
     else out.erase("flashlight");
     if (!ceiling_lights) out.set("ceilinglights", "false");

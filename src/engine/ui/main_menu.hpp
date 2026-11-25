@@ -43,11 +43,30 @@
 //
 // Port addition (@orig none): from 24 to 31 December, a Christmas hat on the
 // Silencer, drawn over the background (christmas_hat.hpp).
+//
+// Port addition (@orig none): with Resources::online (news_screen.hpp,
+// No Remorse issue #36):
+//   - while the player has not said whether the game may go online, the
+//     menu opens with the UpdatesQuestion over it, which gets every event
+//     until answered (MenuOnline::answer);
+//   - when a newer release of the port is known, a green line above the
+//     version lines, "NEW VERSION x.y.z AVAILABLE": a press on it opens the
+//     release's page (MenuOnline::open_release), or, when the game can install
+//     that version itself and no game is running, the UpdateDialog
+//     (MenuOnline::can_install, core/self_update.hpp);
+//   - when there are news, a "NEWS" button (button 8) in the black band
+//     above the background, on the right, with a red disc and the count of
+//     the news not read yet on its corner when there are some. Up from
+//     "options" goes to it, down from it back to "options"; the other keys
+//     do nothing there but Enter (opens it) and Escape. It opens the
+//     NewsScreen; once closed, the news are marked read
+//     (MenuOnline::mark_news_read).
 
 #include "core/surface.hpp"
 #include "engine/ui/credits.hpp"
 #include "engine/ui/difficulty_screen.hpp"
 #include "engine/ui/load_screen.hpp"
+#include "engine/ui/news_screen.hpp"
 #include "engine/ui/options_screen.hpp"
 #include "engine/world/render.hpp"
 
@@ -66,6 +85,7 @@ public:
     static constexpr std::uint16_t kFirstBackground = 54;
     static constexpr std::uint16_t kFirstButton = 58;
     static constexpr int kNewGame = 0, kLoad = 1, kSave = 2, kOptions = 3, kCredits = 4, kQuit = 5, kBack = 6;
+    static constexpr int kNews = 7;  // port addition
 
     struct Rect {
         int x0 = 0, y0 = 0, x1 = 0, y1 = 0;  // inclusive
@@ -99,6 +119,9 @@ public:
         std::function<std::string()> auto_save_name;
         // Port addition: the Christmas hat on the background.
         bool christmas_hat = false;
+        // Port addition: the online question, update notice and news; null
+        // for none of them.
+        MenuOnline* online = nullptr;
     };
     MainMenu(const Resources& res, Shared& shared, bool no_game);
 
@@ -133,13 +156,23 @@ public:
     void show_credits() { activate(kCredits); }
     void end_credits() { credits_.reset(); }
     int selected() const { return *selected_; }
-    const Rect& button(int i) const { return buttons_[i]; }
+    // kNewGame..kQuit, and kNews.
+    const Rect& button(int i) const { return i == kNews ? news_button_ : buttons_[i]; }
+    // Port addition: the news button is shown (there are news).
+    bool has_news() const { return res_.online && !res_.online->news().empty(); }
+    const UpdatesQuestion* updates_question() const { return question_.get(); }
+    const NewsScreen* news_screen() const { return news_.get(); }
+    const UpdateDialog* update_dialog() const { return update_.get(); }
+    // The "new version" line, empty when it is not shown.
+    Rect update_line() const;
 
 private:
     void select(int i) { *selected_ = i; }
     void activate(int i);
 
     void after_sub_screen();
+    // The button under (x, y), -1 for none.
+    int button_at(int x, int y) const;
     void draw_version(Surface8& screen, int y, const std::string& text) const;
 
     Resources res_;
@@ -154,6 +187,14 @@ private:
     std::string save_name_;
 
     int new_game_difficulty_ = 0;
+    // Port addition: the online part.
+    void draw_online(Surface8& screen) const;
+    // A key for the news button or its neighbours; true when used.
+    bool news_key(std::uint16_t code);
+    std::unique_ptr<UpdatesQuestion> question_;
+    std::unique_ptr<NewsScreen> news_;
+    std::unique_ptr<UpdateDialog> update_;
+    Rect news_button_{};
     bool no_game_;
     std::array<Rect, kButtons> buttons_{};
     int captured_ = -1;  // button holding the mouse

@@ -53,8 +53,15 @@ add_library(crusader_core
   src/core/avi_movie.cpp
   src/core/xan_movie.cpp
   src/core/movie_subtitles.cpp
-  src/core/json.cpp)
+  src/core/json.cpp
+  src/core/news.cpp
+  src/core/sha256.cpp
+  src/core/archive.cpp
+  src/core/self_update.cpp)
 target_include_directories(crusader_core PUBLIC src)
+# The self-update (self_update.cpp) downloads on a thread of its own: -pthread on older glibc.
+find_package(Threads REQUIRED)
+target_link_libraries(crusader_core PUBLIC Threads::Threads)
 
 # Engine core: process kernel (KERNEL.C / PROCESS.C), no platform dependency.
 add_library(crusader_engine
@@ -128,6 +135,7 @@ add_library(crusader_engine
   src/engine/ui/credits.cpp
   src/engine/ui/gamepad_screen.cpp
   src/engine/ui/enhancements_screen.cpp
+  src/engine/ui/news_screen.cpp
   src/engine/ui/movie_player.cpp
   src/engine/ui/xan_player.cpp
   src/engine/world/auto_firer.cpp
@@ -143,8 +151,16 @@ add_library(crusader_platform
   src/platform/real_shift.cpp
   src/platform/sdl_gamepad.cpp
   src/platform/sdl_audio.cpp
-  src/platform/gl_lighting.cpp)
+  src/platform/gl_lighting.cpp
+  src/platform/http_get.cpp
+  src/platform/process.cpp)
 target_link_libraries(crusader_platform PUBLIC crusader_engine ${SDL2_TARGET})
+# The online news (http_get.cpp): WinHTTP on Windows, libcurl loaded at run time elsewhere.
+if(WIN32)
+  target_link_libraries(crusader_platform PRIVATE winhttp)
+else()
+  target_link_libraries(crusader_platform PRIVATE ${CMAKE_DL_LIBS})
+endif()
 
 # The game without platform code (testable headless), and its executable.
 add_library(crusader_game src/game/game.cpp)
@@ -269,6 +285,11 @@ if(Python3_FOUND)
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/update_languages.py --check)
 endif()
 
+# The self-update's archives, checksums and install in a scratch folder (core/self_update.hpp).
+add_executable(update_tests tests/update_tests.cpp)
+target_link_libraries(update_tests PRIVATE crusader_core)
+add_test(NAME update_tests COMMAND update_tests)
+
 add_executable(kernel_tests tests/kernel_tests.cpp)
 target_link_libraries(kernel_tests PRIVATE crusader_engine)
 add_test(NAME kernel_tests COMMAND kernel_tests)
@@ -313,7 +334,8 @@ target_link_libraries(editor_data_tests PRIVATE crusader_editor_core crusader_en
 
 add_executable(game_tests e2e/game_tests.cpp)
 target_link_libraries(game_tests PRIVATE crusader_game crusader_editor_core)
-target_include_directories(game_tests PRIVATE e2e)
+# tests/update_fixtures.hpp: the archives of the self-update test.
+target_include_directories(game_tests PRIVATE e2e tests)
 target_compile_definitions(game_tests PRIVATE CRUSADER_TEST_SAVES="${CRUSADER_TEST_SAVES_DIR}")
 
 # No Regret data (data/): regret_data_tests.

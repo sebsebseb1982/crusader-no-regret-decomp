@@ -6,6 +6,7 @@
 #include "core/dtable.hpp"
 #include "core/movie_subtitles.hpp"
 #include "core/png_writer.hpp"
+#include "core/sha256.hpp"
 #include "engine/palette_fader.hpp"
 #include "engine/ui/computer_gump.hpp"
 #include "engine/ui/keypad_gump.hpp"
@@ -35,12 +36,14 @@
 #include "editor/project.hpp"
 #include "game/game.hpp"
 #include "test_saves.hpp"
+#include "update_fixtures.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -1164,6 +1167,304 @@ void test_credits(const std::filesystem::path& data) {
     CHECK(const_cast<MainMenu*>(game.menu())->credits() == nullptr);
     game.update(kFrameUs);
     CHECK(game.audio()->music.current() == Music::kMenu);
+}
+
+// Port addition (GitHub issue #36): the main menu's online question, update
+// notice and news (news_screen.hpp), with a fetch that reads no network.
+void test_online_menu(const std::filesystem::path& data) {
+    Game game(data, test_saves(data));
+    game.config().check_updates = -1;  // the user's CRUSADER.CFG may hold an answer
+    game.config().news_read = 0;
+    game.config().news_seen.clear();
+    game.set_port_version("v1.77.0");
+    const auto utc = [](std::int64_t t) {
+        const std::time_t tt = static_cast<std::time_t>(t);
+        std::tm tm{};
+#ifdef _WIN32
+        gmtime_s(&tm, &tt);
+#else
+        gmtime_r(&tt, &tm);
+#endif
+        char text[32];
+        std::strftime(text, sizeof text, "%Y-%m-%dT%H:%M:%SZ", &tm);
+        return std::string(text);
+    };
+    const std::int64_t now = std::time(nullptr);
+    const std::string news_json = R"({"news": [{"date": ")" + utc(now - 86400) +
+                                  R"(", "title": {"en": "Yesterday", "fr": "Hier"}, "body": "Texte"},
+        {"date": ")" + utc(now - 3 * 86400) + R"(", "title": "Before"},
+        {"date": ")" + utc(now + 86400) + R"(", "title": "Tomorrow"}]})";
+    int fetches = 0;
+    std::string opened;
+    game.enable_online(
+        [&](const std::string& url) -> std::optional<std::string> {
+            ++fetches;
+            if (url == kLatestReleaseUrl) return R"({"tag_name": "v1.79.0", "html_url": "https://example.org/r"})";
+            return news_json;
+        },
+        [&](const std::string& url) { opened = url; }, true);
+    CHECK(fetches == 0);  // not before the player agreed
+    game.load_save(1);
+
+    // The question first: right to "no", Enter.
+    press(game, 0x01, false, 0x1B);
+    const MainMenu* m = game.menu();
+    CHECK(m && m->updates_question() && m->updates_question()->yes_focused());
+    if (!m) return;
+    CHECK(!m->has_news() && m->update_line().x1 < m->update_line().x0);
+    press(game, 0x4D, true);
+    CHECK(m->updates_question() && !m->updates_question()->yes_focused());
+    press(game, 0x1C, false, 0x0D);
+    CHECK(!m->updates_question() && game.config().check_updates == 0 && fetches == 0);
+    press(game, 0x01, false, 0x1B);  // back to the game: not asked again
+    press(game, 0x01, false, 0x1B);
+    m = game.menu();
+    CHECK(m && !m->updates_question());
+
+    // Asked again, yes (focused): the release and the news fetched.
+    press(game, 0x01, false, 0x1B);
+    game.config().check_updates = -1;
+    press(game, 0x01, false, 0x1B);
+    m = game.menu();
+    CHECK(m && m->updates_question());
+    if (!m) return;
+    press(game, 0x1C, false, 0x0D);
+    CHECK(game.config().check_updates == 1 && fetches == 2);
+    CHECK(game.latest_release() && game.news().size() == 2);  // tomorrow's is not shown yet
+    CHECK(m->has_news() && !game.news().empty() && game.news()[0].title == "HIER");
+
+    // The update notice: a press opens the release's page.
+    const MainMenu::Rect line = m->update_line();
+    CHECK(line.x1 > line.x0 && line.y0 > 360 && line.y1 < 438);
+    game.mouse_button(true, (line.x0 + line.x1) / 2, (line.y0 + line.y1) / 2);
+    game.mouse_button(false, (line.x0 + line.x1) / 2, (line.y0 + line.y1) / 2);
+    CHECK(opened == "https://example.org/r");
+
+    // The news button, in the black band above the background, with the red
+    // disc of the 2 news not read on its corner.
+    const MainMenu::Rect b = m->button(MainMenu::kNews);
+    CHECK(b.y1 < 120 && b.x0 > 320);
+    auto reds = [&] {
+        Surface8 screen(Game::kScreenWidth, Game::kScreenHeight);
+        game.render(screen);
+        int n = 0;
+        for (int y = std::max(b.y0 - 12, 0); y <= b.y0 + 12; ++y)
+            for (int x = b.x1 - 14; x <= b.x1 + 10; ++x) n += screen.row(y)[x] == menu_colour::kRed;
+        return n;
+    };
+    CHECK(reds() > 150);
+    // Pressed: the news, the newest first and new; Escape closes them, read.
+    game.mouse_button(true, b.x0 + 4, b.y0 + 4);
+    game.mouse_button(false, b.x0 + 4, b.y0 + 4);
+    const NewsScreen* news = m->news_screen();
+    CHECK(news && !news->lines().empty() && news->lines()[0].unread && news->lines()[1].text == "HIER");
+    press(game, 0x01, false, 0x1B);
+    CHECK(!m->news_screen() && game.config().news_seen.size() == 2 && reds() == 0);
+    // Keys: it is selected; down to "options", up back, Enter opens it.
+    CHECK(m->selected() == MainMenu::kNews);
+    press(game, 0x50, true);
+    CHECK(m->selected() == MainMenu::kOptions);
+    press(game, 0x48, true);
+    CHECK(m->selected() == MainMenu::kNews);
+    press(game, 0x1C, false, 0x0D);
+    news = m->news_screen();
+    CHECK(news && !news->lines()[0].unread);
+    press(game, 0x1C, false, 0x0D);
+    CHECK(!m->news_screen() && game.menu() == m);
+
+    // Switched off in the enhancements window: no notice, no news.
+    game.config().check_updates = 0;
+    CHECK(!m->has_news() && m->update_line().x1 < m->update_line().x0);
+}
+
+// Port addition: the update line installs the new version itself (core/
+// self_update.hpp, the UpdateDialog of news_screen.hpp), from the menu of a
+// launch (no game running), with fake downloads and a scratch install folder.
+void test_self_update_menu(const std::filesystem::path& data) {
+    namespace fs = std::filesystem;
+    const fs::path install = fs::temp_directory_path() / "crusader_self_update_game_test";
+    const auto read = [](const fs::path& path) {
+        std::ifstream in(path, std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(in), {});
+    };
+    const auto write = [](const fs::path& path, const std::string& text) {
+        fs::create_directories(path.parent_path());
+        std::ofstream(path, std::ios::binary) << text;
+    };
+    const auto make_install = [&] {
+        fs::remove_all(install);
+        write(install / "crusader-no-regret.exe", "OLDEXE");
+        write(install / "README.md", "readme 1\n");
+        write(install / "data/CRUSADER.CFG", "mine");
+    };
+    const std::string name = "crusader-no-regret-1.80.0-windows-x64.zip";
+    const std::string base = std::string(kReleaseDownloadPrefix) + "v1.80.0/";
+    const std::string release_json =
+        R"({"tag_name": "v1.80.0", "html_url": "https://example.org/r", "assets": [
+            {"name": ")" + name + R"(", "size": )" + std::to_string(sizeof kZip) + R"(, "browser_download_url": ")" + base + name + R"("},
+            {"name": "SHA256SUMS", "size": 100, "browser_download_url": ")" + base + R"(SHA256SUMS"}]})";
+    bool corrupt = false, offline_download = false;
+    int downloads = 0;
+    std::string opened;
+
+    const auto make_game = [&](Game& game, bool with_self_update) {
+        game.config().check_updates = 1;
+        game.config().news_seen.clear();
+        game.set_port_version("v1.77.0");
+        game.enable_online(
+            [&](const std::string& url) -> std::optional<std::string> {
+                return url == kLatestReleaseUrl ? std::optional<std::string>(release_json) : std::string(R"({"news": []})");
+            },
+            [&](const std::string& url) { opened = url; }, true);
+        if (!with_self_update) return;
+        UpdateHooks hooks;
+        hooks.fetch = [&](const std::string&) -> std::optional<std::string> {
+            const std::string digest = corrupt ? std::string(64, '0') : sha256_hex(kZip, sizeof kZip);
+            return digest + "  " + name + "\n";
+        };
+        hooks.download = [&](const std::string&, const fs::path& file, std::uint64_t,
+                             const std::function<bool(std::uint64_t)>& progress) {
+            ++downloads;
+            if (offline_download) return false;
+            std::ofstream(file, std::ios::binary).write(reinterpret_cast<const char*>(kZip), sizeof kZip);
+            return progress(sizeof kZip);
+        };
+        game.enable_self_update(hooks, install, "crusader-no-regret.exe", "-windows-x64.zip", true);
+    };
+    const auto click = [&](Game& game, const MainMenu::Rect& r) {
+        const int x = (r.x0 + r.x1) / 2, y = (r.y0 + r.y1) / 2;
+        game.mouse_button(true, x, y);
+        game.mouse_button(false, x, y);
+    };
+    // The menu of a launch: the start-up movies skipped.
+    const auto start_menu = [&](Game& game) {
+        game.start_up();
+        // The menu exists while the movies play over it: wait for a quiet moment.
+        for (int f = 0, quiet = 0; f < 3000 && quiet < 30; ++f) {
+            if (game.movie()) {
+                quiet = 0;
+                game.key(0x01, false, true, 0, 0x1B);
+                game.update(kFrameUs);
+                game.key(0x01, false, false, 0);
+            } else if (game.menu()) {
+                ++quiet;
+            }
+            game.update(kFrameUs);
+        }
+    };
+    const auto update_line = [](const MainMenu* m) {
+        MainMenu::Rect r = m->update_line();
+        r.x0 = (r.x0 + r.x1) / 2;
+        r.x1 = r.x0;
+        return r;
+    };
+    const auto dialog_button = [](const MainMenu* m, UpdateDialog::Action action) -> MainMenu::Rect {
+        const UpdateDialog* d = m->update_dialog();
+        for (int i = 0; d && i < static_cast<int>(d->buttons().size()); ++i) {
+            if (d->buttons()[static_cast<std::size_t>(i)] == action) {
+                const auto r = d->button(i);
+                return {r.x0, r.y0, r.x1, r.y1};
+            }
+        }
+        return {-1, -1, -2, -2};
+    };
+
+    // In a game: the update line opens the page, as before (the program would restart).
+    {
+        make_install();
+        Game game(data, test_saves(data));
+        make_game(game, true);
+        game.load_save(1);
+        press(game, 0x01, false, 0x1B);
+        const MainMenu* m = game.menu();
+        CHECK(m && m->update_line().x1 > m->update_line().x0);
+        if (!m) return;
+        click(game, update_line(m));
+        CHECK(!m->update_dialog() && opened == "https://example.org/r" && downloads == 0);
+    }
+
+    // Without the self-update set up (PortMaster, tools): the page as well.
+    {
+        make_install();
+        opened.clear();
+        Game game(data, test_saves(data));
+        make_game(game, false);
+        start_menu(game);
+        const MainMenu* m = game.menu();
+        CHECK(m && m->update_line().x1 > m->update_line().x0);
+        if (!m) return;
+        click(game, update_line(m));
+        CHECK(!m->update_dialog() && opened == "https://example.org/r");
+    }
+
+    // At the launch: the dialog; LATER, WEB PAGE, then INSTALL.
+    {
+        make_install();
+        opened.clear();
+        Game game(data, test_saves(data));
+        make_game(game, true);
+        start_menu(game);
+        const MainMenu* m = game.menu();
+        CHECK(m && m->update_line().x1 > m->update_line().x0);
+        if (!m) return;
+        click(game, update_line(m));
+        const UpdateDialog* d = m->update_dialog();
+        CHECK(d && d->step() == UpdateDialog::Step::kAsk && d->buttons().size() == 3 && opened.empty());
+        if (!d) return;
+        // Drawn over the menu.
+        Surface8 screen(Game::kScreenWidth, Game::kScreenHeight);
+        game.render(screen);
+        int lit = 0;
+        for (int y = d->button(0).y0; y <= d->button(0).y1; ++y)
+            for (int x = d->button(0).x0; x <= d->button(0).x1; ++x) lit += screen.row(y)[x] == menu_colour::kGreen;
+        CHECK(lit > 40);  // the focused button is framed and lettered in green
+        // Escape: later. Nothing was touched.
+        press(game, 0x01, false, 0x1B);
+        CHECK(!m->update_dialog() && downloads == 0 && read(install / "crusader-no-regret.exe") == "OLDEXE");
+        // Again, the web page button.
+        click(game, update_line(m));
+        click(game, dialog_button(m, UpdateDialog::Action::kPage));
+        CHECK(!m->update_dialog() && opened == "https://example.org/r" && downloads == 0);
+
+        // A wrong checksum: the dialog says it failed; BACK leaves; nothing changed.
+        corrupt = true;
+        click(game, update_line(m));
+        click(game, dialog_button(m, UpdateDialog::Action::kInstall));
+        game.update(kFrameUs);
+        d = m->update_dialog();
+        CHECK(d && d->step() == UpdateDialog::Step::kFailed && d->status().failure == UpdateFailure::kChecksum);
+        CHECK(!game.restart_requested() && read(install / "crusader-no-regret.exe") == "OLDEXE" &&
+              !fs::exists(install / ".update"));
+        Surface8 failed(Game::kScreenWidth, Game::kScreenHeight);
+        game.render(failed);  // the failure screen draws
+        click(game, dialog_button(m, UpdateDialog::Action::kBack));
+        CHECK(!m->update_dialog());
+
+        // A download that fails, then a try that works (Enter on INSTALL).
+        corrupt = false;
+        offline_download = true;
+        click(game, update_line(m));
+        press(game, 0x1C, false, 0x0D);
+        game.update(kFrameUs);
+        d = m->update_dialog();
+        CHECK(d && d->step() == UpdateDialog::Step::kFailed && d->status().failure == UpdateFailure::kDownload);
+        press(game, 0x01, false, 0x1B);  // Escape: the last button, BACK
+        CHECK(!m->update_dialog());
+        offline_download = false;
+        click(game, update_line(m));
+        CHECK(m->update_dialog() && m->update_dialog()->step() == UpdateDialog::Step::kAsk);
+        press(game, 0x1C, false, 0x0D);
+        CHECK(m->update_dialog() && m->update_dialog()->step() == UpdateDialog::Step::kRunning);
+        CHECK(!game.restart_requested());
+        game.update(kFrameUs);  // the menu sees the install done: restarts
+        CHECK(game.restart_requested() && game.quit_requested());
+        CHECK(read(install / "crusader-no-regret.exe").starts_with("NEWEXE") && read(install / "README.md") == "readme 2\n" &&
+              read(install / "crusader-no-regret.exe.old") == "OLDEXE" && read(install / "data/CRUSADER.CFG") == "mine" &&
+              !fs::exists(install / "data/PUT_GAME_DATA_HERE.txt"));
+        Surface8 restarting(Game::kScreenWidth, Game::kScreenHeight);
+        game.render(restarting);  // "RESTARTING..." draws
+    }
+    fs::remove_all(install);
 }
 
 // Milestone 4: firing the shotgun of SAVEGAME.13 (shape 818, 1 round, 16 clips).
@@ -7527,6 +7828,11 @@ int main(int argc, char** argv) {
         test_fades(data);
         return failures ? 1 : 0;
     }
+    if (argc > 2 && std::string(argv[2]) == "--online") {
+        test_online_menu(data);
+        test_self_update_menu(data);
+        return failures ? 1 : 0;
+    }
     test_load_and_run(data);
     test_alert(data);
     test_player_walks(data);
@@ -7591,6 +7897,8 @@ int main(int argc, char** argv) {
     test_wall_lasers(data);
     test_end_credits(data);
     test_start_up(data);
+    test_online_menu(data);
+    test_self_update_menu(data);
     test_weasel(data);
     test_weasel_native_view(data);
     test_destroyed_clip_leaves_its_slot(data);

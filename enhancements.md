@@ -38,6 +38,7 @@ The changes fall into four groups:
 11. [Window, fullscreen, mouse and picture](#11-window-fullscreen-mouse-and-picture)
 12. [Version lines on the main menu](#12-version-lines-on-the-main-menu)
    - [12b. Christmas hat](#12b-christmas-hat)
+   - [12c. Update notice and news](#12c-update-notice-and-news)
 13. [Two game versions: French 1.08 and US 1.23](#13-two-game-versions-french-108-and-us-123)
 14. [Installing from a CD image, no CD needed](#14-installing-from-a-cd-image-no-cd-needed)
 15. [Start-up, command line and tools](#15-start-up-command-line-and-tools)
@@ -110,6 +111,7 @@ The original has nothing like it. This screen gathers every option the port adds
 |---|---|---|
 | AUTOSAVE / SAUVEGARDE AUTO | Toggles the autosave | `autosave` |
 | LANGUAGE / LANGUE | Cycles the language: AUTO → each folder of `languages` → AUTO; a language's game files need a restart (section 8b) | `language` |
+| ONLINE NEWS / NOUVEAUTES EN LIGNE | The update notice and the news of the main menu (section 12c) | `checkupdates` |
 
 *CHEATS / TRICHE*
 
@@ -727,6 +729,56 @@ No Regret plays Christmas music from 24 to 31 December (until Ctrl+M); the origi
 - **Ctrl+M** (next music track) turns the Christmas mode off until the game is quit: in No Regret the Christmas music and the hat, in No Remorse the hat. The hat is gone the next time the menu opens.
 - There is no option: outside these dates the menu is the original's.
 
+### 12c. Update notice and news
+
+**Files:** `src/core/news.*`, `src/platform/http_get.*`, `src/engine/ui/news_screen.*`, `src/engine/ui/main_menu.*`, `news.json` (No Remorse issue #36)
+
+The original has nothing like it. The port can look online for a newer version of itself and for news its authors publish.
+
+**Asking first**
+- The first time the main menu opens, a small window asks: ONLINE UPDATES / MISES A JOUR, "CHECK ONLINE FOR NEW VERSIONS AND NEWS OF THE PORT?", YES / NO (French: OUI / NON). Left/right move between the two, Enter answers, Escape or N answers no, Y (O, J) yes; a click answers too.
+- The answer is kept in `CRUSADER.CFG` (`checkupdates`) and can be changed on the GAME page of the enhancements window (ONLINE NEWS / NOUVEAUTES EN LIGNE).
+- Until the player says yes, the game never goes online.
+
+**What is fetched.** Once agreed, at each start, on a thread of its own (the game never waits for it):
+- the latest release of the port, from the GitHub API (`releases/latest`);
+- `news.json`, at the root of the repository (branch `main`).
+Windows uses WinHTTP (part of the system, its proxy settings); Linux loads `libcurl` at run time if it is installed, and does nothing otherwise. No network, a timeout (8 s) or an error: nothing is shown.
+
+**Update notice.** When the latest release is newer than the running version, a green line above the version lines: NEW VERSION x.y.z AVAILABLE (French: NOUVELLE VERSION x.y.z DISPONIBLE). Builds that are not releases (`0.0.0-dev`) never show it. Clicking it:
+
+- on Windows and Linux (x86-64), from the menu of a launch (no game running), opens a window: INSTALL / WEB PAGE / LATER (French: INSTALLER / PAGE WEB / PLUS TARD). INSTALL downloads the release's archive with a percentage and a CANCEL button, checks its SHA-256 against the release's `SHA256SUMS`, swaps the files in and restarts the game by itself. A failure says why (download, corrupted download, installation) and nothing is changed.
+- otherwise (a game is running, the folder cannot be written to, the PortMaster build, which is updated through PortMaster), opens the release's page in the browser, as before.
+
+What is installed: the executables and the files beside them, `languages/` and `ceiling_lights/`. Never `data/`: the game files, the saved games and `CRUSADER.CFG` are left alone. Only addresses under the repository's release downloads are used. The checksum comes from the same release as the archive, so it protects against a broken download, not against a tampered release.
+
+The files an update replaces are kept next to the new ones as `<name>.old` and listed in `.update-backup.txt`; the new version deletes them once it runs. If it did not start, rename them back. Any failure while swapping puts everything back at once.
+
+**Files:** `src/core/self_update.*` (the steps, the choice of files, the rollback), `src/core/archive.*` (DEFLATE, gzip, zip, tar), `src/core/sha256.*`, `src/platform/http_get.*` (`http_download`), `src/platform/process.*` (restart), `src/engine/ui/news_screen.*` (`UpdateDialog`); tests `tests/update_tests.cpp`, `test_self_update_menu` in `e2e/game_tests.cpp`.
+
+**News**
+- When there are news, a NEWS button (French: NOUVEAUTES) in the black band above the menu's background, on the right. Up from OPTIONS reaches it, down goes back; Enter or a click opens it.
+- A red disc with the count of the news not read yet (9+ above nine) sits on its top right corner.
+- The news screen lists them newest first: the day (DD.MM.YYYY) with a red NEW / NOUVEAU when not read yet, the title in green, the text in dark green, wrapped. Up/down scroll a line, left/right a page (the arrows shown when the text does not fit scroll a page too); Enter, Escape or BACK close it. Closing it marks them read: their ids (from the optional `id` of a news in `news.json`, else a hash of its date and English title) are kept in `CRUSADER.CFG` (`newsseen`), so a second news published the same day as a read one is still new.
+- The texts are shown in capitals without accents, like the port's other screens.
+
+**Writing news** (`news.json`, UTF-8):
+
+```json
+{ "format": 1,
+  "news": [ { "date": "2026-11-25T18:00:00Z",
+              "expires": "2027-01-31",
+              "min_version": "1.78.0",
+              "max_version": "1.79.9",
+              "title": { "en": "...", "fr": "...", "de": "..." },
+              "body":  { "en": "...", "fr": "...", "de": "..." } } ] }
+```
+
+- `date` (UTC, `YYYY-MM-DD` with an optional time): the news shows from then, so a news can be prepared in advance. It disappears after **30 days**, or at `expires` when given.
+- `min_version` / `max_version` (optional, both included): the versions of the port it is shown to, e.g. `max_version` for "update to get this", `min_version` for "new in your version".
+- `title` / `body`: by language (the port's language, else `en`, else the first), or a plain string; `\n` separates paragraphs.
+- No release is needed: a commit of `news.json` on `main` is enough (GitHub's raw files may take a few minutes to refresh).
+
 ---
 
 ## 13. Two game versions: French 1.08 and US 1.23
@@ -780,6 +832,7 @@ The original reads much of its data from the CD and needs it in the drive. The p
   - `--size WxH`, `--scroll DX DY`, `--walk`, `--fire`, `--use ID`;
   - `--menu`, `--menu-load`, `--menu-credits`, `--menu-options`, `--menu-gamepad`, `--menu-new`, `--movie NAME`, `--movie-overlay NAME`;
   - `--debug-title`: diagnostics in the window title (FPS, processes, missing intrinsics…).
+  - `--offline`: no update notice nor news for this run; `--check-online`: fetches them, prints what the menu would show and exits; `--online-from DIR` (with `--online-ask`, `--menu-news`): reads `DIR/release.json` and `DIR/news.json` instead of the network (section 12c). `--port-version V`: the program believes it is version V (to test the update notice and the install with `--online-from`, whose DIR then also holds the release's archive and `SHA256SUMS`, found by name); `--install-update DIR`: installs the latest release from the network into the folder DIR, prints the steps and exits.
 - Bundled tools: `shapeview`, `mapview` (shape and map viewers), `shapedump`, `sortcheck`, `ucsmoke` (runs the scripts of every map and reports missing intrinsics), `useprobe`, `diffcheck` (runs the original routines in an emulator and compares them with the port).
 
 ---
@@ -816,6 +869,9 @@ The original reads much of its data from the CD and needs it in the drive. The p
 | `flashlight` | true | `false` |
 | `ambientlight` | 85, clamped to 0..100 | ≠ 85 |
 | `language` | empty (AUTO) | a language folder is picked: its id (`fr`, `en`, `pt-br`...) |
+| `checkupdates` | none (the main menu asks) | answered: `true` or `false` (section 12c) |
+| `newsseen` | empty | the ids of the news read (hex, comma separated, the last 64) |
+| `newsread` | 0 | old way, no longer written: the news dated before it are read (UTC seconds) |
 | `viewzoom` | 0 (auto), 1..4 with decimals (`1.5`) | ≠ 0 |
 | `padmap` | see section 2.4 | controller config ≠ default. 24 comma-separated action numbers; `-1` = default role; values clamped |
 | `padaim` | 3, clamped to 1..5 | same |
