@@ -81,7 +81,7 @@ namespace {
 constexpr std::uint32_t kFrameUs = 1'000'000 / 60;
 
 // @orig none: the port's window title (taskbar, title bar)
-constexpr const char* kWindowTitle = "Crusader: No Remorse — DECOMP";
+constexpr const char* kWindowTitle = "Crusader: No Regret — DECOMP";
 
 // @orig none: start-up diagnostics of the port
 std::string diagnostics(Game& game, const RenderStats& stats, double fps) {
