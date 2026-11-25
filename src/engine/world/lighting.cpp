@@ -1697,11 +1697,10 @@ bool WorldLighting::occluded(const Vec3& p, const Vec3& n, ObjId self, std::size
 //
 // A thing fills its box: a point of it is solid where its sprite is, the
 // sprite pushed along the view through the box. Not a character: pushed
-// through his box, his head's pixels would reach its top at the front (a
-// third of the box's depth higher than the head), and a ceiling lamp hanging
-// under that top, a little in front of him, saw him as a wall up to the
-// lamp: a shadow out to the lamp's reach, longer the closer he stood. A
-// character is his sprite turned round the box's vertical axis: a point of
+// through his box he is a slab as deep as it, his head's pixels higher at its
+// front than his head (a lamp over him threw a blob in front of him, not a
+// disc round his feet; a lamp beside him, a shadow as wide as the box is
+// deep). A character is his sprite turned round the box's vertical axis: a point of
 // the box is solid when the sprite, at the axis and the point's height, is at
 // the point's distance from the axis (on the side the point is, across the
 // view): his shadow is as high as he is, from wherever the light comes.
