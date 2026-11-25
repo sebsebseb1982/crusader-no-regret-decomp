@@ -8,7 +8,7 @@
 //
 // A font object (CAFONT_1318_0148, 12 bytes) is a text stream {vtable, x, y}
 // plus the font number and two spacing values copied from tables in the
-// executable (DS:4918 and DS:4958): a glyph's advance is its frame width plus
+// executable (DS:5862 and DS:58A2): a glyph's advance is its frame width plus
 // the first, a line's height its frame height plus the second. Font numbers
 // above 31 become 0 (CAFONT_1318_028c).
 //
@@ -38,7 +38,7 @@ public:
     // exist (the original does not check: it would read past the frame table).
     const ShapeFrame* glyph(int font, unsigned char c) const;
 
-    // Spacing tables DS:4918 (added to the advance) and DS:4958 (to the height).
+    // Spacing tables DS:5862 (added to the advance) and DS:58A2 (to the height).
     static int extra_width(int font);
     static int extra_height(int font);
 

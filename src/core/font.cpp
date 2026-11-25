@@ -7,9 +7,11 @@ namespace crusader {
 
 namespace {
 
-// DS:4918 and DS:4958 in CRUSADER.EXE (French, 12/10/1995), 32 words each.
+// DS:5862 and DS:58A2 in REGRET.EXE (English and German alike), 32 words each
+// (No Remorse: DS:4918 and DS:4958). No Regret adds one pixel of advance to
+// fonts 18 to 21 as well, among them font 18 of the item names in the HUD.
 constexpr std::array<int, FontSet::kMaxFonts> kExtraWidth = {
-    1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 constexpr std::array<int, FontSet::kMaxFonts> kExtraHeight = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
