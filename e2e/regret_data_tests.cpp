@@ -9,6 +9,7 @@
 #include "core/flex.hpp"
 #include "core/font.hpp"
 #include "core/language.hpp"
+#include "core/news.hpp"
 #include "core/palette.hpp"
 #include "core/png_writer.hpp"
 #include "core/shape.hpp"
@@ -23,6 +24,7 @@
 #include "engine/ui/help_screen.hpp"
 #include "engine/ui/keypad_gump.hpp"
 #include "engine/ui/load_screen.hpp"
+#include "engine/ui/news_screen.hpp"
 #include "engine/usecode/intrinsic_numbering.hpp"
 #include "engine/usecode/usecode_file.hpp"
 #include "engine/usecode/world_intrinsics.hpp"
@@ -1399,6 +1401,87 @@ void test_help_screen(const std::filesystem::path& data) {
     CHECK(help.closed());
 }
 
+// The online part of the main menu in every language: the NEWS button holds
+// its word, the update line lies in the black band between the picture
+// (down to row 406) and the version lines (438), the update window holds its
+// lines and its buttons, each button its name.
+struct StubOnline : MenuOnline {
+    bool ask() const override { return false; }
+    void answer(bool) override {}
+    std::string new_version() const override { return "1.44.0"; }
+    void open_release() override {}
+    bool can_install() override { return true; }
+    void install() override {}
+    void cancel_install() override {}
+    UpdateStatus install_status() const override { return {}; }
+    void restart() override {}
+    const std::vector<NewsItem>& news() const override { return news_; }
+    NewsRead news_read() const override { return {}; }
+    void mark_news_read() override {}
+    std::vector<NewsItem> news_;
+};
+
+void test_online_texts_fit(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.config().check_updates = 1;
+    game.set_port_version("v1.43.0");
+    game.enable_online(
+        [](const std::string& url) -> std::optional<std::string> {
+            if (url == kLatestReleaseUrl) return R"({"tag_name": "v1.44.0", "html_url": "https://example.org/r"})";
+            return R"({"news": [{"date": "2026-11-01T00:00:00Z", "title": "News"}]})";
+        },
+        [](const std::string&) {}, true);
+    game.open_menu();
+    const MainMenu* m = game.menu();
+    CHECK(m && m->has_news());
+    if (!m) return;
+    const FontSet& fonts = game.fonts();
+    // The width of a text in the language in use ("%s": the version).
+    const auto width = [&](const std::string& english) {
+        char text[160];
+        std::snprintf(text, sizeof text, tr(english.c_str()), "1.44.0");
+        return TextWriter(fonts, UpdateDialog::kFont).measure(text).width;
+    };
+    StubOnline online;
+    for (const char* language : {"en", "fr", "de"}) {
+        select_language(language);
+        std::printf("online texts: %s\n", language);
+        const MainMenu::Rect news = m->button(MainMenu::kNews);
+        CHECK(news.x1 - news.x0 + 1 >= width("NEWS") + 30 && news.x0 > 320);
+        const MainMenu::Rect line = m->update_line();
+        CHECK(line.x0 >= 0 && line.x1 < 640 && line.y0 > 406 && line.y1 < 438);
+        Surface8 screen(Game::kScreenWidth, Game::kScreenHeight);
+        game.render(screen);
+        shot_surface(screen, game.palette(), (std::string("online_menu_") + language + ".png").c_str());
+
+        char title[160];
+        std::snprintf(title, sizeof title, tr("UPDATE TO %s"), "1.44.0");
+        UpdateDialog dialog(fonts, online, title);
+        const int inner = UpdateDialog::kWindowX1 - UpdateDialog::kWindowX0 + 1 - 2 * 12;
+        for (const char* text : {"UPDATE TO %s", "INSTALL IT NOW?", "THE GAME RESTARTS AFTERWARDS", "DOWNLOADING...",
+                                 "RESTARTING...", "INSTALLING...", "UPDATE FAILED", "THE DOWNLOAD FAILED",
+                                 "THE DOWNLOAD IS CORRUPTED", "NO PACKAGE FOR THIS SYSTEM", "THE INSTALLATION FAILED"}) {
+            if (width(text) > inner) std::printf("  too wide: %s\n", tr(text));
+            CHECK(width(text) <= inner);
+        }
+        // The ask step has the most buttons (INSTALL, WEB PAGE, LATER).
+        const int count = static_cast<int>(dialog.buttons().size());
+        CHECK(count == 3);
+        CHECK(dialog.button(0).x0 > UpdateDialog::kWindowX0 + 6 &&
+              dialog.button(count - 1).x1 < UpdateDialog::kWindowX1 - 6);
+        for (int i = 0; i < count; ++i) {
+            const UpdateDialog::Rect r = dialog.button(i);
+            CHECK(r.x1 - r.x0 + 1 >= width(dialog.button_label(dialog.buttons()[static_cast<std::size_t>(i)])) + 20);
+            if (i > 0) CHECK(r.x0 > dialog.button(i - 1).x1);
+        }
+        Surface8 window(Game::kScreenWidth, Game::kScreenHeight);
+        game.render(window);
+        dialog.draw(window);
+        shot_surface(window, game.palette(), (std::string("online_update_") + language + ".png").c_str());
+    }
+    select_language("");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1413,6 +1496,7 @@ int main(int argc, char** argv) {
     }
     try {
         test_detection(data);
+        test_online_texts_fit(data);
         test_shapes(data);
         test_tables(data);
         test_new_game(data);

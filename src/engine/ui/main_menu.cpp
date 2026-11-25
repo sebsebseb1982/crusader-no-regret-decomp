@@ -35,11 +35,21 @@ constexpr int kOnlineFont = 14, kOnlineTextDrop = 17;
 constexpr int kNewsButtonX1 = 597, kNewsButtonY0 = 44, kNewsButtonHeight = 24, kNewsButtonPad = 18;
 constexpr int kBadgeRadius = 10;
 constexpr int kUpdateLineY = 406;  // pen position
+// No Regret's picture comes down to row 406: the line goes in the black band
+// between it and the version lines (glyphs from the pen - 9 to the pen + 1).
+constexpr int kUpdateLineYRegret = 426;
+// menu_colour::kGreen is dark red in No Regret's MISC.PAL: the line takes the
+// green of the menu's buttons there.
+constexpr std::uint8_t kUpdateColourRegret = 0x90;
 
-// "NEW VERSION x.y.z AVAILABLE", translated.
+int update_line_y() {
+    return regret_data() ? kUpdateLineYRegret : kUpdateLineY;
+}
+
+// "UPDATE TO x.y.z", translated: an invitation rather than a notice.
 std::string update_text(const std::string& version) {
     char text[160];
-    std::snprintf(text, sizeof text, tr("NEW VERSION %s AVAILABLE"), version.c_str());
+    std::snprintf(text, sizeof text, tr("UPDATE TO %s"), version.c_str());
     return text;
 }
 // No Regret (13B8:04F9): the top row is higher, its shapes taller.
@@ -63,12 +73,16 @@ MainMenu::MainMenu(const Resources& res, Shared& shared, bool no_game)
                                                             : kButtonCorners)[i];
         buttons_[i] = {p.x, p.y, p.x + w - 1, p.y + h - 1};
     }
-    if (res_.online && res_.fonts) {
-        const int width = TextWriter(*res_.fonts, kOnlineFont).measure(tr("NEWS")).width + 2 * kNewsButtonPad;
-        news_button_ = {kNewsButtonX1 - width + 1, kNewsButtonY0, kNewsButtonX1, kNewsButtonY0 + kNewsButtonHeight - 1};
-        if (res_.online->ask()) question_ = std::make_unique<UpdatesQuestion>(*res_.fonts);
-    }
+    if (res_.online && res_.fonts && res_.online->ask()) question_ = std::make_unique<UpdatesQuestion>(*res_.fonts);
     if (*selected_ == kNews && !has_news()) select(kOptions);
+}
+
+// @orig none: port's online news. Measured at each call: the language can
+// change while the menu is open (enhancements window).
+MainMenu::Rect MainMenu::news_button() const {
+    if (!res_.fonts) return {};
+    const int width = TextWriter(*res_.fonts, kOnlineFont).measure(tr("NEWS")).width + 2 * kNewsButtonPad;
+    return {kNewsButtonX1 - width + 1, kNewsButtonY0, kNewsButtonX1, kNewsButtonY0 + kNewsButtonHeight - 1};
 }
 
 // @orig none: the buttons' hit test of 1310:001D, with the port's button
@@ -76,7 +90,7 @@ int MainMenu::button_at(int x, int y) const {
     for (int i = 0; i < kButtons; ++i) {
         if (buttons_[i].contains(x, y)) return i;
     }
-    if (has_news() && news_button_.contains(x, y)) return kNews;
+    if (has_news() && news_button().contains(x, y)) return kNews;
     return -1;
 }
 
@@ -87,18 +101,18 @@ MainMenu::Rect MainMenu::update_line() const {
     if (version.empty()) return {-1, -1, -2, -2};
     const int width = TextWriter(*res_.fonts, kOnlineFont).measure(update_text(version)).width;
     const int x0 = (640 - width) / 2;
-    return {x0, kUpdateLineY - kOnlineTextDrop, x0 + width - 1, kUpdateLineY + 6};
+    return {x0, update_line_y() - kOnlineTextDrop, x0 + width - 1, update_line_y() + 6};
 }
 
 // @orig none: port's online news
 void MainMenu::draw_online(Surface8& screen) const {
     using namespace menu_colour;
     if (const Rect line = update_line(); line.x1 >= line.x0) {
-        print_tinted(screen, *res_.fonts, kOnlineFont, line.x0, kUpdateLineY,
-                     update_text(res_.online->new_version()), kGreen);
+        print_tinted(screen, *res_.fonts, kOnlineFont, line.x0, update_line_y(),
+                     update_text(res_.online->new_version()), regret_data() ? kUpdateColourRegret : kGreen);
     }
     if (!has_news()) return;
-    const Rect& r = news_button_;
+    const Rect r = news_button();
     const std::uint8_t tint = *selected_ == kNews ? kGreen : kDimGreen;
     draw_rounded_box(screen, r.x0, r.y0, r.x1, r.y1, -1, tint);
     print_tinted(screen, *res_.fonts, kOnlineFont, r.x0 + kNewsButtonPad, r.y0 + kOnlineTextDrop, tr("NEWS"), tint);
@@ -112,13 +126,13 @@ void MainMenu::draw_online(Surface8& screen) const {
             const int x = cx + dx, y = cy + dy;
             if (dx * dx + dy * dy <= kBadgeRadius * kBadgeRadius + kBadgeRadius / 2 && x >= 0 && y >= 0 &&
                 x < screen.width && y < screen.height) {
-                screen.row(y)[x] = kRed;
+                screen.row(y)[x] = red();
             }
         }
     }
     const std::string count = unread > 9 ? "9+" : std::to_string(unread);
     const int width = TextWriter(*res_.fonts, kOnlineFont).measure(count).width;
-    print_tinted(screen, *res_.fonts, kOnlineFont, cx - width / 2, cy + 6, count, kWhite);
+    print_tinted(screen, *res_.fonts, kOnlineFont, cx - width / 2, cy + 6, count, white());
 }
 
 // @orig none: port's online news; the keys of the news button

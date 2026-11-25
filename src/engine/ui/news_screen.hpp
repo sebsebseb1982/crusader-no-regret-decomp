@@ -12,7 +12,7 @@
 // answers it, Escape and N answer no, Y (O, J) yes; a mouse press on a button
 // answers it. The enhancements window's "game" page changes the answer later.
 //
-// UpdateDialog: what a press on the "NEW VERSION x.y.z AVAILABLE" line opens
+// UpdateDialog: what a press on the "UPDATE TO x.y.z" line opens
 // when the game can install that version itself (MenuOnline::can_install, core/
 // self_update.hpp), in the question's look. It asks "INSTALL IT NOW? THE GAME
 // RESTARTS AFTERWARDS" with INSTALL, WEB PAGE (the release's page, as before)
@@ -32,6 +32,7 @@
 // a page. The main menu marks the news read once it closes.
 
 #include "core/font.hpp"
+#include "core/language.hpp"
 #include "core/news.hpp"
 #include "core/self_update.hpp"
 #include "core/surface.hpp"
@@ -74,7 +75,13 @@ public:
 // MISC.PAL colours of the port's menu windows.
 namespace menu_colour {
 inline constexpr std::uint8_t kFrame = 0x57, kGreen = 0x0C, kDimGreen = 0x75, kRed = 0x18, kWhite = 0xFF;
-}
+// MISC.PAL differs between the games: kRed and kWhite are No Remorse's red and
+// white; in No Regret they are a grey purple and the transparent magenta, its
+// red and cream white are 0xD9 and 0x9B. (kGreen, dark red in No Regret, is
+// the windows' colour there.)
+inline std::uint8_t red() { return regret_data() ? 0xD9 : kRed; }
+inline std::uint8_t white() { return regret_data() ? 0x9B : kWhite; }
+}  // namespace menu_colour
 
 class UpdatesQuestion {
 public:
@@ -110,7 +117,7 @@ public:
     };
     enum class Step { kAsk, kRunning, kFailed };
     enum class Action { kInstall, kPage, kLater, kCancel, kBack };
-    // `title`: "NEW VERSION x.y.z AVAILABLE", translated.
+    // `title`: "UPDATE TO x.y.z", translated.
     UpdateDialog(const FontSet& fonts, MenuOnline& online, std::string title);
 
     // Over what the screen holds.
@@ -126,8 +133,13 @@ public:
     // The buttons of the step, left to right, and the one with the focus.
     const std::vector<Action>& buttons() const { return buttons_; }
     int focused() const { return focused_; }
+    // Each button as wide as its name needs (at least kButtonWidth).
     Rect button(int index) const;
     std::string button_label(Action action) const;
+    // Wider than the question's: the German names of the buttons ("INSTALLIEREN")
+    // and the lines ("DIE INSTALLATION IST FEHLGESCHLAGEN") need it.
+    static constexpr int kWindowX0 = 40, kWindowX1 = 599;
+    static constexpr int kButtonWidth = 132, kButtonPad = 14, kButtonGap = 14;
 
 private:
     void press(Action action);

@@ -50,7 +50,7 @@
 //     menu opens with the UpdatesQuestion over it, which gets every event
 //     until answered (MenuOnline::answer);
 //   - when a newer release of the port is known, a green line above the
-//     version lines, "NEW VERSION x.y.z AVAILABLE": a press on it opens the
+//     version lines, "UPDATE TO x.y.z": a press on it opens the
 //     release's page (MenuOnline::open_release), or, when the game can install
 //     that version itself and no game is running, the UpdateDialog
 //     (MenuOnline::can_install, core/self_update.hpp);
@@ -157,7 +157,7 @@ public:
     void end_credits() { credits_.reset(); }
     int selected() const { return *selected_; }
     // kNewGame..kQuit, and kNews.
-    const Rect& button(int i) const { return i == kNews ? news_button_ : buttons_[i]; }
+    Rect button(int i) const { return i == kNews ? news_button() : buttons_[i]; }
     // Port addition: the news button is shown (there are news).
     bool has_news() const { return res_.online && !res_.online->news().empty(); }
     const UpdatesQuestion* updates_question() const { return question_.get(); }
@@ -194,7 +194,7 @@ private:
     std::unique_ptr<UpdatesQuestion> question_;
     std::unique_ptr<NewsScreen> news_;
     std::unique_ptr<UpdateDialog> update_;
-    Rect news_button_{};
+    Rect news_button() const;
     bool no_game_;
     std::array<Rect, kButtons> buttons_{};
     int captured_ = -1;  // button holding the mouse
