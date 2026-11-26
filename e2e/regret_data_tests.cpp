@@ -381,6 +381,32 @@ void test_shot_floor_mine(const std::filesystem::path& data) {
     CHECK(!after || after->shape != 0x29F);
 }
 
+// The shots of fire type 0x14 (weapon 0x198) show frames dir * 3 + 0xDC of
+// shape 0x1D9, 0x100..0x10B from direction 12 on (the original's sprites
+// keep 16-bit frames). The port's sprite items kept 8 bits: shot north-west
+// to north, they showed frames 0..11, the blue bolts of fire type 5.
+void test_shot_frames_past_255(const std::filesystem::path& data) {
+    Game game(data, saves_dir());
+    game.new_game(0);
+    for (int i = 0; i < 300 && game.in_movie(); ++i) game.update(kFrameUs);
+    World& w = game.world();
+    for (const int dir : {4, 12, 15}) {
+        // The muzzle in front of him, out of his own box.
+        const Pid pid = fire_weapon(game.kernel(), w, game.animations(), 1, kDirectionDx[dir] * 48,
+                                    kDirectionDy[dir] * 48, 40, dir, 0x14, false);
+        int frame = -1;
+        w.for_each([&](const Item& i) {
+            if (i.shape == kProjectileShape && i.sprite_only) frame = i.frame;
+        });
+        const int first = dir * 3 + 0xDC;
+        std::printf("fire type 0x14 to direction %d: pid %u, frame 0x%X (0x%X..0x%X)\n", dir, pid, frame, first,
+                    first + 2);
+        CHECK(pid != 0 && frame >= first && frame <= first + 2);
+        if (Process* p = game.kernel().get(pid)) p->terminate();  // the next shot is the only sprite
+        game.update(kFrameUs);
+    }
+}
+
 // Port addition (barrel_leaks.hpp): an explosive barrel (BARRELUP 0xAA) put
 // by the player in a new game takes 150 damage before it blows up (BARREL,
 // ITEM_066B); with the option bullets do it 3/5 of their damage. Each bullet
@@ -1504,6 +1530,7 @@ int main(int argc, char** argv) {
         test_keypad_autosave(data);
         test_movie_shows_status_bar(data);
         test_shot_floor_mine(data);
+        test_shot_frames_past_255(data);
         test_barrel_leaks(data);
         test_fixture_lights(data);
         test_ceiling_lights_in_game(data);

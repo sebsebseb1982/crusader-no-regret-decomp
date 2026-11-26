@@ -624,6 +624,12 @@ public:
     // Returns 0 when the shape is out of range (> 0x7FF).
     ObjId create(std::uint16_t shape, std::uint8_t frame);
 
+    // A port-only sprite item (sprite_only) on the pending stack. The
+    // original keeps its sprites outside the item table (SPMGR.C) with a
+    // 16-bit frame, which the item keeps: the shots of No Regret's fire type
+    // 0x14 show frames 0x100..0x10B when fired north-west to north.
+    ObjId create_sprite(std::uint16_t shape, std::uint16_t frame);
+
     // Pending-item stack (ITEMCACH.C; ScummVM's "ethereal void"). Items are
     // created there, or pushed out of the world, then popped to a place.
     void push(ObjId id);
@@ -779,7 +785,8 @@ public:
     bool is_mostly_in(const Item& item, const ScreenRect& r) const;
 
     // Item::I_setFrame: 16 bits for NPCs (high byte also in the NPC record),
-    // 8 bits for other items.
+    // 8 bits for other items. Port addition: 16 bits for sprite items too
+    // (create_sprite).
     void set_frame(Item& item, std::uint16_t frame);
 
     // NPC table. Ids outside 1..255 count as dead (Actor::I_isDead).

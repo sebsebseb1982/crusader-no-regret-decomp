@@ -997,11 +997,8 @@ ProjectileProcess::ProjectileProcess(World& world, const AnimDat& anims, ObjId s
 
 // @orig 1150:0A7A 1150:0EA9 1150:0F30
 void ProjectileProcess::on_added() {
-    sprite_ = world_.create(kProjectileShape, frame_);
-    if (sprite_) {
-        world_.get(sprite_)->sprite_only = true;
-        world_.pop_to_coords(pos_.x, pos_.y, pos_.z);
-    }
+    sprite_ = world_.create_sprite(kProjectileShape, frame_);
+    if (sprite_) world_.pop_to_coords(pos_.x, pos_.y, pos_.z);
 }
 
 void ProjectileProcess::on_terminate() {
