@@ -1799,7 +1799,8 @@ void test_ceiling_lights() {
     const auto& map1 = ceiling_lights(1);
     CHECK(map1.size() > 20 && ceiling_lights(0).empty() && ceiling_lights(99).empty());
     CHECK(std::all_of(map1.begin(), map1.end(), [](const CeilingLight& l) { return l.z > 40; }));
-    // Every map file shipped parses and has lamps, under a ceiling.
+    // Every map file shipped parses and has lamps, over the floor. A lamp hangs 64 over its room's
+    // walls: 328 in map 14's raised room C20 (floor 192, walls 72).
     int files = 0;
     for (int m = 1; m < 100; ++m) {
         char name[32];
@@ -1808,7 +1809,7 @@ void test_ceiling_lights() {
         ++files;
         const auto& lights = ceiling_lights(m);
         CHECK(!lights.empty());
-        CHECK(std::all_of(lights.begin(), lights.end(), [](const CeilingLight& l) { return l.z > 20 && l.z < 300; }));
+        CHECK(std::all_of(lights.begin(), lights.end(), [](const CeilingLight& l) { return l.z > 20 && l.z < 400; }));
     }
     CHECK(files >= 10);
     if (map1.empty()) return;
